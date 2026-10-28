@@ -1,0 +1,37 @@
+<mat-toolbar>
+  <button matIconButton type="button" aria-label="Abrir menu" [matMenuTriggerFor]="menuPrincipal">
+    <mat-icon>menu</mat-icon>
+  </button>
+
+  <mat-menu #menuPrincipal="matMenu">
+    @for (item of dados.menu; track item.rotulo) {
+      <button mat-menu-item type="button">
+        <mat-icon>{{ item.icone }}</mat-icon>
+        <span>{{ item.rotulo }}</span>
+      </button>
+    }
+  </mat-menu>
+
+  <span class="logo-caixa">
+    <img class="logo" [src]="dados.logoUrl" [alt]="dados.nomeSistema" />
+  </span>
+
+  <span class="titulo">{{ dados.nomeSistema }}</span>
+
+  <span class="espacador"></span>
+
+  <button matIconButton type="button" aria-label="Favoritos">
+    <mat-icon>favorite</mat-icon>
+  </button>
+  <button matIconButton type="button" aria-label="Buscar">
+    <mat-icon>search</mat-icon>
+  </button>
+  <button matIconButton type="button" aria-label="Mais opções">
+    <mat-icon>more_vert</mat-icon>
+  </button>
+
+  @if (dados.usuario) {
+    <img class="avatar" [src]="dados.usuario.fotoUrl" [alt]="dados.usuario.nome" />
+    <span class="usuario-nome">{{ dados.usuario.nome }}</span>
+  }
+</mat-toolbar>
