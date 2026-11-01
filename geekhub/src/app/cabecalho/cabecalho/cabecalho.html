@@ -23,10 +23,27 @@
 </mat-toolbar>
 
 <mat-menu #menuPrincipal="matMenu">
-  @for (item of dados.menu; track item.rotulo) {
-    <button mat-menu-item type="button">
-      <mat-icon>{{ item.icone }}</mat-icon>
-      <span>{{ item.rotulo }}</span>
+  @for (item of itensMenu; track item.caminho) {
+    @if (!item.exigeSessao || usuarioAtual) {
+      <a mat-menu-item [routerLink]="item.caminho">
+        <mat-icon>{{ item.icone }}</mat-icon
+        ><span>{{ item.rotulo }}</span>
+      </a>
+    }
+  }
+  @if (usuarioAtual) {
+    <a mat-menu-item routerLink="/minha-conta/perfil"
+      ><mat-icon>person</mat-icon><span>Minha conta</span></a
+    >
+    <button mat-menu-item type="button" (click)="sair.emit()">
+      <mat-icon>logout</mat-icon><span>Sair</span>
     </button>
+  } @else {
+    <a mat-menu-item routerLink="/autenticacao/entrar"
+      ><mat-icon>login</mat-icon><span>Entrar</span></a
+    >
+    <a mat-menu-item routerLink="/autenticacao/cadastro"
+      ><mat-icon>person_add</mat-icon><span>Criar conta</span></a
+    >
   }
 </mat-menu>

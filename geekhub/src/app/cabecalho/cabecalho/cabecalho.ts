@@ -1,20 +1,20 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 
-export interface ItemMenuCabecalho {
+export interface UsuarioResponse {
+  identificador: number;
+  nome: string;
+  email: string;
+  foto?: string;
+}
+interface ItemMenuNavegacao {
   rotulo: string;
   icone: string;
+  caminho: string;
+  exigeSessao?: boolean;
 }
-
-export interface UsuarioCabecalho {
-  nome: string;
-  fotoUrl: string;
-}
-
 export interface DadosCabecalho {
   logoUrl: string;
   nomeSistema: string;
-  menu: ItemMenuCabecalho[];
-  usuario: UsuarioCabecalho | null;
 }
 
 @Component({
@@ -25,18 +25,12 @@ export interface DadosCabecalho {
 })
 export class Cabecalho {
   @Input() versao: 'Simples' | 'Completa' = 'Completa';
-
-  readonly dados: DadosCabecalho = {
-    logoUrl: 'penguin_icon.png',
-    nomeSistema: 'GeekHub',
-    menu: [
-      { rotulo: 'Início', icone: 'home' },
-      { rotulo: 'Categorias', icone: 'category' },
-      { rotulo: 'Contato', icone: 'mail' },
-    ],
-    usuario: {
-      nome: 'Aluno exemplo',
-      fotoUrl: 'https://picsum.photos/seed/geekhub/64',
-    },
-  };
+  @Input() usuarioAtual: UsuarioResponse | null = null;
+  @Output() sair = new EventEmitter<void>();
+  readonly dados: DadosCabecalho = { logoUrl: 'penguin_icon.png', nomeSistema: 'GeekHub' };
+  readonly itensMenu: ItemMenuNavegacao[] = [
+    { rotulo: 'Catálogo', icone: 'home', caminho: '/' },
+    { rotulo: 'Carrinho', icone: 'shopping_cart', caminho: '/carrinho' },
+    { rotulo: 'Minhas compras', icone: 'orders', caminho: '/pedidos', exigeSessao: true },
+  ];
 }
