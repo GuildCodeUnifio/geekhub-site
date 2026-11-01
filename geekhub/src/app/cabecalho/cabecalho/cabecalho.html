@@ -1,4 +1,4 @@
-<mat-toolbar class="barra">
+<mat-toolbar class="barra" [class.pesquisando]="buscaAberta && versao === 'Completa'">
   @if (versao === 'Completa') {
     <button
       class="botao-menu"
@@ -19,9 +19,42 @@
   @if (versao === 'Completa') {
     <span class="espacador"></span>
 
-    <button matIconButton type="button" aria-label="Buscar produtos">
-      <mat-icon>search</mat-icon>
-    </button>
+    <form class="busca" [class.aberta]="buscaAberta" role="search" (ngSubmit)="pesquisar()">
+      @if (buscaAberta) {
+        <mat-form-field class="campo-busca" appearance="outline" subscriptSizing="dynamic">
+          <input
+            #campoBusca
+            matInput
+            name="termo"
+            [(ngModel)]="termoBusca"
+            aria-label="Buscar produtos"
+            placeholder="Buscar"
+            maxlength="120"
+            enterkeyhint="search"
+            (keydown.escape)="fecharBusca(); $event.preventDefault()"
+          />
+          <button
+            matIconButton
+            matSuffix
+            type="button"
+            aria-label="Fechar pesquisa"
+            (click)="fecharBusca()"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-form-field>
+      }
+      <button
+        #botaoBusca
+        matIconButton
+        type="button"
+        aria-label="Buscar produtos"
+        [attr.aria-expanded]="buscaAberta"
+        (click)="buscaAberta ? pesquisar() : abrirBusca()"
+      >
+        <mat-icon>search</mat-icon>
+      </button>
+    </form>
 
     <button matIconButton type="button" aria-label="Favoritos indisponíveis" disabled>
       <mat-icon>favorite</mat-icon>

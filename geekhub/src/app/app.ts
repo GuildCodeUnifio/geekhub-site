@@ -23,6 +23,12 @@ export class App {
     return this.roteador.url.startsWith('/autenticacao/') ? 'Simples' : 'Completa';
   }
 
+  pesquisar(termo: string): void {
+    void this.roteador.navigate(['/'], {
+      queryParams: { busca: termo || null },
+    });
+  }
+
   encerrarSessao(): void {
     this.usuarioAtual = null;
     void this.roteador.navigate(['/autenticacao/entrar']);
