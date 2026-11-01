@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 
 import { Cabecalho } from './cabecalho/cabecalho';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,7 +10,14 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 
 @NgModule({
   declarations: [Cabecalho],
-  imports: [CommonModule, MatToolbarModule, MatButtonModule, MatIconModule, MatMenuModule],
+  imports: [
+    CommonModule,
+    RouterModule,
+    MatToolbarModule,
+    MatButtonModule,
+    MatIconModule,
+    MatMenuModule,
+  ],
   exports: [Cabecalho],
 })
-export class CabecalhoModule { }
+export class CabecalhoModule {}

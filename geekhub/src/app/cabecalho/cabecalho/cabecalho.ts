@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 export interface ItemMenuCabecalho {
   rotulo: string;
@@ -24,6 +24,8 @@ export interface DadosCabecalho {
   templateUrl: './cabecalho.html',
 })
 export class Cabecalho {
+  @Input() versao: 'Simples' | 'Completa' = 'Completa';
+
   readonly dados: DadosCabecalho = {
     logoUrl: 'penguin_icon.png',
     nomeSistema: 'GeekHub',
