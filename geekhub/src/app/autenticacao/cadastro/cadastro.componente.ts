@@ -6,4 +6,9 @@ import { Component } from '@angular/core';
   styleUrl: './cadastro.componente.scss',
   templateUrl: './cadastro.componente.html',
 })
-export class CadastroComponente {}
+export class CadastroComponente {
+  nome: string = '';
+  email: string = '';
+  senha: string = '';
+  confirmacaoSenha: string = '';
+}

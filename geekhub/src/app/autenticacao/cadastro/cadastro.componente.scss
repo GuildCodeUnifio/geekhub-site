@@ -1,0 +1,58 @@
+:host {
+  display: block;
+  color: #212121;
+  background-color: #faf9f6;
+  font-family: Arial, sans-serif;
+}
+
+.pagina-cadastro {
+  display: flex;
+  justify-content: center;
+  padding: 60px 20px;
+}
+
+.caixa-cadastro {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 486px;
+  padding: 40px;
+  border: 2px solid #212121;
+  box-sizing: border-box;
+}
+
+h1 {
+  margin: 0 0 28px;
+  text-align: center;
+  font-size: 34px;
+}
+
+mat-form-field {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+button {
+  width: 100%;
+  border-radius: 0;
+  background-color: #3f51b5;
+  color: #ffffff;
+  letter-spacing: 1px;
+}
+
+p {
+  margin: 24px 0 0;
+  text-align: center;
+}
+
+a {
+  color: #212121;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+@media (max-width: 520px) {
+  .caixa-cadastro {
+    padding: 24px;
+  }
+}

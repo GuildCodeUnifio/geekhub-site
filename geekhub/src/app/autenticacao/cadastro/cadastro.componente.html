@@ -1,1 +1,64 @@
-<p>cadastro works!</p>
+<app-cabecalho-simples></app-cabecalho-simples>
+
+<main class="pagina-cadastro">
+  <section class="caixa-cadastro">
+    <h1>Criar conta</h1>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Nome</mat-label>
+
+      <input
+        matInput
+        name="nome"
+        type="text"
+        [(ngModel)]="nome"
+        placeholder="Seu nome"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>E-mail</mat-label>
+
+      <input
+        matInput
+        name="email"
+        type="email"
+        [(ngModel)]="email"
+        placeholder="seu@email.com"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Senha</mat-label>
+
+      <input
+        matInput
+        name="senha"
+        type="password"
+        [(ngModel)]="senha"
+        placeholder="Sua senha"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Confirmar senha</mat-label>
+
+      <input
+        matInput
+        name="confirmacaoSenha"
+        type="password"
+        [(ngModel)]="confirmacaoSenha"
+        placeholder="Confirme sua senha"
+      />
+    </mat-form-field>
+
+    <button mat-flat-button type="button">
+      CADASTRAR
+    </button>
+
+    <p>
+      Já tem conta?
+      <a routerLink="/entrar">Entrar</a>
+    </p>
+  </section>
+</main>
