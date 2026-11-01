@@ -1,7 +1,9 @@
 @use '@angular/material' as mat;
 
 :host {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .barra {
@@ -57,6 +59,28 @@
 
 .espacador {
   flex: 1 1 auto;
+}
+
+.estrutura {
+  flex: 1;
+  min-height: 0;
+}
+
+.painel-lateral {
+  width: min(280px, calc(100vw - 32px));
+}
+
+.cabecalho-menu {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 16px;
+
+  button {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }
 
 @media (max-width: 767px) {

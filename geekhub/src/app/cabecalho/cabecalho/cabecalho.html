@@ -1,18 +1,28 @@
 <mat-toolbar class="barra">
   @if (versao === 'Completa') {
-    <button matIconButton type="button" aria-label="Abrir menu" [matMenuTriggerFor]="menuPrincipal">
+    <button
+      class="botao-menu"
+      matIconButton
+      type="button"
+      aria-label="Abrir menu"
+      (click)="menuLateral.toggle()"
+    >
       <mat-icon>menu</mat-icon>
     </button>
   }
-  <a class="marca" routerLink="/" aria-label="GeekHub — catálogo">
+
+  <a class="marca" routerLink="/" aria-label="GeekHub — catálogo" (click)="menuLateral.close()">
     <img class="logo" [src]="dados.logoUrl" alt="" />
     <span class="titulo">{{ dados.nomeSistema }}</span>
   </a>
+
   @if (versao === 'Completa') {
     <span class="espacador"></span>
+
     <button matIconButton type="button" aria-label="Buscar produtos">
       <mat-icon>search</mat-icon>
     </button>
+
     <button matIconButton type="button" aria-label="Favoritos indisponíveis" disabled>
       <mat-icon>favorite</mat-icon>
     </button>
@@ -22,28 +32,61 @@
   }
 </mat-toolbar>
 
-<mat-menu #menuPrincipal="matMenu">
-  @for (item of itensMenu; track item.caminho) {
-    @if (!item.exigeSessao || usuarioAtual) {
-      <a mat-menu-item [routerLink]="item.caminho">
-        <mat-icon>{{ item.icone }}</mat-icon
-        ><span>{{ item.rotulo }}</span>
-      </a>
+<mat-sidenav-container class="estrutura">
+  <mat-sidenav
+    #menuLateral
+    class="painel-lateral"
+    mode="over"
+    autoFocus="mat-nav-list"
+    aria-label="Menu principal"
+  >
+    <div class="cabecalho-menu">
+      <span class="titulo-menu">GeekHub</span>
+      <button matIconButton type="button" aria-label="Fechar menu" (click)="menuLateral.close()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <mat-nav-list aria-label="Navegação principal">
+      @for (item of itensMenu; track item.caminho) {
+        @if (!item.exigeSessao || usuarioAtual) {
+          <a mat-list-item [routerLink]="item.caminho" (click)="menuLateral.close()">
+            <mat-icon matListItemIcon>{{ item.icone }}</mat-icon>
+            <span matListItemTitle>{{ item.rotulo }}</span>
+          </a>
+        }
+      }
+
+      <mat-divider />
+
+      @if (usuarioAtual) {
+        <a mat-list-item routerLink="/minha-conta/perfil" (click)="menuLateral.close()">
+          <mat-icon matListItemIcon>person</mat-icon>
+          <span matListItemTitle>Minha conta</span>
+        </a>
+      } @else {
+        <a mat-list-item routerLink="/autenticacao/entrar" (click)="menuLateral.close()">
+          <mat-icon matListItemIcon>login</mat-icon>
+          <span matListItemTitle>Entrar</span>
+        </a>
+        <a mat-list-item routerLink="/autenticacao/cadastro" (click)="menuLateral.close()">
+          <mat-icon matListItemIcon>person_add</mat-icon>
+          <span matListItemTitle>Criar conta</span>
+        </a>
+      }
+    </mat-nav-list>
+
+    @if (usuarioAtual) {
+      <mat-action-list>
+        <button mat-list-item type="button" (click)="menuLateral.close(); sair.emit()">
+          <mat-icon matListItemIcon>logout</mat-icon>
+          <span matListItemTitle>Sair</span>
+        </button>
+      </mat-action-list>
     }
-  }
-  @if (usuarioAtual) {
-    <a mat-menu-item routerLink="/minha-conta/perfil"
-      ><mat-icon>person</mat-icon><span>Minha conta</span></a
-    >
-    <button mat-menu-item type="button" (click)="sair.emit()">
-      <mat-icon>logout</mat-icon><span>Sair</span>
-    </button>
-  } @else {
-    <a mat-menu-item routerLink="/autenticacao/entrar"
-      ><mat-icon>login</mat-icon><span>Entrar</span></a
-    >
-    <a mat-menu-item routerLink="/autenticacao/cadastro"
-      ><mat-icon>person_add</mat-icon><span>Criar conta</span></a
-    >
-  }
-</mat-menu>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <ng-content />
+  </mat-sidenav-content>
+</mat-sidenav-container>
