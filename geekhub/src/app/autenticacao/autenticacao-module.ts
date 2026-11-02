@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { CabecalhoModule } from '../cabecalho/cabecalho-module';
 import { AutenticacaoRoutingModule } from './autenticacao-routing-module';
@@ -20,6 +21,7 @@ import { CadastroComponente } from './cadastro/cadastro.componente';
     MatInputModule,
     MatButtonModule,
     CabecalhoModule,
+    MatSnackBarModule,
   ],
 })
 export class AutenticacaoModule {}
