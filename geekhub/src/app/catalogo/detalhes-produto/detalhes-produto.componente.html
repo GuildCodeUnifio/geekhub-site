@@ -1,0 +1,127 @@
+<main class="pagina">
+  @if (anuncio$ | async; as anuncio) {
+    <div class="detalhes">
+      <div class="galeria">
+        @if (anuncio.imagens.length > 1) {
+          <div class="miniaturas" role="group" aria-label="Fotos do produto">
+            @for (imagem of anuncio.imagens; track $index; let i = $index) {
+              <button
+                type="button"
+                class="miniatura"
+                [class.selecionada]="imagemSelecionada === i"
+                [attr.aria-pressed]="imagemSelecionada === i"
+                [attr.aria-label]="'Mostrar foto ' + (i + 1)"
+                (click)="imagemSelecionada = i"
+              >
+                <img [src]="imagem" alt="" />
+              </button>
+            }
+          </div>
+        }
+
+        <mat-card class="imagem-produto">
+          @if (anuncio.imagens.length > 0) {
+            <img
+              [src]="anuncio.imagens[imagemSelecionada]"
+              [alt]="anuncio.nome + ' — foto ' + (imagemSelecionada + 1)"
+            />
+          } @else {
+            <mat-card-content>
+              <p>Produto sem imagem.</p>
+            </mat-card-content>
+          }
+        </mat-card>
+      </div>
+
+      <section class="coluna-produto">
+        <h1>{{ anuncio.nome }}</h1>
+        <p class="preco">{{ anuncio.preco | currency:'BRL' }}</p>
+
+        <mat-card class="quadro-informacoes" appearance="outlined">
+          <dl>
+            <div>
+              <dt>Categoria</dt>
+              <dd>{{ anuncio.categoria }}</dd>
+            </div>
+
+            <div>
+              <dt>Condição</dt>
+              <dd>{{ anuncio.estado }}</dd>
+            </div>
+
+            <div>
+              <dt>Estado de conservação</dt>
+              <dd>{{ anuncio.conservacao }}</dd>
+            </div>
+
+            <div>
+              <dt>Estoque disponível</dt>
+              <dd>
+                @if (anuncio.estoque > 0) {
+                  {{ anuncio.estoque }}
+                  {{ anuncio.estoque === 1 ? 'unidade' : 'unidades' }}
+                } @else {
+                  Produto esgotado
+                }
+              </dd>
+            </div>
+          </dl>
+        </mat-card>
+
+        <mat-card class="vendedor">
+          <mat-card-header>
+            <mat-card-title>Vendido por</mat-card-title>
+          </mat-card-header>
+
+          <mat-card-content>
+            <a
+              class="perfil"
+              [routerLink]="['/vendedores', anuncio.vendedor.identificador]"
+            >
+              @if (anuncio.vendedor.foto) {
+                <img class="avatar" [src]="anuncio.vendedor.foto" alt="" />
+              } @else {
+                <mat-icon aria-hidden="true">account_circle</mat-icon>
+              }
+
+              <span>{{ anuncio.vendedor.nome }}</span>
+            </a>
+
+            @if (
+              anuncio.vendedor.contagem > 0 &&
+              anuncio.vendedor.media !== null
+            ) {
+              <p>⭐ {{ anuncio.vendedor.media }} ({{ anuncio.vendedor.contagem }})</p>
+            } @else {
+              <p>Sem avaliações.</p>
+            }
+          </mat-card-content>
+
+          <mat-card-actions>
+            <a
+              mat-button
+              [routerLink]="['/vendedores', anuncio.vendedor.identificador]"
+            >
+              Ver perfil do vendedor
+              <mat-icon aria-hidden="true">arrow_forward</mat-icon>
+            </a>
+          </mat-card-actions>
+        </mat-card>
+      </section>
+
+      <mat-card class="cartao-descricao" appearance="outlined">
+        <mat-card-content>
+          <h2>Descrição do produto</h2>
+          <p class="descricao">{{ anuncio.descricao }}</p>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  } @else {
+    <mat-card>
+      <mat-card-content>
+        <h1>Produto não encontrado</h1>
+        <p>Não existe um anúncio com esse identificador.</p>
+      </mat-card-content>
+    </mat-card>
+  }
+</main>

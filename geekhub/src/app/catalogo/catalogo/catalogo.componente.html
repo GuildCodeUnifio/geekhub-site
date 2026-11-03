@@ -1,0 +1,25 @@
+<main class="pagina-catalogo">
+  <div class="lista-produtos">
+    <a
+      class="link-produto"
+      [routerLink]="['/produtos', anuncio.identificador]"
+    >
+      <mat-card class="card-produto" appearance="outlined">
+        <img
+          mat-card-image
+          class="foto-produto"
+          [src]="anuncio.imagens[0]"
+          [alt]="anuncio.nome"
+        />
+
+        <mat-card-content>
+          <h2>{{ anuncio.nome }}</h2>
+
+          <p class="preco">
+            {{ anuncio.preco | currency:'BRL' }}
+          </p>
+        </mat-card-content>
+      </mat-card>
+    </a>
+  </div>
+</main>
