@@ -60,6 +60,7 @@ export class DetalhesProdutoComponente {
 ];
 readonly anuncio$ = this.route.paramMap.pipe(
   map(parametros => {
+    
     this.imagemSelecionada = 0;
 
     const identificador = parametros.get('identificador');
