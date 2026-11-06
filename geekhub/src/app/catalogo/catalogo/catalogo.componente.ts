@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { App } from '../../app';
 
 @Component({
   selector: 'app-catalogo',
@@ -6,11 +7,9 @@ import { Component } from '@angular/core';
   styleUrl: './catalogo.componente.scss',
   templateUrl: './catalogo.componente.html',
 })
+
 export class CatalogoComponente {
-  anuncio = {
-    identificador: 1,
-    nome: 'Action figure Naruto',
-    preco: 1850,
-    imagens: ['imagens/produtos/naruto.jpg']
-  };
+  private readonly app =  inject(App);
+
+  readonly anuncios = this.app.listarAnuncios();
 }

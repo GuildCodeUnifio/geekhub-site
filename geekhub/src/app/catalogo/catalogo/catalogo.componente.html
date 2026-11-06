@@ -1,16 +1,13 @@
 <main class="pagina-catalogo">
   <div class="lista-produtos">
-    <a
-      class="link-produto"
-      [routerLink]="['/produtos', anuncio.identificador]"
-    >
+    @for (anuncio of anuncios; track anuncio.identificador){
+    <a class="link-produto" [routerLink]="['/produtos', anuncio.identificador]">
       <mat-card class="card-produto" appearance="outlined">
-        <img
-          mat-card-image
-          class="foto-produto"
-          [src]="anuncio.imagens[0]"
-          [alt]="anuncio.nome"
-        />
+        @if (anuncio.imagens.length > 0) {
+        <img mat-card-image class="foto-produto" [src]="anuncio.imagens[0]" [alt]="anuncio.nome" />
+        } @else {
+        <p>Produto sem imagem.</p>
+        }
 
         <mat-card-content>
           <h2>{{ anuncio.nome }}</h2>
@@ -21,5 +18,8 @@
         </mat-card-content>
       </mat-card>
     </a>
+    } @empty {
+    <p>Nenhum produto cadastrado.</p>
+    }
   </div>
 </main>
