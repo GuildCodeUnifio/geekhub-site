@@ -55,13 +55,14 @@ export interface VendedorResponse{
 export class App {
   protected readonly title = signal('geekhub');
 
-  private readonly vendedores: PerfilVendedor[] = [
+  private readonly vendedores: Omit< 
+    PerfilVendedor, 
+    'media' | 'contagem'
+  >[]= [
     {
       identificador: 2,
       nome: 'Luiz Carlos Oliveira',
       foto: 'imagens/vendedores/vendedor.jpg',
-      media: 5,
-      contagem: 1,
       membroDesde: 2024,
       vendas: 1,
       taxaResposta: 99,
@@ -89,14 +90,14 @@ export class App {
     preco: 1850.00,
     estado: 'Novo',
     conservacao: 'Estado do lacre original, sem arranhados e amaçados',
-    estoque: 1,
+    estoque: 3,
     vendedor: {
       identificador: 2,
       nome: "Luiz Carlos Oliveira",
       foto: 'imagens/vendedores/vendedor.jpg',
       media: 5,
       contagem: 1
-    }
+    } 
   }
 ];
 
@@ -109,8 +110,19 @@ buscarVendedor(identificador: number): PerfilVendedor | null {
       return null;
     }
 
+    const contagem = vendedor.avaliacoes.length;
+
+    const somaDasNotas = vendedor.avaliacoes.reduce(
+      (soma, avaliacao) => soma + avaliacao.nota, 0
+    );
+
+    const media = contagem > 0
+      ? somaDasNotas / contagem : null;
+
     return {
       ...vendedor,
+      media,
+      contagem,
       produtos: this.listarProdutosDoVendedor(identificador)
     };
   }
@@ -157,5 +169,10 @@ listarProdutosDoVendedor(identificador: number) {
     }));
 }
 
+quantidadeValida(quantidade: number, estoque: number): boolean {
+  return Number.isInteger(quantidade)
+    && quantidade >= 1
+    && quantidade <= estoque;
+}
 
 }

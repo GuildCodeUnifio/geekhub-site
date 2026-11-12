@@ -12,13 +12,15 @@ import { App, type AnuncioResponse } from '../../app';
 
 export class DetalhesProdutoComponente {
   private readonly route = inject(ActivatedRoute);
-  private readonly app = inject(App);
+  protected readonly app = inject(App);
 
   imagemSelecionada = 0;
-
+  quantidade = 1;
+  
   readonly anuncio$ = this.route.paramMap.pipe(
     map(parametros => {
       this.imagemSelecionada = 0;
+      this.quantidade = 1;
 
       const identificador = parametros.get('identificador');
 
@@ -29,4 +31,12 @@ export class DetalhesProdutoComponente {
       return this.app.buscarAnuncio(Number(identificador));
     })
   );
+
+  alterarQuantidade(estoque: number, variacao: -1|1): void {
+    const novaQuantidade = this.quantidade + variacao;
+
+    if (this.app.quantidadeValida(novaQuantidade, estoque)){
+      this.quantidade = novaQuantidade;
+    }
+  }
 }

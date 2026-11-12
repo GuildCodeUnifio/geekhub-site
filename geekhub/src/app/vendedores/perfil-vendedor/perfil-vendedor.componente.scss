@@ -203,3 +203,26 @@ h2 {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.seletor-quantidade {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  span {
+    margin-right: 8px;
+    font-weight: 600;
+  }
+
+  output {
+    min-width: 28px;
+    text-align: center;
+    font-weight: 600;
+  }
+
+  button {
+    min-width: 44px;
+    padding-inline: 12px;
+  }
+}
