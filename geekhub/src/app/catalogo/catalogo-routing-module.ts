@@ -8,8 +8,9 @@ const routes: Routes = [
         path: '',
         component: CatalogoComponente
     },
+    
     {
-        path: 'produtos/:id',   // identificador, pode puxar um unico produto pelo id.
+        path: 'produtos/:identificador',  
         component: DetalhesProdutoComponente
     }
 ];

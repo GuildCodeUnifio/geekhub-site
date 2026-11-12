@@ -1,1 +1,135 @@
-<p>perfil-vendedor works!</p>
+<main class="pagina-perfil">
+  @if (vendedor; as perfil) {
+    <header class="painel resumo">
+      <div class="identidade">
+        <div class="avatar">
+          @if (perfil.foto; as foto) {
+            <img [src]="foto" alt="" />
+          } @else {
+            <span aria-hidden="true">
+              {{ perfil.nome.charAt(0).toUpperCase() }}
+            </span>
+          }
+        </div>
+
+        <div>
+          <h1>{{ perfil.nome }}</h1>
+          <p>Membro desde {{ perfil.membroDesde }}</p>
+
+          @if (perfil.media !== null && perfil.contagem > 0) {
+            <p>
+              <span class="estrela" aria-hidden="true">★</span>
+              <strong>{{ perfil.media }} de 5</strong>
+              ({{ perfil.contagem }} avaliações)
+            </p>
+          } @else {
+            <p>Sem avaliações.</p>
+          }
+        </div>
+      </div>
+
+      <dl class="indicadores">
+        <div>
+          <dt>Produtos</dt>
+          <dd>{{ perfil.produtos.length }}</dd>
+        </div>
+        <div>
+          <dt>Vendas</dt>
+          <dd>{{ perfil.vendas }}</dd>
+        </div>
+        <div>
+          <dt>Taxa de resposta</dt>
+          <dd>{{ perfil.taxaResposta }}%</dd>
+        </div>
+      </dl>
+    </header>
+
+    <section class="painel" aria-labelledby="titulo-avaliacoes">
+      <div class="cabecalho-secao">
+        <h2 id="titulo-avaliacoes">Avaliações</h2>
+
+        @if (perfil.avaliacoes.length > 3) {
+          <button
+            type="button"
+            class="botao-lista"
+            aria-controls="lista-avaliacoes"
+            [attr.aria-expanded]="mostrarTodasAvaliacoes"
+            (click)="mostrarTodasAvaliacoes = !mostrarTodasAvaliacoes"
+          >
+            {{ mostrarTodasAvaliacoes ? 'Ver menos' : 'Ver todas' }}
+          </button>
+        }
+      </div>
+
+      <ul id="lista-avaliacoes" class="lista-avaliacoes">
+        @for (
+          avaliacao of (mostrarTodasAvaliacoes
+            ? perfil.avaliacoes
+            : perfil.avaliacoes.slice(0, 3));
+          track avaliacao.identificador
+        ) {
+          <li class="avaliacao">
+            <div class="comentario">
+              <span class="avatar avatar-pequeno" aria-hidden="true">
+                {{ avaliacao.autor.charAt(0).toUpperCase() }}
+              </span>
+              <p>
+                <strong><span class="estrela" aria-hidden="true">★</span>
+                  {{ avaliacao.nota }} de 5</strong>
+                {{ avaliacao.comentario }}
+              </p>
+            </div>
+            <p class="autoria">
+              <strong>{{ avaliacao.autor }}</strong>
+              <span>{{ avaliacao.data }}</span>
+            </p>
+          </li>
+        } @empty {
+          <li>Este vendedor ainda não recebeu avaliações.</li>
+        }
+      </ul>
+    </section>
+
+    <section class="painel" aria-labelledby="titulo-produtos">
+      <div class="cabecalho-secao">
+        <h2 id="titulo-produtos">Produtos do vendedor</h2>
+
+        @if (perfil.produtos.length > 4) {
+          <button
+            type="button"
+            class="botao-lista"
+            aria-controls="lista-produtos"
+            [attr.aria-expanded]="mostrarTodosProdutos"
+            (click)="mostrarTodosProdutos = !mostrarTodosProdutos"
+          >
+            {{ mostrarTodosProdutos ? 'Ver menos' : 'Ver todos' }}
+          </button>
+        }
+      </div>
+
+      <div id="lista-produtos" class="lista-produtos">
+        @for (
+          produto of (mostrarTodosProdutos
+            ? perfil.produtos
+            : perfil.produtos.slice(0, 4));
+          track produto.identificador
+        ) {
+          <a class="produto" [routerLink]="['/produtos', produto.identificador]">
+            <img [src]="produto.imagem" alt="" />
+            <div class="dados-produto">
+              <h3>{{ produto.nome }}</h3>
+              <p>{{ produto.preco | currency:'BRL' }}</p>
+            </div>
+          </a>
+        } @empty {
+          <p>Este vendedor ainda não tem produtos anunciados.</p>
+        }
+      </div>
+    </section>
+  } @else {
+    <section class="painel">
+      <h1>{{ erro }}</h1>
+      <p>Confira o endereço ou volte ao anúncio para abrir o perfil.</p>
+    </section>
+  }
+</main>

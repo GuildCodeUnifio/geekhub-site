@@ -1,6 +1,7 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { App } from '../../app';
 
 @Component({
   selector: 'app-catalogo',
@@ -9,6 +10,7 @@ import { Subscription } from 'rxjs';
   templateUrl: './catalogo.componente.html',
 })
 export class CatalogoComponente implements OnInit, OnDestroy {
+  readonly anuncios = inject(App).listarAnuncios();
   buscaAplicada = '';
   private assinaturaRota?: Subscription;
 

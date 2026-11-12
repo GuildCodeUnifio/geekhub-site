@@ -1,5 +1,28 @@
-<p>catalogo works!</p>
+<main class="pagina-catalogo">
+  @if (buscaAplicada) {
+    <p role="status">Busca por “{{ buscaAplicada }}”</p>
+  }
+  <div class="lista-produtos">
+    @for (anuncio of anuncios; track anuncio.identificador){
+    <a class="link-produto" [routerLink]="['/produtos', anuncio.identificador]">
+      <mat-card class="card-produto" appearance="outlined">
+        @if (anuncio.imagens.length > 0) {
+        <img mat-card-image class="foto-produto" [src]="anuncio.imagens[0]" [alt]="anuncio.nome" />
+        } @else {
+        <p>Produto sem imagem.</p>
+        }
 
-@if (buscaAplicada) {
-  <p role="status">Busca por “{{ buscaAplicada }}”</p>
-}
+        <mat-card-content>
+          <h2>{{ anuncio.nome }}</h2>
+
+          <p class="preco">
+            {{ anuncio.preco | currency:'BRL' }}
+          </p>
+        </mat-card-content>
+      </mat-card>
+    </a>
+    } @empty {
+    <p>Nenhum produto cadastrado.</p>
+    }
+  </div>
+</main>
