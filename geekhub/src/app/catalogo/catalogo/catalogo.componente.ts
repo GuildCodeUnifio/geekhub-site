@@ -1,4 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { App } from '../../app';
 
 @Component({
@@ -7,9 +9,24 @@ import { App } from '../../app';
   styleUrl: './catalogo.componente.scss',
   templateUrl: './catalogo.componente.html',
 })
+export class CatalogoComponente implements OnInit, OnDestroy {
+  readonly anuncios = inject(App).listarAnuncios();
+  buscaAplicada = '';
+  private assinaturaRota?: Subscription;
 
-export class CatalogoComponente {
-  private readonly app =  inject(App);
+  constructor(
+    private rota: ActivatedRoute,
+    private detector: ChangeDetectorRef,
+  ) {}
 
-  readonly anuncios = this.app.listarAnuncios();
+  ngOnInit(): void {
+    this.assinaturaRota = this.rota.queryParamMap.subscribe((parametros) => {
+      this.buscaAplicada = parametros.get('busca') ?? '';
+      this.detector.markForCheck();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.assinaturaRota?.unsubscribe();
+  }
 }

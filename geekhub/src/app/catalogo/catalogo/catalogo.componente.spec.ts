@@ -1,4 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { App } from '../../app';
+import { CatalogoModule } from '../catalogo-module';
 import { CatalogoComponente } from './catalogo.componente';
 
 describe('CatalogoComponente', () => {
@@ -7,7 +10,8 @@ describe('CatalogoComponente', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [CatalogoComponente],
+      imports: [CatalogoModule],
+      providers: [provideRouter([]), App],
     }).compileComponents();
 
     fixture = TestBed.createComponent(CatalogoComponente);

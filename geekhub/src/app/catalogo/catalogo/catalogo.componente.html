@@ -1,4 +1,7 @@
 <main class="pagina-catalogo">
+  @if (buscaAplicada) {
+    <p role="status">Busca por “{{ buscaAplicada }}”</p>
+  }
   <div class="lista-produtos">
     @for (anuncio of anuncios; track anuncio.identificador){
     <a class="link-produto" [routerLink]="['/produtos', anuncio.identificador]">
