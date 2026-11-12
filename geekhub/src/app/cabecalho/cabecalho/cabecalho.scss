@@ -1,0 +1,151 @@
+@use '@angular/material' as mat;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.barra {
+  @include mat.toolbar-overrides(
+    (
+      container-background-color: #3f51b5,
+      container-text-color: white,
+    )
+  );
+  @include mat.icon-button-overrides(
+    (
+      icon-color: white,
+      disabled-icon-color: #c5cae9,
+    )
+  );
+
+  flex-shrink: 0;
+  gap: 4px;
+
+  button {
+    flex-shrink: 0;
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+.marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  color: inherit;
+  text-decoration: none;
+  min-height: 44px;
+
+  &:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+}
+
+.logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.titulo,
+.titulo-menu {
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.espacador {
+  flex: 1 1 auto;
+}
+
+.busca {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 44px;
+  flex-shrink: 0;
+
+  &.aberta {
+    flex: 0 1 420px;
+  }
+}
+
+.campo-busca {
+  @include mat.form-field-overrides(
+    (
+      container-height: 44px,
+      container-vertical-padding: 10px,
+      outlined-container-shape: 4px,
+    )
+  );
+  @include mat.icon-button-overrides(
+    (
+      icon-color: var(--mat-sys-on-surface),
+    )
+  );
+
+  flex: 1;
+  min-width: 0;
+  background: var(--mat-sys-surface);
+  border-radius: 4px;
+  animation: expandir-busca 160ms ease-out;
+}
+
+.estrutura {
+  flex: 1;
+  min-height: 0;
+}
+
+.painel-lateral {
+  width: min(280px, calc(100vw - 32px));
+}
+
+.cabecalho-menu {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 16px;
+
+  button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+@keyframes expandir-busca {
+  from {
+    opacity: 0;
+    clip-path: inset(0 0 0 100%);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0);
+  }
+}
+
+@media (max-width: 767px) {
+  .barra {
+    padding: 0 8px;
+    gap: 0;
+  }
+
+  .titulo {
+    font-size: 16px;
+  }
+
+  .pesquisando .marca,
+  .pesquisando .espacador,
+  .pesquisando .botao-menu {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .campo-busca {
+    animation: none;
+  }
+}
