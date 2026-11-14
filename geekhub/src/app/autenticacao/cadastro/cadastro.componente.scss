@@ -18,6 +18,7 @@
   max-width: 486px;
   padding: 40px;
   border: 2px solid #212121;
+  border-radius: 0;
   box-sizing: border-box;
 }
 
@@ -32,7 +33,7 @@ mat-form-field {
   margin-bottom: 8px;
 }
 
-button {
+.caixa-cadastro > button {
   width: 100%;
   border-radius: 0;
   background-color: #3f51b5;

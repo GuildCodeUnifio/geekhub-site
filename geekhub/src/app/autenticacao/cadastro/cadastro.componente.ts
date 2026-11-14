@@ -38,6 +38,26 @@ export class CadastroComponente {
   senha: string = '';
   confirmacaoSenha: string = '';
   cadastroConcluido: boolean = false;
+  errosCampos: { [campo: string]: string } = {};
+
+  senhaVisivel = false;
+  confirmacaoSenhaVisivel = false;
+
+  readonly erroNome = {
+    isErrorState: () => Boolean(this.errosCampos['nome']),
+  };
+
+  readonly erroEmail = {
+    isErrorState: () => Boolean(this.errosCampos['email']),
+  };
+
+  readonly erroSenha = {
+    isErrorState: () => Boolean(this.errosCampos['senha']),
+  };
+
+  readonly erroConfirmacao = {
+    isErrorState: () => Boolean(this.errosCampos['confirmacaoSenha']),
+  };
 
   private usuarios: ContaFicticia[] = [
     {
@@ -78,10 +98,60 @@ export class CadastroComponente {
   }
 
   cadastrarUsuario(request: CadastroRequest): CadastroResultado {
+    this.errosCampos = {};
+
+    if (!request.nome.trim()) {
+      const mensagem = 'Informe seu nome.';
+      this.errosCampos['nome'] = mensagem;
+
+      return {
+        sucesso: false,
+        mensagem,
+      };
+    }
+
+    const email = request.email.trim();
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      const mensagem = email
+        ? 'Informe um e-mail válido.'
+        : 'Informe seu e-mail.';
+
+      this.errosCampos['email'] = mensagem;
+
+      return {
+        sucesso: false,
+        mensagem,
+      };
+    }
+
+    if (!request.senha) {
+      const mensagem = 'Informe uma senha.';
+      this.errosCampos['senha'] = mensagem;
+
+      return {
+        sucesso: false,
+        mensagem,
+      };
+    }
+
+    if (!request.confirmacaoSenha || request.confirmacaoSenha !== request.senha) {
+      const mensagem = !request.confirmacaoSenha
+        ? 'Confirme sua senha.'
+        : 'As senhas não coincidem.';
+
+      this.errosCampos['confirmacaoSenha'] = mensagem;
+
+      return {
+        sucesso: false,
+        mensagem,
+      };
+    }
+
     const usuario: Usuario = {
       id: crypto.randomUUID(),
       nome: request.nome.trim(),
-      email: request.email.trim().toLowerCase(),
+      email: email.toLowerCase(),
     };
 
     this.usuarios.push({

@@ -13,7 +13,10 @@
         type="text"
         [(ngModel)]="nome"
         placeholder="Seu nome"
+        [errorStateMatcher]="erroNome"
       />
+
+      <mat-error>{{ errosCampos['nome'] }}</mat-error>
     </mat-form-field>
 
     <mat-form-field appearance="outline">
@@ -25,7 +28,10 @@
         type="email"
         [(ngModel)]="email"
         placeholder="seu@email.com"
+        [errorStateMatcher]="erroEmail"
       />
+
+      <mat-error>{{ errosCampos['email'] }}</mat-error>
     </mat-form-field>
 
     <mat-form-field appearance="outline">
@@ -34,10 +40,23 @@
       <input
         matInput
         name="senha"
-        type="password"
+        [type]="senhaVisivel ? 'text' : 'password'"
         [(ngModel)]="senha"
         placeholder="Sua senha"
+        [errorStateMatcher]="erroSenha"
       />
+
+      <button
+        mat-icon-button
+        matIconSuffix
+        type="button"
+        [attr.aria-label]="senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'"
+        (click)="senhaVisivel = !senhaVisivel"
+      >
+        <mat-icon>{{ senhaVisivel ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+
+      <mat-error>{{ errosCampos['senha'] }}</mat-error>
     </mat-form-field>
 
     <mat-form-field appearance="outline">
@@ -46,10 +65,23 @@
       <input
         matInput
         name="confirmacaoSenha"
-        type="password"
+        [type]="confirmacaoSenhaVisivel ? 'text' : 'password'"
         [(ngModel)]="confirmacaoSenha"
         placeholder="Confirme sua senha"
+        [errorStateMatcher]="erroConfirmacao"
       />
+
+      <button
+        mat-icon-button
+        matIconSuffix
+        type="button"
+        [attr.aria-label]="confirmacaoSenhaVisivel ? 'Ocultar confirmação de senha' : 'Mostrar confirmação de senha'"
+        (click)="confirmacaoSenhaVisivel = !confirmacaoSenhaVisivel"
+      >
+        <mat-icon>{{ confirmacaoSenhaVisivel ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+
+      <mat-error>{{ errosCampos['confirmacaoSenha'] }}</mat-error>
     </mat-form-field>
 
     <button
