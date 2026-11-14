@@ -1,12 +1,9 @@
-<app-cabecalho-simples></app-cabecalho-simples>
-
 <main class="pagina-cadastro">
   <section class="caixa-cadastro">
     <h1>Criar conta</h1>
 
     <mat-form-field appearance="outline">
       <mat-label>Nome</mat-label>
-
       <input
         matInput
         name="nome"
@@ -15,13 +12,11 @@
         placeholder="Seu nome"
         [errorStateMatcher]="erroNome"
       />
-
       <mat-error>{{ errosCampos['nome'] }}</mat-error>
     </mat-form-field>
 
     <mat-form-field appearance="outline">
       <mat-label>E-mail</mat-label>
-
       <input
         matInput
         name="email"
@@ -30,13 +25,11 @@
         placeholder="seu@email.com"
         [errorStateMatcher]="erroEmail"
       />
-
       <mat-error>{{ errosCampos['email'] }}</mat-error>
     </mat-form-field>
 
     <mat-form-field appearance="outline">
       <mat-label>Senha</mat-label>
-
       <input
         matInput
         name="senha"
@@ -45,7 +38,6 @@
         placeholder="Sua senha"
         [errorStateMatcher]="erroSenha"
       />
-
       <button
         mat-icon-button
         matIconSuffix
@@ -55,13 +47,11 @@
       >
         <mat-icon>{{ senhaVisivel ? 'visibility_off' : 'visibility' }}</mat-icon>
       </button>
-
       <mat-error>{{ errosCampos['senha'] }}</mat-error>
     </mat-form-field>
 
     <mat-form-field appearance="outline">
       <mat-label>Confirmar senha</mat-label>
-
       <input
         matInput
         name="confirmacaoSenha"
@@ -70,7 +60,6 @@
         placeholder="Confirme sua senha"
         [errorStateMatcher]="erroConfirmacao"
       />
-
       <button
         mat-icon-button
         matIconSuffix
@@ -80,7 +69,6 @@
       >
         <mat-icon>{{ confirmacaoSenhaVisivel ? 'visibility_off' : 'visibility' }}</mat-icon>
       </button>
-
       <mat-error>{{ errosCampos['confirmacaoSenha'] }}</mat-error>
     </mat-form-field>
 

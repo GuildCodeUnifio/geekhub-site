@@ -103,14 +103,10 @@ export class CadastroComponente {
     if (!request.nome.trim()) {
       const mensagem = 'Informe seu nome.';
       this.errosCampos['nome'] = mensagem;
-
-      return {
-        sucesso: false,
-        mensagem,
-      };
+      return { sucesso: false, mensagem };
     }
 
-    const email = request.email.trim();
+    const email = request.email.trim().toLowerCase();
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       const mensagem = email
@@ -118,21 +114,13 @@ export class CadastroComponente {
         : 'Informe seu e-mail.';
 
       this.errosCampos['email'] = mensagem;
-
-      return {
-        sucesso: false,
-        mensagem,
-      };
+      return { sucesso: false, mensagem };
     }
 
     if (!request.senha) {
       const mensagem = 'Informe uma senha.';
       this.errosCampos['senha'] = mensagem;
-
-      return {
-        sucesso: false,
-        mensagem,
-      };
+      return { sucesso: false, mensagem };
     }
 
     if (!request.confirmacaoSenha || request.confirmacaoSenha !== request.senha) {
@@ -141,17 +129,23 @@ export class CadastroComponente {
         : 'As senhas não coincidem.';
 
       this.errosCampos['confirmacaoSenha'] = mensagem;
+      return { sucesso: false, mensagem };
+    }
 
-      return {
-        sucesso: false,
-        mensagem,
-      };
+    const emailJaCadastrado = this.usuarios.some(
+      (conta) => conta.email.trim().toLowerCase() === email,
+    );
+
+    if (emailJaCadastrado) {
+      const mensagem = 'E-mail já cadastrado';
+      this.errosCampos['email'] = mensagem;
+      return { sucesso: false, mensagem };
     }
 
     const usuario: Usuario = {
       id: crypto.randomUUID(),
       nome: request.nome.trim(),
-      email: email.toLowerCase(),
+      email,
     };
 
     this.usuarios.push({
@@ -162,7 +156,7 @@ export class CadastroComponente {
     return {
       sucesso: true,
       mensagem: 'Conta criada com sucesso!',
-      usuario: usuario,
+      usuario,
     };
   }
 }
