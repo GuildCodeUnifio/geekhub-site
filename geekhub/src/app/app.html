@@ -1,1 +1,8 @@
-<router-outlet />
+<app-cabecalho
+  [versao]="versaoCabecalho"
+  [usuarioAtual]="usuarioAtual"
+  (buscar)="pesquisar($event)"
+  (sair)="encerrarSessao()"
+>
+  <router-outlet />
+</app-cabecalho>

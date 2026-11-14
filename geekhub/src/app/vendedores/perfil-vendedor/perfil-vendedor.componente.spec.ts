@@ -1,4 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { App } from '../../app';
+import { VendedoresModule } from '../vendedores-module';
 import { PerfilVendedorComponente } from './perfil-vendedor.componente';
 
 describe('PerfilVendedorComponente', () => {
@@ -7,7 +10,8 @@ describe('PerfilVendedorComponente', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [PerfilVendedorComponente],
+      imports: [VendedoresModule],
+      providers: [provideRouter([]), App],
     }).compileComponents();
 
     fixture = TestBed.createComponent(PerfilVendedorComponente);

@@ -4,7 +4,7 @@ import { PerfilVendedorComponente } from './perfil-vendedor/perfil-vendedor.comp
 
 const routes: Routes = [
   {
-    path: ':id',
+    path: ':identificador',
     component: PerfilVendedorComponente,
   },
 ];
