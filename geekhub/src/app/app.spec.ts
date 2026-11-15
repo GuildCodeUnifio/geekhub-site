@@ -125,6 +125,57 @@ describe('App', () => {
     await fixture.whenStable();
 
     expect(fixture.nativeElement.querySelector('app-cadastro')).toBeTruthy();
+
+    await roteador.navigateByUrl('/carrinho');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelector('app-carrinho')).toBeTruthy();
+  });
+
+  it('persiste operacoes do carrinho por comprador no localStorage', () => {
+    const primeiraInstancia = TestBed.createComponent(App).componentInstance;
+
+    const carrinhoInicial = primeiraInstancia.consultarCarrinho(1);
+    expect(carrinhoInicial.itens).toHaveLength(3);
+    expect(carrinhoInicial.total).toBe(2206.3);
+
+    const alterado = primeiraInstancia.alterarQuantidadeCarrinho({
+      compradorIdentificador: 1,
+      anuncioIdentificador: 2,
+      quantidade: 4,
+    });
+    expect(alterado.sucesso).toBe(true);
+    expect(alterado.carrinho.total).toBe(2306.1);
+
+    const cadastrado = primeiraInstancia.cadastrar({
+      nome: 'Novo Comprador',
+      email: 'comprador@geekhub.com',
+      senha: '123456',
+    });
+    expect(cadastrado).not.toBeNull();
+
+    const segundaInstancia = TestBed.createComponent(App).componentInstance;
+    expect(segundaInstancia.consultarCarrinho(1).total).toBe(2306.1);
+    expect(segundaInstancia.consultarCarrinho(cadastrado!.identificador)).toEqual({
+      compradorIdentificador: cadastrado!.identificador,
+      itens: [],
+      total: 0,
+    });
+
+    for (const item of segundaInstancia.consultarCarrinho(1).itens) {
+      segundaInstancia.removerDoCarrinho({
+        compradorIdentificador: 1,
+        anuncioIdentificador: item.anuncioIdentificador,
+      });
+    }
+
+    const terceiraInstancia = TestBed.createComponent(App).componentInstance;
+    expect(terceiraInstancia.consultarCarrinho(1)).toEqual({
+      compradorIdentificador: 1,
+      itens: [],
+      total: 0,
+    });
   });
 
   it('sair limpa o usuario em memoria e no localStorage e navega para entrada', () => {
