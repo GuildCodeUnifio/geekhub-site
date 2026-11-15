@@ -1,89 +1,111 @@
 <main class="pagina-cadastro">
-  <section class="caixa-cadastro">
+  <mat-card class="caixa-cadastro">
     <h1>Criar conta</h1>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Nome</mat-label>
-      <input
-        matInput
-        name="nome"
-        type="text"
-        [(ngModel)]="nome"
-        placeholder="Seu nome"
-        [errorStateMatcher]="erroNome"
-      />
-      <mat-error>{{ errosCampos['nome'] }}</mat-error>
-    </mat-form-field>
+    <form (ngSubmit)="cadastrar()" novalidate>
+      <mat-form-field appearance="outline" floatLabel="always" subscriptSizing="dynamic">
+        <mat-label>Nome</mat-label>
+        <input
+          matInput
+          name="nome"
+          type="text"
+          [(ngModel)]="nome"
+          (ngModelChange)="limparErroCampo('nome')"
+          [errorStateMatcher]="erroNome"
+          autocomplete="name"
+          placeholder="seu nome"
+        />
+        <mat-error>{{ errosCampos.nome }}</mat-error>
+      </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>E-mail</mat-label>
-      <input
-        matInput
-        name="email"
-        type="email"
-        [(ngModel)]="email"
-        placeholder="seu@email.com"
-        [errorStateMatcher]="erroEmail"
-      />
-      <mat-error>{{ errosCampos['email'] }}</mat-error>
-    </mat-form-field>
+      <mat-form-field appearance="outline" floatLabel="always" subscriptSizing="dynamic">
+        <mat-label>E-mail</mat-label>
+        <input
+          matInput
+          name="email"
+          type="email"
+          [(ngModel)]="email"
+          (ngModelChange)="limparErroCampo('email')"
+          [errorStateMatcher]="erroEmail"
+          autocomplete="email"
+          placeholder="seu@email.com"
+        />
+        <mat-error>{{ errosCampos.email }}</mat-error>
+      </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Senha</mat-label>
-      <input
-        matInput
-        name="senha"
-        [type]="senhaVisivel ? 'text' : 'password'"
-        [(ngModel)]="senha"
-        placeholder="Sua senha"
-        [errorStateMatcher]="erroSenha"
-      />
+      <mat-form-field appearance="outline" floatLabel="always" subscriptSizing="dynamic">
+        <mat-label>Senha</mat-label>
+        <input
+          matInput
+          name="senha"
+          [type]="senhaVisivel ? 'text' : 'password'"
+          [(ngModel)]="senha"
+          (ngModelChange)="limparErroCampo('senha')"
+          [errorStateMatcher]="erroSenha"
+          autocomplete="new-password"
+          placeholder="sua senha"
+        />
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          class="botao-visibilidade-senha"
+          [attr.aria-label]="senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'"
+          [attr.aria-pressed]="senhaVisivel"
+          (click)="alternarVisibilidadeSenha()"
+        >
+          <mat-icon fontSet="material-symbols-outlined">
+            {{ senhaVisivel ? 'visibility_off' : 'visibility' }}
+          </mat-icon>
+        </button>
+        <mat-error>{{ errosCampos.senha }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" floatLabel="always" subscriptSizing="dynamic">
+        <mat-label>Confirmar senha</mat-label>
+        <input
+          matInput
+          name="confirmacaoSenha"
+          [type]="confirmacaoSenhaVisivel ? 'text' : 'password'"
+          [(ngModel)]="confirmacaoSenha"
+          (ngModelChange)="limparErroCampo('confirmacaoSenha')"
+          [errorStateMatcher]="erroConfirmacao"
+          autocomplete="new-password"
+          placeholder="confirme sua senha"
+        />
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          class="botao-visibilidade-confirmacao"
+          [attr.aria-label]="
+            confirmacaoSenhaVisivel
+              ? 'Ocultar confirmação de senha'
+              : 'Mostrar confirmação de senha'
+          "
+          [attr.aria-pressed]="confirmacaoSenhaVisivel"
+          (click)="alternarVisibilidadeConfirmacaoSenha()"
+        >
+          <mat-icon fontSet="material-symbols-outlined">
+            {{ confirmacaoSenhaVisivel ? 'visibility_off' : 'visibility' }}
+          </mat-icon>
+        </button>
+        <mat-error>{{ errosCampos.confirmacaoSenha }}</mat-error>
+      </mat-form-field>
+
       <button
-        mat-icon-button
-        matIconSuffix
-        type="button"
-        [attr.aria-label]="senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'"
-        (click)="senhaVisivel = !senhaVisivel"
+        mat-flat-button
+        type="submit"
+        class="botao-cadastrar"
+        [disabled]="cadastroConcluido"
       >
-        <mat-icon>{{ senhaVisivel ? 'visibility_off' : 'visibility' }}</mat-icon>
+        CADASTRAR
       </button>
-      <mat-error>{{ errosCampos['senha'] }}</mat-error>
-    </mat-form-field>
+    </form>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Confirmar senha</mat-label>
-      <input
-        matInput
-        name="confirmacaoSenha"
-        [type]="confirmacaoSenhaVisivel ? 'text' : 'password'"
-        [(ngModel)]="confirmacaoSenha"
-        placeholder="Confirme sua senha"
-        [errorStateMatcher]="erroConfirmacao"
-      />
-      <button
-        mat-icon-button
-        matIconSuffix
-        type="button"
-        [attr.aria-label]="confirmacaoSenhaVisivel ? 'Ocultar confirmação de senha' : 'Mostrar confirmação de senha'"
-        (click)="confirmacaoSenhaVisivel = !confirmacaoSenhaVisivel"
-      >
-        <mat-icon>{{ confirmacaoSenhaVisivel ? 'visibility_off' : 'visibility' }}</mat-icon>
-      </button>
-      <mat-error>{{ errosCampos['confirmacaoSenha'] }}</mat-error>
-    </mat-form-field>
-
-    <button
-      mat-flat-button
-      type="button"
-      (click)="cadastrar()"
-      [disabled]="cadastroConcluido"
-    >
-      CADASTRAR
-    </button>
-
-    <p>
+    <p class="texto-entrar">
       Já tem conta?
       <a routerLink="/entrar">Entrar</a>
     </p>
-  </section>
+  </mat-card>
 </main>

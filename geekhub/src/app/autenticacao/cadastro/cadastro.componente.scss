@@ -1,59 +1,89 @@
 :host {
   display: block;
+  background: #faf9f6;
   color: #212121;
-  background-color: #faf9f6;
   font-family: Arial, sans-serif;
 }
 
 .pagina-cadastro {
   display: flex;
   justify-content: center;
-  padding: 60px 20px;
+  align-items: center;
+  min-height: calc(100dvh - 64px);
+  padding: 40px 20px;
+  box-sizing: border-box;
 }
 
 .caixa-cadastro {
-  display: flex;
-  flex-direction: column;
   width: 100%;
-  max-width: 486px;
+  max-width: 520px;
   padding: 40px;
+  box-sizing: border-box;
   border: 2px solid #212121;
   border-radius: 0;
-  box-sizing: border-box;
+  background: #faf9f6;
+  box-shadow: none;
 }
 
 h1 {
   margin: 0 0 28px;
   text-align: center;
   font-size: 34px;
+  font-weight: 700;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
 
 mat-form-field {
   width: 100%;
-  margin-bottom: 8px;
 }
 
-.caixa-cadastro > button {
+.botao-cadastrar {
   width: 100%;
+  min-height: 40px;
   border-radius: 0;
-  background-color: #3f51b5;
-  color: #ffffff;
   letter-spacing: 1px;
+
+  --mdc-filled-button-container-color: #3f51b5;
+  --mdc-filled-button-label-text-color: #fff;
 }
 
-p {
+.botao-visibilidade-senha,
+.botao-visibilidade-confirmacao {
+  color: #212121;
+}
+
+.texto-entrar {
   margin: 24px 0 0;
   text-align: center;
 }
 
 a {
   color: #212121;
-  font-weight: bold;
+  font-weight: 700;
   text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+  }
 }
 
 @media (max-width: 520px) {
+  .pagina-cadastro {
+    min-height: calc(100dvh - 56px);
+    padding: 24px 16px;
+  }
+
   .caixa-cadastro {
     padding: 24px;
+  }
+
+  h1 {
+    font-size: 30px;
   }
 }
