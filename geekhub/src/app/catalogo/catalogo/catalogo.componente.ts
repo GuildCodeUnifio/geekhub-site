@@ -64,6 +64,14 @@ export class CatalogoComponente implements OnInit {
         this.termoBusca.set(novoTermo);
         this.paginaAtual.set(1);
       }
+
+      const categoriaParam = parametros.get('categoria');
+      if (categoriaParam !== null) {
+        const categoriaId = Number(categoriaParam);
+        const valida = this.categorias.some((categoria) => categoria.identificador === categoriaId);
+        this.categoriaSelecionada.set(valida ? categoriaId : undefined);
+        this.paginaAtual.set(1);
+      }
     });
   }
 
@@ -74,6 +82,14 @@ export class CatalogoComponente implements OnInit {
   selecionarCategoria(categoriaIdentificador?: number): void {
     this.categoriaSelecionada.set(categoriaIdentificador);
     this.paginaAtual.set(1);
+
+    if (this.rota.snapshot.queryParamMap.has('categoria')) {
+      void this.roteador.navigate([], {
+        relativeTo: this.rota,
+        queryParams: { categoria: categoriaIdentificador ?? null },
+        queryParamsHandling: 'merge',
+      });
+    }
   }
 
   aoMudarPagina(evento: PageEvent): void {
@@ -86,14 +102,15 @@ export class CatalogoComponente implements OnInit {
 
   limparSelecao(): void {
     const tinhaBusca = Boolean(this.termoBusca());
+    const tinhaCategoriaNaRota = this.rota.snapshot.queryParamMap.has('categoria');
     this.categoriaSelecionada.set(undefined);
     this.termoBusca.set('');
     this.paginaAtual.set(1);
 
-    if (tinhaBusca) {
+    if (tinhaBusca || tinhaCategoriaNaRota) {
       void this.roteador.navigate([], {
         relativeTo: this.rota,
-        queryParams: { busca: null },
+        queryParams: { busca: null, categoria: null },
         queryParamsHandling: 'merge',
       });
     }

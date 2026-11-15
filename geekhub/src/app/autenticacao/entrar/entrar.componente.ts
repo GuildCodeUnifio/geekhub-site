@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { App } from '../../app';
 import type { UsuarioResponse } from '../../cabecalho/cabecalho/cabecalho';
@@ -23,6 +23,7 @@ export interface ErrosCamposEntrar {
 export class EntrarComponente {
   private readonly app = inject(App);
   private readonly roteador = inject(Router);
+  private readonly rota = inject(ActivatedRoute, { optional: true });
 
   email = '';
   senha = '';
@@ -72,7 +73,12 @@ export class EntrarComponente {
 
     this.usuarioAtual = usuario;
 
-    void this.roteador.navigate(['/']);
+    const redirecionar = this.rota?.snapshot.queryParamMap.get('redirecionar') ?? '';
+    if (redirecionar.startsWith('/') && !redirecionar.startsWith('//')) {
+      void this.roteador.navigateByUrl(redirecionar);
+    } else {
+      void this.roteador.navigate(['/']);
+    }
 
     return true;
   }

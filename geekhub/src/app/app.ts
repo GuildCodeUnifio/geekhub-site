@@ -177,6 +177,10 @@ export interface AnuncioResponse {
   vendedor: VendedorResponse;
 }
 
+export interface ConsultarAnuncioRequest {
+  anuncioIdentificador: number;
+}
+
 const CATEGORIAS_CATALOGO: readonly CategoriaResponse[] = [
   { identificador: 1, nome: 'Figuras colecionáveis' },
   { identificador: 2, nome: 'Quadrinhos e mangás' },
@@ -726,9 +730,20 @@ buscarVendedor(identificador: number): PerfilVendedor | null {
   }
 
 
-buscarAnuncio(identificador: number): AnuncioResponse | null {
+buscarAnuncio(
+  identificadorOuRequest: number | ConsultarAnuncioRequest
+): AnuncioResponse | null {
+  const identificador =
+    typeof identificadorOuRequest === 'number'
+      ? identificadorOuRequest
+      : identificadorOuRequest.anuncioIdentificador;
+
+  if (!Number.isInteger(identificador) || identificador < 1) {
+    return null;
+  }
+
   const anuncio = this.anuncios.find(
-    anuncio => anuncio.identificador === identificador 
+    anuncio => anuncio.identificador === identificador
   );
 
   if (!anuncio) {
@@ -745,6 +760,7 @@ buscarAnuncio(identificador: number): AnuncioResponse | null {
 
   return {
     ...anuncio,
+    disponivel: anuncio.disponivel ?? anuncio.estoque > 0,
     vendedor
   };
 }
@@ -893,7 +909,9 @@ adicionarAoCarrinho(
   const disponivel =
     request.disponivel ??
     existente?.disponivel ??
-    (anuncioCatalogo ? anuncioCatalogo.estoque > 0 : false);
+    (anuncioCatalogo
+      ? anuncioCatalogo.disponivel !== false && anuncioCatalogo.estoque > 0
+      : false);
 
   if (
     !nome.trim() ||
