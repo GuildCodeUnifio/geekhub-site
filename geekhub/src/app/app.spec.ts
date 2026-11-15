@@ -7,9 +7,15 @@ import { AppModule } from './app-module';
 
 describe('App', () => {
   beforeEach(async () => {
+    localStorage.clear();
+
     await TestBed.configureTestingModule({
       imports: [AppModule],
     }).compileComponents();
+  });
+
+  afterEach(() => {
+    localStorage.clear();
   });
 
   it('exibe o cabecalho e inicia sem usuario', async () => {
@@ -56,7 +62,48 @@ describe('App', () => {
     expect(app.usuarioAtual).toBeNull();
   });
 
-  it('renderiza o catalogo na rota inicial e a tela de entrar em /entrar', async () => {
+  it('cadastrar persiste a conta no localStorage e permite login em nova instancia', () => {
+    const primeiraInstancia = TestBed.createComponent(App).componentInstance;
+
+    const cadastrado = primeiraInstancia.cadastrar({
+      nome: '  Maria Silva  ',
+      email: '  MARIA@GEEKHUB.COM  ',
+      senha: ' minhaSenha ',
+    });
+
+    expect(cadastrado).toEqual({
+      identificador: 3,
+      nome: 'Maria Silva',
+      email: 'maria@geekhub.com',
+    });
+    expect(cadastrado).not.toHaveProperty('senha');
+
+    const segundaInstancia = TestBed.createComponent(App).componentInstance;
+    const autenticado = segundaInstancia.entrar({
+      email: 'maria@geekhub.com',
+      senha: ' minhaSenha ',
+    });
+
+    expect(autenticado).toEqual(cadastrado);
+    expect(segundaInstancia.usuarioAtual).toEqual(cadastrado);
+
+    const terceiraInstancia = TestBed.createComponent(App).componentInstance;
+    expect(terceiraInstancia.usuarioAtual).toEqual(cadastrado);
+  });
+
+  it('cadastrar retorna null quando o e-mail ja existe', () => {
+    const app = TestBed.createComponent(App).componentInstance;
+
+    const duplicado = app.cadastrar({
+      nome: 'Outro Nome',
+      email: '  DEMO@GEEKHUB.COM  ',
+      senha: '123',
+    });
+
+    expect(duplicado).toBeNull();
+  });
+
+  it('renderiza o catalogo na rota inicial e as telas de entrada e cadastro', async () => {
     const fixture = TestBed.createComponent(App);
     const roteador = TestBed.inject(Router);
 
@@ -72,9 +119,15 @@ describe('App', () => {
     await fixture.whenStable();
 
     expect(fixture.nativeElement.querySelector('app-entrar')).toBeTruthy();
+
+    await roteador.navigateByUrl('/cadastro');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(fixture.nativeElement.querySelector('app-cadastro')).toBeTruthy();
   });
 
-  it('sair limpa o usuario e navega para entrada', () => {
+  it('sair limpa o usuario em memoria e no localStorage e navega para entrada', () => {
     const fixture = TestBed.createComponent(App);
     const app = fixture.componentInstance;
 
@@ -84,16 +137,17 @@ describe('App', () => {
       .spyOn(roteador, 'navigate')
       .mockResolvedValue(true);
 
-    app.usuarioAtual = {
-      identificador: 1,
-      nome: 'Aluno exemplo',
-      email: 'aluno@exemplo.com',
-    };
+    app.entrar({
+      email: 'demo@geekhub.com',
+      senha: '123456',
+    });
 
     app.sair();
 
     expect(app.usuarioAtual).toBeNull();
-
     expect(navegar).toHaveBeenCalledWith(['/entrar']);
+
+    const novaInstancia = TestBed.createComponent(App).componentInstance;
+    expect(novaInstancia.usuarioAtual).toBeNull();
   });
 });

@@ -13,6 +13,8 @@ describe('EntrarComponente', () => {
   let navegar: ReturnType<typeof vi.spyOn>;
 
   beforeEach(async () => {
+    localStorage.clear();
+
     await TestBed.configureTestingModule({
       imports: [AutenticacaoModule],
       providers: [provideRouter([]), App],
@@ -29,6 +31,10 @@ describe('EntrarComponente', () => {
     component = fixture.componentInstance;
 
     await fixture.whenStable();
+  });
+
+  afterEach(() => {
+    localStorage.clear();
   });
 
   it('cria o componente e inicia sem usuario', () => {
