@@ -1,0 +1,172 @@
+:host {
+  display: block;
+  background: #fafaf7;
+  min-height: 100vh;
+}
+
+.pagina {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 20px;
+}
+
+.detalhes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.imagem-produto {
+  overflow: hidden;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 420px;
+    object-fit: contain;
+    background: white;
+  }
+}
+
+h1 {
+  font-size: 1.75rem;
+  line-height: 1.3;
+}
+
+.preco {
+  color: #3f51b5;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 24px 0;
+}
+
+.coluna-produto {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.coluna-produto h1,
+.coluna-produto .preco {
+  margin: 0;
+}
+
+.quadro-informacoes {
+  overflow: hidden;
+  border-radius: 0;
+}
+
+.quadro-informacoes dl {
+  margin: 0;
+}
+
+.quadro-informacoes dl > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+}
+
+.quadro-informacoes dl > div + div {
+  border-top: 1px solid #ccc;
+}
+
+.quadro-informacoes dd {
+  margin: 0;
+  text-align: right;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.descricao {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.perfil {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  color: #3f51b5;
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+@media (max-width: 700px) {
+  .detalhes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .imagem-produto img {
+    height: 300px;
+  }
+}
+
+.galeria {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.galeria .imagem-produto {
+  flex: 1;
+  min-width: 0;
+}
+
+.miniaturas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.miniatura {
+  width: 68px;
+  height: 68px;
+  padding: 2px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  background: white;
+  cursor: pointer;
+}
+
+.miniatura img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.miniatura.selecionada,
+.miniatura:focus-visible {
+  border-color: #3f51b5;
+}
+
+.miniatura:focus-visible {
+  outline: 2px solid #3f51b5;
+  outline-offset: 2px;
+}
+
+.cartao-descricao {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 480px) {
+  .galeria {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .miniaturas {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}
