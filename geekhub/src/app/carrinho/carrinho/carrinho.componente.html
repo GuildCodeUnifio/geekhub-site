@@ -1,1 +1,132 @@
-<p>carrinho works!</p>
+<main class="carrinho-conteiner">
+  <h1 class="titulo-pagina">Carrinho</h1>
+
+  @if (mensagem) {
+    <p class="mensagem-alerta" role="alert">{{ mensagem }}</p>
+  }
+
+  @if (itensCarrinho.length > 0) {
+    <div class="tabela-conteiner">
+      <table mat-table [dataSource]="itensCarrinho" class="carrinho-tabela">
+        <ng-container matColumnDef="produto">
+          <th mat-header-cell *matHeaderCellDef>Produto</th>
+          <td mat-cell *matCellDef="let item">
+            <div class="produto-informacoes">
+              <img class="produto-imagem" [src]="item.imagem" [alt]="item.nome" />
+              <div class="produto-detalhes">
+                <span class="produto-titulo">{{ item.nome }}</span>
+                @if (!item.disponivel || item.estoqueDisponivel < 1) {
+                  <p class="aviso-item">Produto indisponível no momento. Remova para continuar.</p>
+                } @else if (item.quantidade > item.estoqueDisponivel) {
+                  <p class="aviso-item">
+                    Quantidade acima do estoque disponível ({{ item.estoqueDisponivel }}). Ajuste ou
+                    remova para continuar.
+                  </p>
+                }
+              </div>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="preco">
+          <th mat-header-cell *matHeaderCellDef class="texto-centralizado">Preço</th>
+          <td mat-cell *matCellDef="let item" class="texto-centralizado">
+            {{ item.precoUnitario | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="quantidade">
+          <th mat-header-cell *matHeaderCellDef class="texto-centralizado">Quantidade</th>
+          <td mat-cell *matCellDef="let item" class="texto-centralizado">
+            <mat-form-field
+              appearance="outline"
+              subscriptSizing="dynamic"
+              class="seletor-quantidade"
+            >
+              <mat-select
+                [value]="item.quantidade"
+                [disabled]="!item.disponivel || item.estoqueDisponivel < 1"
+                [attr.aria-label]="'Quantidade de ' + item.nome"
+                (selectionChange)="aoSelecionarQuantidade(item, $event.value, $event.source)"
+              >
+                @if (item.quantidade > item.estoqueDisponivel && item.quantidade >= 1) {
+                  <mat-option [value]="item.quantidade" disabled>
+                    {{ item.quantidade }}
+                  </mat-option>
+                }
+                @for (qtd of obterOpcoesQuantidade(item.estoqueDisponivel); track qtd) {
+                  <mat-option [value]="qtd">{{ qtd }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="subtotal">
+          <th mat-header-cell *matHeaderCellDef class="texto-centralizado">Subtotal</th>
+          <td mat-cell *matCellDef="let item" class="texto-centralizado texto-negrito">
+            {{ obterSubtotalCentavos(item) / 100 | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acao">
+          <th mat-header-cell *matHeaderCellDef class="texto-centralizado">Ação</th>
+          <td mat-cell *matCellDef="let item" class="texto-centralizado">
+            <button
+              matButton
+              type="button"
+              class="botao-remover"
+              [attr.aria-label]="'Remover ' + item.nome + ' do carrinho'"
+              (click)="aoRemover(item.anuncioIdentificador)"
+            >
+              Remover
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="colunasExibidas"></tr>
+        <tr
+          mat-row
+          *matRowDef="let linha; columns: colunasExibidas"
+          [class.linha-pendente]="itemComPendencia(linha)"
+        ></tr>
+      </table>
+    </div>
+
+    <div class="resumo-conteiner">
+      <mat-card class="resumo-cartao" appearance="outlined">
+        <div class="resumo-linha">
+          <span class="resumo-rotulo">Subtotal</span>
+          <span class="resumo-valor">
+            {{ valorTotal | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}
+          </span>
+        </div>
+
+        @if (!podeAvancar) {
+          <p class="aviso-bloqueio" role="status">
+            Corrija ou remova os itens indisponíveis antes de finalizar o pedido.
+          </p>
+        }
+
+        <button
+          matButton="filled"
+          type="button"
+          class="botao-finalizar"
+          [disabled]="!podeAvancar"
+          (click)="avancar()"
+        >
+          FINALIZAR PEDIDO
+        </button>
+      </mat-card>
+    </div>
+  } @else {
+    <mat-card class="carrinho-vazio-conteiner" appearance="outlined">
+      <mat-icon fontSet="material-symbols-outlined" class="icone-vazio" aria-hidden="true">
+        shopping_cart
+      </mat-icon>
+      <h2>Seu carrinho está vazio.</h2>
+      <p>Navegue pelo catálogo para adicionar produtos!</p>
+      <a matButton="filled" class="botao-catalogo" routerLink="/">Ir ao catálogo</a>
+    </mat-card>
+  }
+</main>
