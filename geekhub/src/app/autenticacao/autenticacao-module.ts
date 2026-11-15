@@ -9,7 +9,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 
-import { CabecalhoModule } from '../cabecalho/cabecalho-module';
 import { AutenticacaoRoutingModule } from './autenticacao-routing-module';
 import { EntrarComponente } from './entrar/entrar.componente';
 import { CadastroComponente } from './cadastro/cadastro.componente';
@@ -23,7 +22,6 @@ import { CadastroComponente } from './cadastro/cadastro.componente';
     CommonModule,
     FormsModule,
     AutenticacaoRoutingModule,
-    CabecalhoModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,

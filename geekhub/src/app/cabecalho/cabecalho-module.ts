@@ -13,10 +13,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { Cabecalho } from './cabecalho/cabecalho';
-import { CabecalhoSimples } from './cabecalho-simples/cabecalho-simples';
 
 @NgModule({
-  declarations: [Cabecalho, CabecalhoSimples],
+  declarations: [Cabecalho],
   imports: [
     CommonModule,
     RouterModule,
@@ -30,6 +29,6 @@ import { CabecalhoSimples } from './cabecalho-simples/cabecalho-simples';
     MatListModule,
     MatDividerModule,
   ],
-  exports: [Cabecalho, CabecalhoSimples],
+  exports: [Cabecalho],
 })
 export class CabecalhoModule {}
