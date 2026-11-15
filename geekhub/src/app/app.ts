@@ -1,6 +1,12 @@
 import { Component, signal } from '@angular/core';
 import { Router } from '@angular/router';
+
+import type { EntrarRequest } from './autenticacao/entrar/entrar.componente';
 import type { UsuarioResponse } from './cabecalho/cabecalho/cabecalho';
+
+export interface ContaUsuario extends UsuarioResponse {
+  senha: string;
+}
 
 export interface PerfilVendedor {
   identificador: number;
@@ -57,27 +63,74 @@ export interface VendedorResponse{
 export class App {
   protected readonly title = signal('geekhub');
 
-  usuarioAtual: UsuarioResponse | null = {
-    identificador: 1,
-    nome: 'Aluno exemplo',
-    email: 'aluno@exemplo.com',
-  };
+  private readonly usuarios: ContaUsuario[] = [
+    {
+      identificador: 1,
+      nome: 'Usuário GeekHub',
+      email: 'demo@geekhub.com',
+      senha: '123456',
+    },
+    {
+      identificador: 2,
+      nome: 'Usuário Teste',
+      email: 'teste@geekhub.com',
+      senha: 'teste123',
+    },
+  ];
 
-  constructor(private roteador: Router) {}
+  usuarioAtual: UsuarioResponse | null = null;
+
+  constructor(private readonly roteador: Router) {}
 
   get versaoCabecalho(): 'Simples' | 'Completa' {
-    return this.roteador.url.startsWith('/autenticacao/') ? 'Simples' : 'Completa';
+    const caminho = this.roteador.url.split('?')[0];
+
+    return caminho === '/entrar' ||
+      caminho === '/cadastro' ||
+      caminho.startsWith('/autenticacao/')
+      ? 'Simples'
+      : 'Completa';
+  }
+
+  entrar(request: EntrarRequest): UsuarioResponse | null {
+    const email = request.email.trim().toLowerCase();
+
+    const conta = this.usuarios.find(
+      usuario =>
+        usuario.email === email &&
+        usuario.senha === request.senha
+    );
+
+    if (!conta) {
+      this.usuarioAtual = null;
+      return null;
+    }
+
+    this.usuarioAtual = {
+      identificador: conta.identificador,
+      nome: conta.nome,
+      email: conta.email,
+      ...(conta.foto ? { foto: conta.foto } : {}),
+    };
+
+    return this.usuarioAtual;
   }
 
   pesquisar(termo: string): void {
     void this.roteador.navigate(['/'], {
-      queryParams: { busca: termo || null },
+      queryParams: {
+        busca: termo || null,
+      },
     });
   }
 
-  encerrarSessao(): void {
+  sair(): void {
     this.usuarioAtual = null;
-    void this.roteador.navigate(['/autenticacao/entrar']);
+    void this.roteador.navigate(['/entrar']);
+  }
+
+  encerrarSessao(): void {
+    this.sair();
   }
 
   private readonly vendedores: Omit< 
@@ -87,7 +140,7 @@ export class App {
     {
       identificador: 2,
       nome: 'Luiz Carlos Oliveira',
-      foto: 'imagens/vendedores/vendedor.jpg',
+      foto: 'https://randomuser.me/api/portraits/men/32.jpg',
       membroDesde: 2024,
       vendas: 1,
       taxaResposta: 99,
@@ -110,7 +163,12 @@ export class App {
     nome: 'Action figure Naruto',
     titulo: 'Action figura Naruto 1 edição',
     descricao: 'Produto original com nota fiscal',
-    imagens: ['imagens/produtos/naruto.jpg', 'imagens/produtos/n1.jpg', 'imagens/produtos/n2.jpg', 'imagens/produtos/n3.jpg'],
+    imagens: [
+      'https://cdn.myanimelist.net/images/anime/13/17405.jpg',
+      'https://cdn.myanimelist.net/images/characters/2/284121.jpg',
+      'https://cdn.myanimelist.net/images/characters/9/131317.jpg',
+      'https://cdn.myanimelist.net/images/characters/7/284129.jpg',
+    ],
     categoria: 'Colecionavel',
     preco: 1850.00,
     estado: 'Novo',
@@ -119,7 +177,7 @@ export class App {
     vendedor: {
       identificador: 2,
       nome: "Luiz Carlos Oliveira",
-      foto: 'imagens/vendedores/vendedor.jpg',
+      foto: 'https://randomuser.me/api/portraits/men/32.jpg',
       media: 5,
       contagem: 1
     } 
