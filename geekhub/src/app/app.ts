@@ -142,19 +142,47 @@ export interface PerfilVendedor {
   }[];
 }
 
-export interface AnuncioResponse{
+export interface CategoriaResponse {
+  identificador: number;
+  nome: string;
+}
+
+export interface ConsultarAnunciosRequest {
+  termo?: string;
+  categoriaIdentificador?: number;
+  pagina?: number;
+  itensPorPagina?: number;
+}
+
+export interface ConsultarAnunciosResponse {
+  anuncios: AnuncioResponse[];
+  pagina: number;
+  itensPorPagina: number;
+  total: number;
+}
+
+export interface AnuncioResponse {
   identificador: number;
   nome: string;
   titulo: string;
   descricao: string;
   imagens: string[];
+  categoriaIdentificador?: number;
   categoria: string;
   preco: number;
   estado: 'Novo' | 'Usado';
   conservacao: string;
-  estoque: number,
+  estoque: number;
+  disponivel?: boolean;
   vendedor: VendedorResponse;
 }
+
+const CATEGORIAS_CATALOGO: readonly CategoriaResponse[] = [
+  { identificador: 1, nome: 'Figuras colecionáveis' },
+  { identificador: 2, nome: 'Quadrinhos e mangás' },
+  { identificador: 3, nome: 'Jogos' },
+  { identificador: 4, nome: 'Acessórios' },
+];
 
 export interface VendedorResponse{
   identificador: number;
@@ -384,16 +412,16 @@ export class App {
     }
   }
 
-  private readonly vendedores: Omit< 
-    PerfilVendedor, 
+  private readonly vendedores: Omit<
+    PerfilVendedor,
     'media' | 'contagem'
-  >[]= [
+  >[] = [
     {
       identificador: 2,
       nome: 'Luiz Carlos Oliveira',
       foto: 'https://randomuser.me/api/portraits/men/32.jpg',
       membroDesde: 2024,
-      vendas: 1,
+      vendas: 12,
       taxaResposta: 99,
       avaliacoes: [
         {
@@ -406,34 +434,264 @@ export class App {
       ],
       produtos: [],
     },
+    {
+      identificador: 3,
+      nome: 'Marina Costa',
+      foto: 'https://randomuser.me/api/portraits/women/44.jpg',
+      membroDesde: 2025,
+      vendas: 8,
+      taxaResposta: 97,
+      avaliacoes: [
+        {
+          identificador: 2,
+          autor: 'Lucas',
+          nota: 5,
+          comentario: 'Item bem embalado e exatamente como anunciado.',
+          data: '04/11/2026',
+        },
+      ],
+      produtos: [],
+    },
   ];
 
   private readonly anuncios: AnuncioResponse[] = [
     {
-    identificador: 1,
-    nome: 'Action figure Naruto',
-    titulo: 'Action figura Naruto 1 edição',
-    descricao: 'Produto original com nota fiscal',
-    imagens: [
-      'https://cdn.myanimelist.net/images/anime/13/17405.jpg',
-      'https://cdn.myanimelist.net/images/characters/2/284121.jpg',
-      'https://cdn.myanimelist.net/images/characters/9/131317.jpg',
-      'https://cdn.myanimelist.net/images/characters/7/284129.jpg',
-    ],
-    categoria: 'Colecionavel',
-    preco: 1850.00,
-    estado: 'Novo',
-    conservacao: 'Estado do lacre original, sem arranhados e amaçados',
-    estoque: 3,
-    vendedor: {
+      identificador: 1,
+      nome: 'Action figure Naruto',
+      titulo: 'Action figura Naruto 1 edição',
+      descricao: 'Produto original com nota fiscal',
+      imagens: [
+        'https://cdn.myanimelist.net/images/anime/13/17405.jpg',
+        'https://cdn.myanimelist.net/images/characters/2/284121.jpg',
+        'https://cdn.myanimelist.net/images/characters/9/131317.jpg',
+        'https://cdn.myanimelist.net/images/characters/7/284129.jpg',
+      ],
+      categoriaIdentificador: 1,
+      categoria: 'Figuras colecionáveis',
+      preco: 1850.0,
+      estado: 'Novo',
+      conservacao: 'Estado do lacre original, sem arranhados e amassados',
+      estoque: 3,
+      disponivel: true,
+      vendedor: {
+        identificador: 2,
+        nome: 'Luiz Carlos Oliveira',
+        foto: 'https://randomuser.me/api/portraits/men/32.jpg',
+        media: 5,
+        contagem: 1,
+      },
+    },
+    {
       identificador: 2,
-      nome: "Luiz Carlos Oliveira",
-      foto: 'https://randomuser.me/api/portraits/men/32.jpg',
-      media: 5,
-      contagem: 1
-    } 
-  }
-];
+      nome: 'Mangá Colecionável — Edição Especial',
+      titulo: 'Mangá Colecionável — Edição Especial',
+      descricao: 'Volume de colecionador com sobrecapa e páginas coloridas.',
+      imagens: ['https://cdn.myanimelist.net/images/characters/2/284121.jpg'],
+      categoriaIdentificador: 2,
+      categoria: 'Quadrinhos e mangás',
+      preco: 49.9,
+      estado: 'Novo',
+      conservacao: 'Lacrados de fábrica, sem marcas de dobra',
+      estoque: 5,
+      disponivel: true,
+      vendedor: {
+        identificador: 2,
+        nome: 'Luiz Carlos Oliveira',
+        foto: 'https://randomuser.me/api/portraits/men/32.jpg',
+        media: 5,
+        contagem: 1,
+      },
+    },
+    {
+      identificador: 3,
+      nome: 'Poster Ilustrado Ninja',
+      titulo: 'Poster Ilustrado Ninja',
+      descricao: 'Impressão em papel couchê 250g com acabamento fosco.',
+      imagens: ['https://cdn.myanimelist.net/images/characters/9/131317.jpg'],
+      categoriaIdentificador: 4,
+      categoria: 'Acessórios',
+      preco: 85.5,
+      estado: 'Novo',
+      conservacao: 'Sem marcas de dobra, enviado em tubo protetor',
+      estoque: 10,
+      disponivel: true,
+      vendedor: {
+        identificador: 3,
+        nome: 'Marina Costa',
+        foto: 'https://randomuser.me/api/portraits/women/44.jpg',
+        media: 5,
+        contagem: 1,
+      },
+    },
+    {
+      identificador: 4,
+      nome: 'Estátua Kakashi Hatake 18cm',
+      titulo: 'Estátua Kakashi Hatake 18cm',
+      descricao: 'Peça em PVC detalhada com base expositora inclusa.',
+      imagens: ['https://cdn.myanimelist.net/images/characters/7/284129.jpg'],
+      categoriaIdentificador: 1,
+      categoria: 'Figuras colecionáveis',
+      preco: 329.9,
+      estado: 'Usado',
+      conservacao: 'Exposto apenas em cristaleira, acompanha caixa original',
+      estoque: 2,
+      disponivel: true,
+      vendedor: {
+        identificador: 2,
+        nome: 'Luiz Carlos Oliveira',
+        foto: 'https://randomuser.me/api/portraits/men/32.jpg',
+        media: 5,
+        contagem: 1,
+      },
+    },
+    {
+      identificador: 5,
+      nome: 'HQ Batman: O Cavaleiro das Trevas',
+      titulo: 'HQ Batman: O Cavaleiro das Trevas',
+      descricao: 'Edição definitiva capa dura com extras de arte.',
+      imagens: ['https://picsum.photos/seed/geekhub-hq-batman/600/450'],
+      categoriaIdentificador: 2,
+      categoria: 'Quadrinhos e mangás',
+      preco: 139.9,
+      estado: 'Usado',
+      conservacao: 'Lombada firme, páginas limpas sem anotações',
+      estoque: 4,
+      disponivel: true,
+      vendedor: {
+        identificador: 3,
+        nome: 'Marina Costa',
+        foto: 'https://randomuser.me/api/portraits/women/44.jpg',
+        media: 5,
+        contagem: 1,
+      },
+    },
+    {
+      identificador: 6,
+      nome: 'Controle Retrô USB Arcade',
+      titulo: 'Controle Retrô USB Arcade',
+      descricao: 'Compatível com PC e consoles retrô, cabo reforçado de 2m.',
+      imagens: ['https://picsum.photos/seed/geekhub-controle-retro/600/450'],
+      categoriaIdentificador: 3,
+      categoria: 'Jogos',
+      preco: 199.0,
+      estado: 'Novo',
+      conservacao: 'Novo na caixa original',
+      estoque: 6,
+      disponivel: true,
+      vendedor: {
+        identificador: 2,
+        nome: 'Luiz Carlos Oliveira',
+        foto: 'https://randomuser.me/api/portraits/men/32.jpg',
+        media: 5,
+        contagem: 1,
+      },
+    },
+    {
+      identificador: 7,
+      nome: 'Cartucho Zelda Ocarina Reedição',
+      titulo: 'Cartucho Zelda Ocarina Reedição',
+      descricao: 'Item de coleção testado e funcionando perfeitamente.',
+      imagens: ['https://picsum.photos/seed/geekhub-zelda/600/450'],
+      categoriaIdentificador: 3,
+      categoria: 'Jogos',
+      preco: 279.0,
+      estado: 'Usado',
+      conservacao: 'Ótimo estado estético e bateria de save nova',
+      estoque: 1,
+      disponivel: true,
+      vendedor: {
+        identificador: 3,
+        nome: 'Marina Costa',
+        foto: 'https://randomuser.me/api/portraits/women/44.jpg',
+        media: 5,
+        contagem: 1,
+      },
+    },
+    {
+      identificador: 8,
+      nome: 'Chaveiro Metal Escudo Hylian',
+      titulo: 'Chaveiro Metal Escudo Hylian',
+      descricao: 'Acabamento metálico esmaltado com argola reforçada.',
+      imagens: ['https://picsum.photos/seed/geekhub-chaveiro-hylian/600/450'],
+      categoriaIdentificador: 4,
+      categoria: 'Acessórios',
+      preco: 34.9,
+      estado: 'Novo',
+      conservacao: 'Lacrado em embalagem individual',
+      estoque: 15,
+      disponivel: true,
+      vendedor: {
+        identificador: 2,
+        nome: 'Luiz Carlos Oliveira',
+        foto: 'https://randomuser.me/api/portraits/men/32.jpg',
+        media: 5,
+        contagem: 1,
+      },
+    },
+    {
+      identificador: 9,
+      nome: 'Box Trilogia Mangá Samurai',
+      titulo: 'Box Trilogia Mangá Samurai',
+      descricao: 'Caixa rígida contendo os 3 volumes completos em português.',
+      imagens: ['https://picsum.photos/seed/geekhub-box-samurai/600/450'],
+      categoriaIdentificador: 2,
+      categoria: 'Quadrinhos e mangás',
+      preco: 164.0,
+      estado: 'Novo',
+      conservacao: 'Caixa selada sem amassados',
+      estoque: 4,
+      disponivel: true,
+      vendedor: {
+        identificador: 3,
+        nome: 'Marina Costa',
+        foto: 'https://randomuser.me/api/portraits/women/44.jpg',
+        media: 5,
+        contagem: 1,
+      },
+    },
+    {
+      identificador: 10,
+      nome: 'Tabuleiro RPG Dados Poliédricos',
+      titulo: 'Tabuleiro RPG Dados Poliédricos',
+      descricao: 'Conjunto com 7 dados metálicos e bandeja dobrável em feltro.',
+      imagens: ['https://picsum.photos/seed/geekhub-dados-rpg/600/450'],
+      categoriaIdentificador: 3,
+      categoria: 'Jogos',
+      preco: 118.5,
+      estado: 'Novo',
+      conservacao: 'Novo, nunca utilizado',
+      estoque: 7,
+      disponivel: true,
+      vendedor: {
+        identificador: 2,
+        nome: 'Luiz Carlos Oliveira',
+        foto: 'https://randomuser.me/api/portraits/men/32.jpg',
+        media: 5,
+        contagem: 1,
+      },
+    },
+    {
+      identificador: 11,
+      nome: 'Miniatura Mecha Edição Esgotada',
+      titulo: 'Miniatura Mecha Edição Esgotada',
+      descricao: 'Item indisponível usado para validar filtragem do catálogo.',
+      imagens: ['https://picsum.photos/seed/geekhub-mecha-esgotado/600/450'],
+      categoriaIdentificador: 1,
+      categoria: 'Figuras colecionáveis',
+      preco: 490.0,
+      estado: 'Novo',
+      conservacao: 'Lacrado',
+      estoque: 0,
+      disponivel: false,
+      vendedor: {
+        identificador: 2,
+        nome: 'Luiz Carlos Oliveira',
+        foto: 'https://randomuser.me/api/portraits/men/32.jpg',
+        media: 5,
+        contagem: 1,
+      },
+    },
+  ];
 
 buscarVendedor(identificador: number): PerfilVendedor | null {
     const vendedor = this.vendedores.find(
@@ -485,6 +743,65 @@ buscarAnuncio(identificador: number): AnuncioResponse | null {
   };
 }
 
+listarCategorias(): CategoriaResponse[] {
+  return CATEGORIAS_CATALOGO.map(categoria => ({ ...categoria }));
+}
+
+consultarAnuncios(
+  request: ConsultarAnunciosRequest = {}
+): ConsultarAnunciosResponse {
+  const termo = request.termo?.trim().toLowerCase() ?? '';
+  const categoriaIdentificador = request.categoriaIdentificador;
+  const itensPorPagina =
+    request.itensPorPagina &&
+    Number.isInteger(request.itensPorPagina) &&
+    request.itensPorPagina > 0
+      ? request.itensPorPagina
+      : 8;
+
+  const filtrados = this.anuncios.filter(anuncio => {
+    if (anuncio.disponivel === false || anuncio.estoque <= 0) {
+      return false;
+    }
+
+    if (
+      categoriaIdentificador !== undefined &&
+      anuncio.categoriaIdentificador !== categoriaIdentificador
+    ) {
+      return false;
+    }
+
+    if (termo) {
+      const corresponde =
+        anuncio.nome.toLowerCase().includes(termo) ||
+        anuncio.titulo.toLowerCase().includes(termo) ||
+        anuncio.categoria.toLowerCase().includes(termo);
+
+      if (!corresponde) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  const total = filtrados.length;
+  const totalPaginas = Math.max(1, Math.ceil(total / itensPorPagina));
+  const paginaSolicitada =
+    request.pagina && Number.isInteger(request.pagina) && request.pagina >= 1
+      ? request.pagina
+      : 1;
+  const pagina = Math.min(paginaSolicitada, totalPaginas);
+  const inicio = (pagina - 1) * itensPorPagina;
+
+  return {
+    anuncios: filtrados.slice(inicio, inicio + itensPorPagina),
+    pagina,
+    itensPorPagina,
+    total,
+  };
+}
+
 listarAnuncios(): AnuncioResponse[] {
   return this.anuncios;
 }
@@ -492,7 +809,10 @@ listarAnuncios(): AnuncioResponse[] {
 listarProdutosDoVendedor(identificador: number) {
   return this.anuncios
     .filter(
-      anuncio => anuncio.vendedor.identificador === identificador
+      anuncio =>
+        anuncio.vendedor.identificador === identificador &&
+        anuncio.disponivel !== false &&
+        anuncio.estoque > 0
     )
     
     .map(anuncio => ({
