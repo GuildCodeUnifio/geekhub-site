@@ -25,9 +25,7 @@ describe('App', () => {
 
     expect(fixture.componentInstance.usuarioAtual).toBeNull();
 
-    expect(
-      fixture.nativeElement.querySelector('app-cabecalho')
-    ).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-cabecalho')).toBeTruthy();
   });
 
   it('entrar preenche usuarioAtual quando credenciais sao validas sem expor a senha', () => {
@@ -184,9 +182,7 @@ describe('App', () => {
 
     const roteador = TestBed.inject(Router);
 
-    const navegar = vi
-      .spyOn(roteador, 'navigate')
-      .mockResolvedValue(true);
+    const navegar = vi.spyOn(roteador, 'navigate').mockResolvedValue(true);
 
     app.entrar({
       email: 'demo@geekhub.com',
@@ -200,5 +196,44 @@ describe('App', () => {
 
     const novaInstancia = TestBed.createComponent(App).componentInstance;
     expect(novaInstancia.usuarioAtual).toBeNull();
+  });
+
+  it('consulta anúncios paginados por categoria e termo ocultando itens indisponíveis', () => {
+    const app = TestBed.createComponent(App).componentInstance;
+
+    const categorias = app.listarCategorias();
+    expect(categorias.map((categoria) => categoria.nome)).toEqual([
+      'Figuras colecionáveis',
+      'Quadrinhos e mangás',
+      'Jogos',
+      'Acessórios',
+    ]);
+
+    const pagina1 = app.consultarAnuncios({ pagina: 1, itensPorPagina: 8 });
+    expect(pagina1.total).toBe(10);
+    expect(pagina1.pagina).toBe(1);
+    expect(pagina1.anuncios).toHaveLength(8);
+
+    const paginaForaIntervalo = app.consultarAnuncios({ pagina: 9, itensPorPagina: 8 });
+    expect(paginaForaIntervalo.pagina).toBe(2);
+    expect(paginaForaIntervalo.anuncios).toHaveLength(2);
+
+    const todosIds = [...pagina1.anuncios, ...paginaForaIntervalo.anuncios].map(
+      (anuncio) => anuncio.identificador,
+    );
+    expect(todosIds).not.toContain(11);
+
+    const porCategoria = app.consultarAnuncios({ categoriaIdentificador: 3 });
+    expect(porCategoria.total).toBe(3);
+    expect(porCategoria.anuncios.every((anuncio) => anuncio.categoriaIdentificador === 3)).toBe(
+      true,
+    );
+
+    const porBusca = app.consultarAnuncios({ termo: 'zelda' });
+    expect(porBusca.total).toBe(1);
+    expect(porBusca.anuncios[0].identificador).toBe(7);
+
+    const produtosVendedor1 = app.listarProdutosDoVendedor(1);
+    expect(produtosVendedor1.some((produto) => produto.identificador === 11)).toBe(false);
   });
 });
