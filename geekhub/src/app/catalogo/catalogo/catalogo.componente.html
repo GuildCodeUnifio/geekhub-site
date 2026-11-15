@@ -1,28 +1,66 @@
 <main class="pagina-catalogo">
-  @if (buscaAplicada) {
-    <p role="status">Busca por “{{ buscaAplicada }}”</p>
-  }
-  <div class="lista-produtos">
-    @for (anuncio of anuncios; track anuncio.identificador){
-    <a class="link-produto" [routerLink]="['/produtos', anuncio.identificador]">
-      <mat-card class="card-produto" appearance="outlined">
-        @if (anuncio.imagens.length > 0) {
-        <img mat-card-image class="foto-produto" [src]="anuncio.imagens[0]" [alt]="anuncio.nome" />
-        } @else {
-        <p>Produto sem imagem.</p>
-        }
+  <nav class="barra-categorias" aria-label="Filtrar produtos por categoria">
+    <button
+      [matButton]="categoriaSelecionada() === undefined ? 'filled' : 'outlined'"
+      type="button"
+      class="botao-categoria"
+      [class.ativa]="categoriaSelecionada() === undefined"
+      [attr.aria-pressed]="categoriaSelecionada() === undefined"
+      (click)="selecionarCategoria(undefined)"
+    >
+      Todos
+    </button>
 
-        <mat-card-content>
-          <h2>{{ anuncio.nome }}</h2>
-
-          <p class="preco">
-            {{ anuncio.preco | currency:'BRL' }}
-          </p>
-        </mat-card-content>
-      </mat-card>
-    </a>
-    } @empty {
-    <p>Nenhum produto cadastrado.</p>
+    @for (categoria of categorias; track categoria.identificador) {
+      <button
+        [matButton]="categoriaSelecionada() === categoria.identificador ? 'filled' : 'outlined'"
+        type="button"
+        class="botao-categoria"
+        [class.ativa]="categoriaSelecionada() === categoria.identificador"
+        [attr.aria-pressed]="categoriaSelecionada() === categoria.identificador"
+        (click)="selecionarCategoria(categoria.identificador)"
+      >
+        {{ categoria.nome }}
+      </button>
     }
-  </div>
+  </nav>
+
+  @if (buscaAplicada) {
+    <div class="status-busca" role="status">
+      <span>Busca por “{{ buscaAplicada }}”</span>
+      <button matButton type="button" (click)="limparSelecao()">Limpar busca</button>
+    </div>
+  }
+
+  @if (anuncios.length > 0) {
+    <div class="lista-produtos">
+      @for (anuncio of anuncios; track anuncio.identificador) {
+        <app-cartao-produto [anuncio]="anuncio" />
+      }
+    </div>
+
+    <div class="paginacao-conteiner">
+      <mat-paginator
+        class="paginador-catalogo"
+        [length]="resultado().total"
+        [pageSize]="resultado().itensPorPagina"
+        [pageIndex]="resultado().pagina - 1"
+        [pageSizeOptions]="[4, 8, 12]"
+        showFirstLastButtons
+        aria-label="Paginação do catálogo"
+        (page)="aoMudarPagina($event)"
+      />
+    </div>
+  } @else {
+    <mat-card class="estado-vazio" appearance="outlined">
+      <mat-icon fontSet="material-symbols-outlined" class="icone-vazio" aria-hidden="true">
+        search_off
+      </mat-icon>
+      <h2>Nenhum produto encontrado.</h2>
+      <p>Nenhuma oferta disponível corresponde à seleção atual.</p>
+      <button matButton="filled" type="button" class="botao-limpar" (click)="limparSelecao()">
+        Limpar seleção
+      </button>
+    </mat-card>
+  }
 </main>
