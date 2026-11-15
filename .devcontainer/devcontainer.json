@@ -8,11 +8,18 @@
       "onAutoForward": "notify"
     }
   },
+  "containerEnv": {
+    "NODE_OPTIONS": "--dns-result-order=ipv4first"
+  },
+  "mounts": [
+    "source=geekhub-node_modules,target=${containerWorkspaceFolder}/geekhub/node_modules,type=volume",
+    "source=geekhub-angular-cache,target=${containerWorkspaceFolder}/geekhub/.angular,type=volume"
+  ],
   "customizations": {
     "vscode": {
       "extensions": ["angular.ng-template"]
     }
   },
-  "postCreateCommand": "npm install -g @angular/cli",
+  "postCreateCommand": "sudo chown -R node:node geekhub/node_modules geekhub/.angular && npm install -g @angular/cli && npm --prefix geekhub ci",
   "remoteUser": "node"
 }
