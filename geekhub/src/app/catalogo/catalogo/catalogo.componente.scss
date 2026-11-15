@@ -6,7 +6,7 @@
 }
 
 .pagina-catalogo {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 28px 24px 40px;
   box-sizing: border-box;
@@ -57,7 +57,7 @@
 .lista-produtos {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 24px;
+  gap: 20px;
 }
 
 .paginacao-conteiner {

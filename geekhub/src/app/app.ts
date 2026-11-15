@@ -570,7 +570,9 @@ export class App {
       nome: 'Controle Retrô USB Clássico',
       titulo: 'Controle Retrô USB Clássico',
       descricao: 'Compatível com PC e consoles retrô, cabo reforçado de 2m.',
-      imagens: ['https://images.unsplash.com/photo-1703868671298-b1d776d486f7?auto=format&fit=crop&w=600&q=80'],
+      imagens: [
+        'https://images.unsplash.com/photo-1703868671298-b1d776d486f7?auto=format&fit=crop&w=800&h=450&q=80',
+      ],
       categoriaIdentificador: 3,
       categoria: 'Jogos',
       preco: 199.0,
@@ -612,7 +614,9 @@ export class App {
       nome: 'Headset Gamer RGB Profissional',
       titulo: 'Headset Gamer RGB Profissional',
       descricao: 'Som estéreo surround, almofadas macias e iluminação RGB.',
-      imagens: ['https://images.unsplash.com/photo-1566055972289-c52022ae23b7?auto=format&fit=crop&w=600&q=80'],
+      imagens: [
+        'https://images.unsplash.com/photo-1566055972289-c52022ae23b7?auto=format&fit=crop&w=800&h=450&q=80',
+      ],
       categoriaIdentificador: 4,
       categoria: 'Acessórios',
       preco: 234.9,
@@ -654,7 +658,9 @@ export class App {
       nome: 'Dado D20 Colecionável RPG',
       titulo: 'Dado D20 Colecionável RPG',
       descricao: 'Dado poliédrico de 20 faces com acabamento marmorizado e gravação dourada.',
-      imagens: ['https://images.unsplash.com/photo-1650024520022-cab7611a460b?auto=format&fit=crop&w=600&q=80'],
+      imagens: [
+        'https://images.unsplash.com/photo-1650024520022-cab7611a460b?auto=format&fit=crop&w=800&h=450&q=80',
+      ],
       categoriaIdentificador: 3,
       categoria: 'Jogos',
       preco: 118.5,

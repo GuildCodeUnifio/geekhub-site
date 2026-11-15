@@ -9,7 +9,7 @@
     }
 
     <mat-card-content class="conteudo-cartao">
-      <h2>{{ anuncio.nome }}</h2>
+      <h2 [title]="anuncio.nome">{{ anuncio.nome }}</h2>
       <p class="preco">{{ anuncio.preco | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</p>
     </mat-card-content>
   </mat-card>
