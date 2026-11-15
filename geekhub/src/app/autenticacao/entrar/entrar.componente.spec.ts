@@ -23,9 +23,7 @@ describe('EntrarComponente', () => {
     const roteador = TestBed.inject(Router);
     app = TestBed.inject(App);
 
-    navegar = vi
-      .spyOn(roteador, 'navigate')
-      .mockResolvedValue(true);
+    navegar = vi.spyOn(roteador, 'navigate').mockResolvedValue(true);
 
     fixture = TestBed.createComponent(EntrarComponente);
     component = fixture.componentInstance;
@@ -68,31 +66,21 @@ describe('EntrarComponente', () => {
     ['', '123456', 'email'],
     ['demo@geekhub.com', '', 'senha'],
     ['   ', '   ', 'email'],
-  ])(
-    'rejeita campos obrigatorios vazios',
-    (email, senha, campo) => {
-      const sucesso = component.entrar({
-        email,
-        senha,
-      });
+  ])('rejeita campos obrigatorios vazios', (email, senha, campo) => {
+    const sucesso = component.entrar({
+      email,
+      senha,
+    });
 
-      expect(sucesso).toBe(false);
-      expect(
-        component.errosCampos[campo as 'email' | 'senha']
-      ).toBeTruthy();
+    expect(sucesso).toBe(false);
+    expect(component.errosCampos[campo as 'email' | 'senha']).toBeTruthy();
 
-      expect(component.usuarioAtual).toBeNull();
-      expect(app.usuarioAtual).toBeNull();
-      expect(navegar).not.toHaveBeenCalled();
-    }
-  );
+    expect(component.usuarioAtual).toBeNull();
+    expect(app.usuarioAtual).toBeNull();
+    expect(navegar).not.toHaveBeenCalled();
+  });
 
-  it.each([
-    ['email-invalido'],
-    ['sem-arroba.com'],
-    ['usuario@'],
-    ['@dominio.com'],
-  ])(
+  it.each([['email-invalido'], ['sem-arroba.com'], ['usuario@'], ['@dominio.com']])(
     'rejeita formato de e-mail invalido',
     (email) => {
       const sucesso = component.entrar({
@@ -105,40 +93,33 @@ describe('EntrarComponente', () => {
       expect(component.usuarioAtual).toBeNull();
       expect(app.usuarioAtual).toBeNull();
       expect(navegar).not.toHaveBeenCalled();
-    }
+    },
   );
 
   it.each([
     ['naoexiste@geekhub.com', '123456'],
     ['demo@geekhub.com', 'senhaerrada'],
-  ])(
-    'rejeita credenciais nao cadastradas ou senha incorreta',
-    (email, senha) => {
-      const sucesso = component.entrar({
-        email,
-        senha,
-      });
+  ])('rejeita credenciais nao cadastradas ou senha incorreta', (email, senha) => {
+    const sucesso = component.entrar({
+      email,
+      senha,
+    });
 
-      expect(sucesso).toBe(false);
-      expect(component.mensagemErro).toBe('E-mail ou senha incorretos.');
-      expect(component.usuarioAtual).toBeNull();
-      expect(app.usuarioAtual).toBeNull();
-      expect(navegar).not.toHaveBeenCalled();
-    }
-  );
+    expect(sucesso).toBe(false);
+    expect(component.mensagemErro).toBe('E-mail ou senha incorretos.');
+    expect(component.usuarioAtual).toBeNull();
+    expect(app.usuarioAtual).toBeNull();
+    expect(navegar).not.toHaveBeenCalled();
+  });
 
   it('mostra e oculta a senha sem alterar o texto', () => {
     component.senha = 'minhaSenha123';
 
     fixture.detectChanges();
 
-    const input = fixture.nativeElement.querySelector(
-      'input[name="senha"]'
-    ) as HTMLInputElement;
+    const input = fixture.nativeElement.querySelector('input[name="senha"]') as HTMLInputElement;
 
-    const botao = fixture.nativeElement.querySelector(
-      '.botao-visibilidade'
-    ) as HTMLButtonElement;
+    const botao = fixture.nativeElement.querySelector('.botao-visibilidade') as HTMLButtonElement;
 
     expect(input.type).toBe('password');
 
@@ -159,13 +140,48 @@ describe('EntrarComponente', () => {
     fixture.detectChanges();
 
     const link = fixture.nativeElement.querySelector(
-      'a[href="/cadastro"]'
+      'a[href="/cadastro"]',
     ) as HTMLAnchorElement | null;
 
     expect(link).not.toBeNull();
 
-    expect(link?.textContent).toContain(
-      'Criar conta'
-    );
+    expect(link?.textContent).toContain('Criar conta');
+  });
+
+  it('redireciona para a rota informada no query param redirecionar apos entrar', async () => {
+    await TestBed.resetTestingModule();
+    localStorage.clear();
+
+    const { ActivatedRoute } = await import('@angular/router');
+    await TestBed.configureTestingModule({
+      imports: [AutenticacaoModule],
+      providers: [
+        provideRouter([]),
+        App,
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              queryParamMap: {
+                get: (chave: string) => (chave === 'redirecionar' ? '/produtos/1' : null),
+              },
+            },
+          },
+        },
+      ],
+    }).compileComponents();
+
+    const novoRoteador = TestBed.inject(Router);
+    const spyNovoByUrl = vi.spyOn(novoRoteador, 'navigateByUrl').mockResolvedValue(true);
+    const novoFixture = TestBed.createComponent(EntrarComponente);
+    const novoComponent = novoFixture.componentInstance;
+
+    const sucesso = novoComponent.entrar({
+      email: 'demo@geekhub.com',
+      senha: '123456',
+    });
+
+    expect(sucesso).toBe(true);
+    expect(spyNovoByUrl).toHaveBeenCalledWith('/produtos/1');
   });
 });

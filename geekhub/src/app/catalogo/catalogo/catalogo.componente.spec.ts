@@ -163,4 +163,14 @@ describe('CatalogoComponente', () => {
     expect(fixture.nativeElement.querySelectorAll('app-cartao-produto')).toHaveLength(8);
     expect(fixture.nativeElement.querySelector('mat-paginator')).toBeTruthy();
   });
+
+  it('aplica filtro inicial pelo query param categoria vindo do breadcrumb', async () => {
+    await router.navigate(['/'], { queryParams: { categoria: 3 } });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.categoriaSelecionada()).toBe(3);
+    expect(component.totalResultados).toBe(3);
+    expect(component.anuncios.every((anuncio) => anuncio.categoriaIdentificador === 3)).toBe(true);
+  });
 });
