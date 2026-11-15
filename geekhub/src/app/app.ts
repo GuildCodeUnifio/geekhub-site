@@ -140,7 +140,7 @@ export class App {
     {
       identificador: 2,
       nome: 'Luiz Carlos Oliveira',
-      foto: 'imagens/vendedores/vendedor.jpg',
+      foto: 'https://randomuser.me/api/portraits/men/32.jpg',
       membroDesde: 2024,
       vendas: 1,
       taxaResposta: 99,
@@ -163,7 +163,12 @@ export class App {
     nome: 'Action figure Naruto',
     titulo: 'Action figura Naruto 1 edição',
     descricao: 'Produto original com nota fiscal',
-    imagens: ['imagens/produtos/naruto.jpg', 'imagens/produtos/n1.jpg', 'imagens/produtos/n2.jpg', 'imagens/produtos/n3.jpg'],
+    imagens: [
+      'https://cdn.myanimelist.net/images/anime/13/17405.jpg',
+      'https://cdn.myanimelist.net/images/characters/2/284121.jpg',
+      'https://cdn.myanimelist.net/images/characters/9/131317.jpg',
+      'https://cdn.myanimelist.net/images/characters/7/284129.jpg',
+    ],
     categoria: 'Colecionavel',
     preco: 1850.00,
     estado: 'Novo',
@@ -172,7 +177,7 @@ export class App {
     vendedor: {
       identificador: 2,
       nome: "Luiz Carlos Oliveira",
-      foto: 'imagens/vendedores/vendedor.jpg',
+      foto: 'https://randomuser.me/api/portraits/men/32.jpg',
       media: 5,
       contagem: 1
     } 
