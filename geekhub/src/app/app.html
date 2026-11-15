@@ -1,3 +1,8 @@
-<app-cabecalho [versao]="versaoCabecalho" [usuarioAtual]="usuarioAtual" (buscar)="pesquisar($event)" (sair)="sair()">
-  <router-outlet (activate)="aoAtivarRota($event)" (deactivate)="aoDesativarRota()" />
+<app-cabecalho
+  [versao]="versaoCabecalho"
+  [usuarioAtual]="usuarioAtual"
+  (buscar)="pesquisar($event)"
+  (sair)="sair()"
+>
+  <router-outlet />
 </app-cabecalho>

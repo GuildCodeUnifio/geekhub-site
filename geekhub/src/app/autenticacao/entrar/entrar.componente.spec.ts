@@ -1,23 +1,25 @@
-
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { vi } from 'vitest';
 
+import { App } from '../../app';
 import { AutenticacaoModule } from '../autenticacao-module';
 import { EntrarComponente } from './entrar.componente';
 
 describe('EntrarComponente', () => {
   let component: EntrarComponente;
   let fixture: ComponentFixture<EntrarComponente>;
+  let app: App;
   let navegar: ReturnType<typeof vi.spyOn>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AutenticacaoModule],
-      providers: [provideRouter([])],
+      providers: [provideRouter([]), App],
     }).compileComponents();
 
     const roteador = TestBed.inject(Router);
+    app = TestBed.inject(App);
 
     navegar = vi
       .spyOn(roteador, 'navigate')
@@ -33,35 +35,26 @@ describe('EntrarComponente', () => {
     expect(component).toBeTruthy();
     expect(component.usuarioAtual).toBeNull();
     expect(component.senhaVisivel).toBe(false);
+    expect(component.mensagemErro).toBe('');
   });
 
-  it('entra com credenciais validas sem retornar a senha', () => {
-    const listener = vi.fn();
-
-    component.loginRealizado.subscribe(listener);
-
-    const resultado = component.entrar({
+  it('entra com dados validos atualizando o App sem manter a senha', () => {
+    const sucesso = component.entrar({
       email: ' DEMO@GEEKHUB.COM ',
       senha: '123456',
     });
 
-    expect(resultado.sucesso).toBe(true);
+    expect(sucesso).toBe(true);
 
-    expect(resultado.usuario).toMatchObject({
+    expect(component.usuarioAtual).toMatchObject({
       identificador: 1,
+      nome: 'Usuário GeekHub',
       email: 'demo@geekhub.com',
     });
 
-    expect(resultado.usuario).not.toHaveProperty('senha');
-
-    expect(component.usuarioAtual).toEqual(
-      resultado.usuario
-    );
-
-    expect(listener).toHaveBeenCalledWith(
-      resultado.usuario
-    );
-
+    expect(component.usuarioAtual).not.toHaveProperty('senha');
+    expect(app.usuarioAtual).toEqual(component.usuarioAtual);
+    expect(component.mensagemErro).toBe('');
     expect(navegar).toHaveBeenCalledWith(['/']);
   });
 
@@ -72,19 +65,39 @@ describe('EntrarComponente', () => {
   ])(
     'rejeita campos obrigatorios vazios',
     (email, senha, campo) => {
-      const resultado = component.entrar({
+      const sucesso = component.entrar({
         email,
         senha,
       });
 
-      expect(resultado.sucesso).toBe(false);
-      expect(resultado.usuario).toBeUndefined();
-
+      expect(sucesso).toBe(false);
       expect(
         component.errosCampos[campo as 'email' | 'senha']
       ).toBeTruthy();
 
       expect(component.usuarioAtual).toBeNull();
+      expect(app.usuarioAtual).toBeNull();
+      expect(navegar).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([
+    ['email-invalido'],
+    ['sem-arroba.com'],
+    ['usuario@'],
+    ['@dominio.com'],
+  ])(
+    'rejeita formato de e-mail invalido',
+    (email) => {
+      const sucesso = component.entrar({
+        email,
+        senha: '123456',
+      });
+
+      expect(sucesso).toBe(false);
+      expect(component.errosCampos.email).toBe('Informe um e-mail válido.');
+      expect(component.usuarioAtual).toBeNull();
+      expect(app.usuarioAtual).toBeNull();
       expect(navegar).not.toHaveBeenCalled();
     }
   );
@@ -93,21 +106,17 @@ describe('EntrarComponente', () => {
     ['naoexiste@geekhub.com', '123456'],
     ['demo@geekhub.com', 'senhaerrada'],
   ])(
-    'rejeita credenciais invalidas',
+    'rejeita credenciais nao cadastradas ou senha incorreta',
     (email, senha) => {
-      const resultado = component.entrar({
+      const sucesso = component.entrar({
         email,
         senha,
       });
 
-      expect(resultado.sucesso).toBe(false);
-
-      expect(resultado.mensagem).toBe(
-        'E-mail ou senha incorretos.'
-      );
-
-      expect(resultado.usuario).toBeUndefined();
+      expect(sucesso).toBe(false);
+      expect(component.mensagemErro).toBe('E-mail ou senha incorretos.');
       expect(component.usuarioAtual).toBeNull();
+      expect(app.usuarioAtual).toBeNull();
       expect(navegar).not.toHaveBeenCalled();
     }
   );

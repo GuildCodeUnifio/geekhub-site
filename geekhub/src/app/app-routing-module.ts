@@ -33,24 +33,18 @@ const routes: Routes = [
             import('./autenticacao/autenticacao-module')
                 .then(m => m.AutenticacaoModule),
     },
-
-    // Permite acessar /entrar e /cadastro diretamente
-    {
-        path: '',
-        loadChildren: () =>
-            import('./autenticacao/autenticacao-module')
-                .then(m => m.AutenticacaoModule),
-    },
-
-    // Mantém o catálogo e os detalhes dos produtos públicos
     {
         path: '',
         loadChildren: () =>
             import('./catalogo/catalogo-module')
                 .then(m => m.CatalogoModule),
     },
-
-    // Redireciona caminhos desconhecidos ao catálogo
+    {
+        path: '',
+        loadChildren: () =>
+            import('./autenticacao/autenticacao-module')
+                .then(m => m.AutenticacaoModule),
+    },
     {
         path: '**',
         redirectTo: '/',

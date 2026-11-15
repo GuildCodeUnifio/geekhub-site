@@ -1,27 +1,17 @@
-
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
-interface EntrarRequest {
+import { App } from '../../app';
+import type { UsuarioResponse } from '../../cabecalho/cabecalho/cabecalho';
+
+export interface EntrarRequest {
   email: string;
   senha: string;
 }
 
-export interface UsuarioResponse {
-  identificador: number;
-  nome: string;
-  email: string;
-  foto?: string;
-}
-
-interface ContaFicticia extends UsuarioResponse {
-  senha: string;
-}
-
-interface EntrarResultado {
-  sucesso: boolean;
-  mensagem: string;
-  usuario?: UsuarioResponse;
+export interface ErrosCamposEntrar {
+  email?: string;
+  senha?: string;
 }
 
 @Component({
@@ -31,32 +21,16 @@ interface EntrarResultado {
   styleUrl: './entrar.componente.scss',
 })
 export class EntrarComponente {
+  private readonly app = inject(App);
+  private readonly roteador = inject(Router);
+
   email = '';
   senha = '';
   senhaVisivel = false;
   mensagemErro = '';
 
-  errosCampos: { email?: string; senha?: string } = {};
+  errosCampos: ErrosCamposEntrar = {};
   usuarioAtual: UsuarioResponse | null = null;
-
-  @Output() loginRealizado = new EventEmitter<UsuarioResponse>();
-
-  private readonly contasFicticias: ContaFicticia[] = [
-    {
-      identificador: 1,
-      nome: 'Usuário GeekHub',
-      email: 'demo@geekhub.com',
-      senha: '123456',
-    },
-    {
-      identificador: 2,
-      nome: 'Usuário Teste',
-      email: 'teste@geekhub.com',
-      senha: 'teste123',
-    },
-  ];
-
-  constructor(private readonly roteador: Router) { }
 
   aoEnviar(): void {
     this.entrar({
@@ -65,7 +39,7 @@ export class EntrarComponente {
     });
   }
 
-  entrar(request: EntrarRequest): EntrarResultado {
+  entrar(request: EntrarRequest): boolean {
     this.mensagemErro = '';
     this.errosCampos = {};
     this.usuarioAtual = null;
@@ -74,6 +48,8 @@ export class EntrarComponente {
 
     if (!email) {
       this.errosCampos.email = 'Informe seu e-mail.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      this.errosCampos.email = 'Informe um e-mail válido.';
     }
 
     if (!request.senha.trim()) {
@@ -81,51 +57,31 @@ export class EntrarComponente {
     }
 
     if (this.errosCampos.email || this.errosCampos.senha) {
-      return {
-        sucesso: false,
-        mensagem: 'Preencha os campos obrigatórios.',
-      };
+      return false;
     }
 
-    const conta = this.contasFicticias.find(
-      usuario =>
-        usuario.email === email &&
-        usuario.senha === request.senha
-    );
+    const usuario = this.app.entrar({
+      email,
+      senha: request.senha,
+    });
 
-    if (!conta) {
+    if (!usuario) {
       this.mensagemErro = 'E-mail ou senha incorretos.';
-
-      return {
-        sucesso: false,
-        mensagem: this.mensagemErro,
-      };
+      return false;
     }
-
-    const usuario: UsuarioResponse = {
-      identificador: conta.identificador,
-      nome: conta.nome,
-      email: conta.email,
-      foto: conta.foto,
-    };
 
     this.usuarioAtual = usuario;
-    this.loginRealizado.emit(usuario);
 
     void this.roteador.navigate(['/']);
 
-    return {
-      sucesso: true,
-      mensagem: 'Login realizado com sucesso!',
-      usuario,
-    };
+    return true;
   }
 
   alternarVisibilidadeSenha(): void {
     this.senhaVisivel = !this.senhaVisivel;
   }
 
-  limparErroCampo(campo: 'email' | 'senha'): void {
+  limparErroCampo(campo: keyof ErrosCamposEntrar): void {
     delete this.errosCampos[campo];
     this.mensagemErro = '';
   }
