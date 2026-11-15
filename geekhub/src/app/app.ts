@@ -8,6 +8,30 @@ export interface ContaUsuario extends UsuarioResponse {
   senha: string;
 }
 
+export interface CadastrarUsuarioRequest {
+  nome: string;
+  email: string;
+  senha: string;
+}
+
+const CHAVE_USUARIOS_STORAGE = 'geekhub.usuarios';
+const CHAVE_USUARIO_ATUAL_STORAGE = 'geekhub.usuarioAtual';
+
+const CONTAS_PADRAO: readonly ContaUsuario[] = [
+  {
+    identificador: 1,
+    nome: 'Usuário GeekHub',
+    email: 'demo@geekhub.com',
+    senha: '123456',
+  },
+  {
+    identificador: 2,
+    nome: 'Usuário Teste',
+    email: 'teste@geekhub.com',
+    senha: 'teste123',
+  },
+];
+
 export interface PerfilVendedor {
   identificador: number;
   nome: string;
@@ -63,22 +87,9 @@ export interface VendedorResponse{
 export class App {
   protected readonly title = signal('geekhub');
 
-  private readonly usuarios: ContaUsuario[] = [
-    {
-      identificador: 1,
-      nome: 'Usuário GeekHub',
-      email: 'demo@geekhub.com',
-      senha: '123456',
-    },
-    {
-      identificador: 2,
-      nome: 'Usuário Teste',
-      email: 'teste@geekhub.com',
-      senha: 'teste123',
-    },
-  ];
+  private readonly usuarios: ContaUsuario[] = this.carregarUsuarios();
 
-  usuarioAtual: UsuarioResponse | null = null;
+  usuarioAtual: UsuarioResponse | null = this.carregarUsuarioAtual();
 
   constructor(private readonly roteador: Router) {}
 
@@ -92,26 +103,58 @@ export class App {
       : 'Completa';
   }
 
+  cadastrar(request: CadastrarUsuarioRequest): UsuarioResponse | null {
+    const nome = request.nome.trim();
+    const email = request.email.trim().toLowerCase();
+
+    if (!nome || !email || !request.senha.trim()) {
+      return null;
+    }
+
+    const emailJaCadastrado = this.usuarios.some(
+      usuario => usuario.email.trim().toLowerCase() === email
+    );
+
+    if (emailJaCadastrado) {
+      return null;
+    }
+
+    const proximoIdentificador =
+      this.usuarios.reduce(
+        (maior, usuario) => Math.max(maior, usuario.identificador),
+        0
+      ) + 1;
+
+    const novaConta: ContaUsuario = {
+      identificador: proximoIdentificador,
+      nome,
+      email,
+      senha: request.senha,
+    };
+
+    this.usuarios.push(novaConta);
+    this.salvarUsuarios();
+
+    return this.paraUsuarioResponse(novaConta);
+  }
+
   entrar(request: EntrarRequest): UsuarioResponse | null {
     const email = request.email.trim().toLowerCase();
 
     const conta = this.usuarios.find(
       usuario =>
-        usuario.email === email &&
+        usuario.email.trim().toLowerCase() === email &&
         usuario.senha === request.senha
     );
 
     if (!conta) {
       this.usuarioAtual = null;
+      this.salvarUsuarioAtual();
       return null;
     }
 
-    this.usuarioAtual = {
-      identificador: conta.identificador,
-      nome: conta.nome,
-      email: conta.email,
-      ...(conta.foto ? { foto: conta.foto } : {}),
-    };
+    this.usuarioAtual = this.paraUsuarioResponse(conta);
+    this.salvarUsuarioAtual();
 
     return this.usuarioAtual;
   }
@@ -126,11 +169,117 @@ export class App {
 
   sair(): void {
     this.usuarioAtual = null;
+    this.salvarUsuarioAtual();
     void this.roteador.navigate(['/entrar']);
   }
 
   encerrarSessao(): void {
     this.sair();
+  }
+
+  private paraUsuarioResponse(conta: ContaUsuario): UsuarioResponse {
+    return {
+      identificador: conta.identificador,
+      nome: conta.nome,
+      email: conta.email,
+      ...(conta.foto ? { foto: conta.foto } : {}),
+    };
+  }
+
+  private carregarUsuarios(): ContaUsuario[] {
+    const padrao = CONTAS_PADRAO.map(conta => ({ ...conta }));
+
+    if (typeof localStorage === 'undefined') {
+      return padrao;
+    }
+
+    try {
+      const salvo = localStorage.getItem(CHAVE_USUARIOS_STORAGE);
+      if (!salvo) {
+        return padrao;
+      }
+
+      const dados: unknown = JSON.parse(salvo);
+      if (!Array.isArray(dados)) {
+        return padrao;
+      }
+
+      const contas = dados.filter(
+        (item): item is ContaUsuario =>
+          typeof item === 'object' &&
+          item !== null &&
+          typeof (item as ContaUsuario).identificador === 'number' &&
+          typeof (item as ContaUsuario).nome === 'string' &&
+          typeof (item as ContaUsuario).email === 'string' &&
+          typeof (item as ContaUsuario).senha === 'string'
+      );
+
+      return contas.length > 0 ? contas : padrao;
+    } catch {
+      return padrao;
+    }
+  }
+
+  private salvarUsuarios(): void {
+    if (typeof localStorage === 'undefined') {
+      return;
+    }
+
+    try {
+      localStorage.setItem(
+        CHAVE_USUARIOS_STORAGE,
+        JSON.stringify(this.usuarios)
+      );
+    } catch {
+      // Ignora indisponibilidade de storage no ambiente atual.
+    }
+  }
+
+  private carregarUsuarioAtual(): UsuarioResponse | null {
+    if (typeof localStorage === 'undefined') {
+      return null;
+    }
+
+    try {
+      const salvo = localStorage.getItem(CHAVE_USUARIO_ATUAL_STORAGE);
+      if (!salvo) {
+        return null;
+      }
+
+      const dados: unknown = JSON.parse(salvo);
+      if (
+        typeof dados !== 'object' ||
+        dados === null ||
+        typeof (dados as UsuarioResponse).identificador !== 'number' ||
+        typeof (dados as UsuarioResponse).nome !== 'string' ||
+        typeof (dados as UsuarioResponse).email !== 'string'
+      ) {
+        return null;
+      }
+
+      return this.paraUsuarioResponse(dados as ContaUsuario);
+    } catch {
+      return null;
+    }
+  }
+
+  private salvarUsuarioAtual(): void {
+    if (typeof localStorage === 'undefined') {
+      return;
+    }
+
+    try {
+      if (!this.usuarioAtual) {
+        localStorage.removeItem(CHAVE_USUARIO_ATUAL_STORAGE);
+      } else {
+        localStorage.setItem(
+          CHAVE_USUARIO_ATUAL_STORAGE,
+          JSON.stringify(this.usuarioAtual)
+        );
+      }
+    } catch {
+      // Ignora indisponibilidade de storage no ambiente atual.
+    }
   }
 
   private readonly vendedores: Omit< 

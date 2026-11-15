@@ -1,1 +1,111 @@
-<p>cadastro works!</p>
+<main class="pagina-cadastro">
+  <mat-card class="caixa-cadastro">
+    <h1>Criar conta</h1>
+
+    <form (ngSubmit)="cadastrar()" novalidate>
+      <mat-form-field appearance="outline" floatLabel="always" subscriptSizing="dynamic">
+        <mat-label>Nome</mat-label>
+        <input
+          matInput
+          name="nome"
+          type="text"
+          [(ngModel)]="nome"
+          (ngModelChange)="limparErroCampo('nome')"
+          [errorStateMatcher]="erroNome"
+          autocomplete="name"
+          placeholder="seu nome"
+        />
+        <mat-error>{{ errosCampos.nome }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" floatLabel="always" subscriptSizing="dynamic">
+        <mat-label>E-mail</mat-label>
+        <input
+          matInput
+          name="email"
+          type="email"
+          [(ngModel)]="email"
+          (ngModelChange)="limparErroCampo('email')"
+          [errorStateMatcher]="erroEmail"
+          autocomplete="email"
+          placeholder="seu@email.com"
+        />
+        <mat-error>{{ errosCampos.email }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" floatLabel="always" subscriptSizing="dynamic">
+        <mat-label>Senha</mat-label>
+        <input
+          matInput
+          name="senha"
+          [type]="senhaVisivel ? 'text' : 'password'"
+          [(ngModel)]="senha"
+          (ngModelChange)="limparErroCampo('senha')"
+          [errorStateMatcher]="erroSenha"
+          autocomplete="new-password"
+          placeholder="sua senha"
+        />
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          class="botao-visibilidade-senha"
+          [attr.aria-label]="senhaVisivel ? 'Ocultar senha' : 'Mostrar senha'"
+          [attr.aria-pressed]="senhaVisivel"
+          (click)="alternarVisibilidadeSenha()"
+        >
+          <mat-icon fontSet="material-symbols-outlined">
+            {{ senhaVisivel ? 'visibility_off' : 'visibility' }}
+          </mat-icon>
+        </button>
+        <mat-error>{{ errosCampos.senha }}</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" floatLabel="always" subscriptSizing="dynamic">
+        <mat-label>Confirmar senha</mat-label>
+        <input
+          matInput
+          name="confirmacaoSenha"
+          [type]="confirmacaoSenhaVisivel ? 'text' : 'password'"
+          [(ngModel)]="confirmacaoSenha"
+          (ngModelChange)="limparErroCampo('confirmacaoSenha')"
+          [errorStateMatcher]="erroConfirmacao"
+          autocomplete="new-password"
+          placeholder="confirme sua senha"
+        />
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          class="botao-visibilidade-confirmacao"
+          [attr.aria-label]="
+            confirmacaoSenhaVisivel
+              ? 'Ocultar confirmação de senha'
+              : 'Mostrar confirmação de senha'
+          "
+          [attr.aria-pressed]="confirmacaoSenhaVisivel"
+          (click)="alternarVisibilidadeConfirmacaoSenha()"
+        >
+          <mat-icon fontSet="material-symbols-outlined">
+            {{ confirmacaoSenhaVisivel ? 'visibility_off' : 'visibility' }}
+          </mat-icon>
+        </button>
+        <mat-error>{{ errosCampos.confirmacaoSenha }}</mat-error>
+      </mat-form-field>
+
+      <button
+        mat-flat-button
+        type="submit"
+        class="botao-cadastrar"
+        [disabled]="cadastroConcluido"
+      >
+        CADASTRAR
+      </button>
+    </form>
+
+    <p class="texto-entrar">
+      Já tem conta?
+      <a routerLink="/entrar">Entrar</a>
+    </p>
+  </mat-card>
+</main>
