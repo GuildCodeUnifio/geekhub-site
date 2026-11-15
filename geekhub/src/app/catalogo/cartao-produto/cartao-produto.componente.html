@@ -1,0 +1,16 @@
+<a class="link-produto" [routerLink]="['/produtos', anuncio.identificador]">
+  <mat-card class="card-produto" appearance="outlined">
+    @if (anuncio.imagens.length > 0) {
+      <img mat-card-image class="foto-produto" [src]="anuncio.imagens[0]" [alt]="anuncio.nome" />
+    } @else {
+      <div class="sem-imagem" aria-label="Produto sem imagem">
+        <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">image</mat-icon>
+      </div>
+    }
+
+    <mat-card-content class="conteudo-cartao">
+      <h2>{{ anuncio.nome }}</h2>
+      <p class="preco">{{ anuncio.preco | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</p>
+    </mat-card-content>
+  </mat-card>
+</a>
