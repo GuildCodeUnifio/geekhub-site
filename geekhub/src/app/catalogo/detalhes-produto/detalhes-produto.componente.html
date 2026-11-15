@@ -1,133 +1,218 @@
 <main class="pagina">
-  @if (anuncio$ | async; as anuncio) {
-  <div class="detalhes">
-    <div class="galeria">
-      @if (anuncio.imagens.length > 1) {
-      <div class="miniaturas" role="group" aria-label="Fotos do produto">
-        @for (imagem of anuncio.imagens; track $index; let i = $index) {
-        <button type="button" class="miniatura" [class.selecionada]="imagemSelecionada === i"
-          [attr.aria-pressed]="imagemSelecionada === i" [attr.aria-label]="'Mostrar foto ' + (i + 1)"
-          (click)="imagemSelecionada = i">
-          <img [src]="imagem" alt="" />
-        </button>
-        }
-      </div>
-      }
+  @if (anuncio(); as produto) {
+    <nav class="trilha-navegacao" aria-label="Navegação estrutural">
+      <a routerLink="/">Início</a>
+      <span class="separador" aria-hidden="true">></span>
+      <a
+        [routerLink]="['/']"
+        [queryParams]="
+          produto.categoriaIdentificador ? { categoria: produto.categoriaIdentificador } : null
+        "
+      >
+        {{ produto.categoria }}
+      </a>
+      <span class="separador" aria-hidden="true">></span>
+      <span class="atual" aria-current="page">{{ produto.nome }}</span>
+    </nav>
 
-      <mat-card class="imagem-produto">
-        @if (anuncio.imagens.length > 0) {
-        <img [src]="anuncio.imagens[imagemSelecionada]" [alt]="anuncio.nome + ' — foto ' + (imagemSelecionada + 1)" />
+    <div class="detalhes">
+      <div class="galeria">
+        @if (produto.imagens.length > 1) {
+          <div class="miniaturas" role="group" aria-label="Fotos do produto">
+            @for (imagem of produto.imagens; track $index; let i = $index) {
+              <button
+                type="button"
+                class="miniatura caixa-borda"
+                [class.selecionada]="imagemSelecionada() === i"
+                [attr.aria-pressed]="imagemSelecionada() === i"
+                [attr.aria-label]="'Mostrar foto ' + (i + 1)"
+                (click)="selecionarImagem(i, produto.imagens.length)"
+              >
+                <img [src]="imagem" alt="" />
+              </button>
+            }
+          </div>
+        }
+
+        <mat-card class="imagem-produto caixa-borda" appearance="outlined">
+          @if (produto.imagens.length > 0) {
+            <img
+              [src]="produto.imagens[imagemSelecionada()]"
+              [alt]="produto.nome + ' — foto ' + (imagemSelecionada() + 1)"
+            />
+          } @else {
+            <div class="sem-imagem" aria-label="Produto sem imagem">
+              <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">image</mat-icon>
+              <span>Produto sem imagem.</span>
+            </div>
+          }
+        </mat-card>
+      </div>
+
+      <section class="coluna-produto">
+        <div class="cabecalho-produto">
+          <h1>{{ produto.nome }}</h1>
+          <p class="preco">{{ produto.preco | currency: 'BRL' : 'symbol' : '1.2-2' : 'pt-BR' }}</p>
+        </div>
+
+        <mat-card class="quadro-informacoes caixa-borda" appearance="outlined">
+          <dl>
+            <div>
+              <dt>Categoria</dt>
+              <dd>{{ produto.categoria }}</dd>
+            </div>
+
+            <div>
+              <dt>Condição</dt>
+              <dd>
+                <span class="etiqueta-info">{{ produto.estado }}</span>
+              </dd>
+            </div>
+
+            <div>
+              <dt>Estado de conservação</dt>
+              <dd>
+                <span class="etiqueta-info">{{ produto.conservacao }}</span>
+              </dd>
+            </div>
+
+            <div>
+              <dt>Estoque disponível</dt>
+              <dd>
+                @if (disponivelParaCompra(produto)) {
+                  {{ produto.estoque }}
+                  {{ produto.estoque === 1 ? 'unidade' : 'unidades' }}
+                } @else if (produto.estoque === 0) {
+                  Produto esgotado
+                } @else {
+                  Indisponível
+                }
+              </dd>
+            </div>
+          </dl>
+        </mat-card>
+
+        @if (disponivelParaCompra(produto)) {
+          <div class="seletor-quantidade">
+            <span id="rotulo-quantidade" class="rotulo-quantidade">Quantidade</span>
+
+            <div
+              class="controle-quantidade caixa-borda"
+              role="group"
+              aria-label="Selecionar quantidade"
+            >
+              <button
+                matButton
+                type="button"
+                class="botao-qtde"
+                aria-label="Diminuir quantidade"
+                [disabled]="!podeDiminuir(produto)"
+                (click)="alterarQuantidade(produto.estoque, -1)"
+              >
+                -
+              </button>
+
+              <output class="valor-qtde" aria-labelledby="rotulo-quantidade" aria-live="polite">
+                {{ quantidade() }}
+              </output>
+
+              <button
+                matButton
+                type="button"
+                class="botao-qtde"
+                aria-label="Aumentar quantidade"
+                [disabled]="!podeAumentar(produto)"
+                (click)="alterarQuantidade(produto.estoque, 1)"
+              >
+                +
+              </button>
+            </div>
+          </div>
         } @else {
-        <mat-card-content>
-          <p>Produto sem imagem.</p>
-        </mat-card-content>
+          <div class="aviso-indisponivel banner-status erro caixa-borda" role="status">
+            <span>Este anúncio está indisponível para compra no momento.</span>
+            <a matButton="outlined" routerLink="/">Voltar ao catálogo</a>
+          </div>
         }
-      </mat-card>
-    </div>
 
-    <section class="coluna-produto">
-      <h1>{{ anuncio.nome }}</h1>
-      <p class="preco">{{ anuncio.preco | currency:'BRL' }}</p>
-
-      <mat-card class="quadro-informacoes" appearance="outlined">
-        <dl>
-          <div>
-            <dt>Categoria</dt>
-            <dd>{{ anuncio.categoria }}</dd>
-          </div>
-
-          <div>
-            <dt>Condição</dt>
-            <dd>{{ anuncio.estado }}</dd>
-          </div>
-
-          <div>
-            <dt>Estado de conservação</dt>
-            <dd>{{ anuncio.conservacao }}</dd>
-          </div>
-
-          <div>
-            <dt>Estoque disponível</dt>
-            <dd>
-              @if (anuncio.estoque > 0) {
-              {{ anuncio.estoque }}
-              {{ anuncio.estoque === 1 ? 'unidade' : 'unidades' }}
-              } @else {
-              Produto esgotado
-              }
-            </dd>
-          </div>
-        </dl>
-      </mat-card>
-      @if (anuncio.estoque > 0) {
-      <div class="seletor-quantidade">
-        <span id="rotulo-quantidade">Quantidade</span>
-
-        <button mat-stroked-button type="button" aria-label="Diminuir quantidade"
-          [disabled]="!app.quantidadeValida(quantidade - 1, anuncio.estoque)"
-          (click)="alterarQuantidade(anuncio.estoque, -1)">
-          −
-        </button>
-
-        <output aria-labelledby="rotulo-quantidade" aria-live="polite">
-          {{ quantidade }}
-        </output>
-
-        <button mat-stroked-button type="button" aria-label="Aumentar quantidade"
-          [disabled]="!app.quantidadeValida(quantidade + 1, anuncio.estoque)"
-          (click)="alterarQuantidade(anuncio.estoque, 1)">
-          +
-        </button>
-      </div>
-      }
-      <mat-card class="vendedor">
-        <mat-card-header>
-          <mat-card-title>Vendido por</mat-card-title>
-        </mat-card-header>
-
-        <mat-card-content>
-          <a class="perfil" [routerLink]="['/vendedores', anuncio.vendedor.identificador]">
-            @if (anuncio.vendedor.foto) {
-            <img class="avatar" [src]="anuncio.vendedor.foto" alt="" />
+        <a
+          class="cartao-vendedor"
+          [routerLink]="['/vendedores', produto.vendedor.identificador]"
+          [attr.aria-label]="'Ver perfil do vendedor ' + produto.vendedor.nome"
+        >
+          <mat-card class="vendedor caixa-borda" appearance="outlined">
+            @if (produto.vendedor.foto) {
+              <img class="avatar" [src]="produto.vendedor.foto" alt="" />
             } @else {
-            <mat-icon aria-hidden="true">account_circle</mat-icon>
+              <div class="avatar avatar-padrao" aria-hidden="true">
+                <mat-icon fontSet="material-symbols-outlined">person</mat-icon>
+              </div>
             }
 
-            <span>{{ anuncio.vendedor.nome }}</span>
-          </a>
+            <div class="vendedor-info">
+              <span class="vendedor-rotulo">Vendido por</span>
+              <strong class="vendedor-nome">{{ produto.vendedor.nome }}</strong>
 
-          @if (
-          anuncio.vendedor.contagem > 0 &&
-          anuncio.vendedor.media !== null
-          ) {
-          <p>⭐ {{ anuncio.vendedor.media }} ({{ anuncio.vendedor.contagem }})</p>
-          } @else {
-          <p>Sem avaliações.</p>
-          }
+              @if (produto.vendedor.contagem > 0 && produto.vendedor.media !== null) {
+                <span class="vendedor-nota">
+                  <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">star</mat-icon>
+                  {{ produto.vendedor.media | number: '1.1-1' : 'pt-BR' }} ({{
+                    produto.vendedor.contagem
+                  }})
+                </span>
+              } @else {
+                <span class="vendedor-nota sem-nota">Sem avaliações</span>
+              }
+            </div>
+          </mat-card>
+        </a>
+
+        <button
+          matButton="filled"
+          type="button"
+          class="botao-adicionar-carrinho botao-primario"
+          [disabled]="!disponivelParaCompra(produto)"
+          (click)="adicionarAoCarrinho(produto)"
+        >
+          <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">shopping_bag</mat-icon>
+          <span>{{
+            disponivelParaCompra(produto) ? 'Adicionar ao carrinho' : 'Produto indisponível'
+          }}</span>
+        </button>
+
+        @if (feedbackCarrinho(); as feedback) {
+          <div
+            class="feedback-carrinho banner-status caixa-borda"
+            [class.sucesso]="feedback.sucesso"
+            [class.erro]="!feedback.sucesso"
+            [attr.role]="feedback.sucesso ? 'status' : 'alert'"
+          >
+            <span>{{ feedback.mensagem }}</span>
+            @if (feedback.sucesso) {
+              <a matButton="outlined" class="link-ver-carrinho" routerLink="/carrinho">
+                Ver carrinho
+              </a>
+            }
+          </div>
+        }
+      </section>
+
+      <mat-card class="cartao-descricao caixa-borda" appearance="outlined">
+        <mat-card-content>
+          <h2>Descrição do produto</h2>
+          <p class="descricao">{{ produto.descricao }}</p>
         </mat-card-content>
-
-        <mat-card-actions>
-          <a mat-button [routerLink]="['/vendedores', anuncio.vendedor.identificador]">
-            Ver perfil do vendedor
-            <mat-icon aria-hidden="true">arrow_forward</mat-icon>
-          </a>
-        </mat-card-actions>
       </mat-card>
-    </section>
-
-    <mat-card class="cartao-descricao" appearance="outlined">
+    </div>
+  } @else {
+    <mat-card class="estado-nao-encontrado caixa-borda" appearance="outlined">
       <mat-card-content>
-        <h2>Descrição do produto</h2>
-        <p class="descricao">{{ anuncio.descricao }}</p>
+        <h1>Produto não encontrado</h1>
+        <p>Não existe um anúncio com esse identificador.</p>
+        <a matButton="filled" class="botao-voltar-catalogo botao-primario" routerLink="/"
+          >Voltar ao catálogo</a
+        >
       </mat-card-content>
     </mat-card>
-  </div>
-  } @else {
-  <mat-card>
-    <mat-card-content>
-      <h1>Produto não encontrado</h1>
-      <p>Não existe um anúncio com esse identificador.</p>
-    </mat-card-content>
-  </mat-card>
   }
 </main>
