@@ -25,7 +25,7 @@ avaliação de vendedores e dashboard operacional.
 - **CRUD Completo de Anúncios (`/meus-anuncios`, `/meus-anuncios/novo`, `/meus-anuncios/:id/editar`)**: cadastro, edição, ativação/pausa de disponibilidade, visão administrativa e remoção.
 - **CRUD Completo de Categorias (`/categorias`)**: cadastro, edição, ativação/inativação e remoção protegida (administradores).
 - **Carrinho e Fluxo de Pedido (`/carrinho`, `/pedidos/revisar`, `/pedidos`, `/pedidos/vendas`, `/pedidos/:id`)**: ajuste de quantidade, limpeza completa do carrinho, revisão, criação do pedido, avanço de estado (`CRIADO -> CONFIRMADO -> ENVIADO -> CONCLUIDO`), cancelamento com estorno de estoque e avaliação pós-conclusão.
-- **Dashboard Operacional (`/dashboard`)**: painel com 4 KPIs calculados dinamicamente (receita/ticket médio, total de pedidos e taxa de conclusão, anúncios ativos/estoque/categorias e nota média de avaliações), distribuição por estado e por categoria e tabela de pedidos recentes.
+- **Dashboard Operacional (`/dashboard`)**: painel exclusivo para administradores consumindo os KPIs calculados em `GET /dashboard` no `geekhub-api` (com fallback local automático caso a API esteja inacessível): receita/ticket médio, total de pedidos e taxa de conclusão, anúncios ativos/estoque/categorias, nota média de avaliações, distribuição por estado/categoria e tabela de pedidos recentes.
 
 ---
 
@@ -57,11 +57,11 @@ Por padrão, [`CONFIGURACAO_API.fonteDados`](geekhub/src/app/api/configuracao-ap
 
 ### Roteiro Sugerido de Teste Ponta a Ponta
 
-1. Acesse `/dashboard` para conferir os KPIs operacionais iniciais.
-2. Entre com `demo@geekhub.com` / `123456` (ou `admin@geekhub.com` se estiver com a API rodando).
+1. Entre com `demo@geekhub.com` / `123456` (ou `admin@geekhub.com` / `123456` se estiver com a API rodando).
+2. Acesse **Dashboard** (`/dashboard`) no menu lateral (restrito a administradores) para conferir os KPIs operacionais calculados a partir dos dados do sistema.
 3. Em **Meus anúncios** (`/meus-anuncios`), crie um novo produto ou edite/exclua anúncios existentes.
 4. No **Catálogo** (`/`), abra um produto, adicione ao **Carrinho** (`/carrinho`) e avance para **Revisar pedido** (`/pedidos/revisar`) para concluir uma compra.
-5. Acompanhe o pedido em **Minhas compras** (`/pedidos`), gerencie seu avanço (`Confirmar` → `Enviar` → `Concluir`) em **Minhas vendas** (`/pedidos/vendas`) e envie uma avaliação em `/pedidos/:id`.
+5. Acompanhe o pedido em **Minhas compras** (`/pedidos`), gerencie seu avanço (`Confirmar` → `Enviar` → `Concluir`) em **Minhas vendas** (`/pedidos/vendas`), envie uma avaliação em `/pedidos/:id` e retorne ao `/dashboard` para observar os KPIs atualizados.
 
 ---
 

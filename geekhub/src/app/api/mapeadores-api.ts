@@ -4,6 +4,7 @@ import type {
   CategoriaDetalheResponse,
   CategoriaResponse,
   CompraResponse,
+  DashboardOperacionalResponse,
   MeuAnuncioResponse,
   PedidoResponse,
   PerfilVendedor,
@@ -23,6 +24,14 @@ const ROTULOS_CONSERVACAO: Record<api.ConservacaoProduto, string> = {
   EXCELENTE: 'Excelente',
   BOM: 'Bom',
   REGULAR: 'Regular',
+};
+
+const ROTULOS_ESTADO_PEDIDO_API: Record<api.EstadoPedido, string> = {
+  CRIADO: 'Criado',
+  CONFIRMADO: 'Confirmado',
+  ENVIADO: 'Enviado',
+  CONCLUIDO: 'Concluído',
+  CANCELADO: 'Cancelado',
 };
 
 export function paraCondicaoApi(estado: AnuncioResponse['estado']): api.CondicaoProduto {
@@ -275,6 +284,48 @@ export function paraVendaAdmin(pedido: api.ListarPedidoAdminResponse): VendaResp
     valorTotal: pedido.valorTotal,
     estado: pedido.estado,
     criadoEm: pedido.criadoEm,
+  };
+}
+
+export function paraDashboard(
+  dashboard: api.ConsultarDashboardApiResponse,
+): DashboardOperacionalResponse {
+  return {
+    receitaTotal: dashboard.receitaTotal,
+    ticketMedio: dashboard.ticketMedio,
+    totalPedidos: dashboard.totalPedidos,
+    pedidosConcluidos: dashboard.pedidosConcluidos,
+    pedidosEmAndamento: dashboard.pedidosEmAndamento,
+    pedidosCancelados: dashboard.pedidosCancelados,
+    taxaConclusao: dashboard.taxaConclusao,
+    totalAnuncios: dashboard.totalAnuncios,
+    anunciosDisponiveis: dashboard.anunciosDisponiveis,
+    anunciosIndisponiveis: dashboard.anunciosIndisponiveis,
+    unidadesEmEstoque: dashboard.unidadesEmEstoque,
+    totalCategoriasAtivas: dashboard.totalCategoriasAtivas,
+    notaMediaAvaliacoes: dashboard.notaMediaAvaliacoes,
+    totalAvaliacoes: dashboard.totalAvaliacoes,
+    pedidosPorEstado: (dashboard.pedidosPorEstado ?? []).map(item => ({
+      estado: item.estado,
+      rotulo: ROTULOS_ESTADO_PEDIDO_API[item.estado],
+      quantidade: item.quantidade,
+      percentual: item.percentual,
+    })),
+    anunciosPorCategoria: (dashboard.anunciosPorCategoria ?? []).map(item => ({
+      nome: item.nome,
+      quantidadeAnuncios: item.quantidadeAnuncios,
+      estoqueTotal: item.estoqueTotal,
+      percentual: item.percentual,
+    })),
+    pedidosRecentes: (dashboard.pedidosRecentes ?? []).map(item => ({
+      identificador: item.id,
+      compradorNome: item.compradorNome,
+      estado: item.estado,
+      valorTotal: item.valorTotal,
+      quantidadeItens: item.quantidadeItens,
+      criadoEm: item.criadoEm,
+    })),
+    fonte: 'api',
   };
 }
 

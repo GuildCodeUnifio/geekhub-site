@@ -3,6 +3,7 @@ import {
   paraAnuncio,
   paraAnuncioDoCatalogo,
   paraCarrinho,
+  paraDashboard,
   paraPerfilVendedor,
   paraUsuario,
 } from './mapeadores-api';
@@ -116,5 +117,51 @@ describe('mapeadores da API', () => {
   it('formata datas da API', () => {
     expect(formatarData('2026-01-05T10:00:00')).toBe('05/01/2026');
     expect(formatarData(null)).toBe('');
+  });
+
+  it('converte indicadores do dashboard da API com rotulos de estado e fonte api', () => {
+    const dashboard = paraDashboard({
+      receitaTotal: 2922.6,
+      ticketMedio: 584.52,
+      totalPedidos: 6,
+      pedidosConcluidos: 2,
+      pedidosEmAndamento: 3,
+      pedidosCancelados: 1,
+      taxaConclusao: 33,
+      totalAnuncios: 11,
+      anunciosDisponiveis: 10,
+      anunciosIndisponiveis: 1,
+      unidadesEmEstoque: 42,
+      totalCategoriasAtivas: 4,
+      notaMediaAvaliacoes: 5,
+      totalAvaliacoes: 2,
+      pedidosPorEstado: [{ estado: 'CONCLUIDO', quantidade: 2, percentual: 33 }],
+      anunciosPorCategoria: [
+        { nome: 'Figuras colecionáveis', quantidadeAnuncios: 4, estoqueTotal: 12, percentual: 36 },
+      ],
+      pedidosRecentes: [
+        {
+          id: 9,
+          compradorNome: 'Usuário GeekHub',
+          estado: 'ENVIADO',
+          valorTotal: 329.9,
+          quantidadeItens: 1,
+          criadoEm: '2026-11-20T15:00:00',
+        },
+      ],
+    });
+
+    expect(dashboard.fonte).toBe('api');
+    expect(dashboard.pedidosPorEstado[0]).toEqual({
+      estado: 'CONCLUIDO',
+      rotulo: 'Concluído',
+      quantidade: 2,
+      percentual: 33,
+    });
+    expect(dashboard.pedidosRecentes[0]).toMatchObject({
+      identificador: 9,
+      compradorNome: 'Usuário GeekHub',
+      estado: 'ENVIADO',
+    });
   });
 });

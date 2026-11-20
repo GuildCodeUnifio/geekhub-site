@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import {
@@ -17,6 +18,7 @@ import {
 export class DashboardComponente implements OnInit {
   private readonly app = inject(App);
   private readonly detector = inject(ChangeDetectorRef);
+  private readonly roteador = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly rotulosEstado = ROTULOS_ESTADO_PEDIDO;
@@ -28,10 +30,6 @@ export class DashboardComponente implements OnInit {
 
   private consultaAtual?: Subscription;
 
-  get usuarioAutenticado(): boolean {
-    return this.app.usuarioAtual !== null;
-  }
-
   get ehAdmin(): boolean {
     return this.app.usuarioAtualEhAdmin;
   }
@@ -42,10 +40,26 @@ export class DashboardComponente implements OnInit {
 
   ngOnInit(): void {
     this.destroyRef.onDestroy(() => this.consultaAtual?.unsubscribe());
+
+    if (!this.app.usuarioAtual) {
+      void this.roteador.navigate(['/entrar'], {
+        queryParams: { redirecionar: '/dashboard' },
+      });
+      return;
+    }
+
+    if (!this.ehAdmin) {
+      return;
+    }
+
     this.carregar();
   }
 
   carregar(): void {
+    if (!this.ehAdmin) {
+      return;
+    }
+
     this.consultaAtual?.unsubscribe();
     this.carregando = true;
     this.erro = '';

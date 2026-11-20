@@ -69,10 +69,23 @@
 
 .kpi-cartao,
 .painel-detalhe,
-.painel-tabela {
+.painel-tabela,
+.painel-restrito {
   background: #fff;
   border-color: #212121;
   padding: 20px;
+}
+
+.painel-restrito {
+  h2 {
+    margin: 0 0 8px;
+    font-size: 1.25rem;
+  }
+
+  p {
+    margin: 0 0 16px;
+    color: #555;
+  }
 }
 
 .kpi-cartao {

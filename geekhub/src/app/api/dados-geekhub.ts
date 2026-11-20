@@ -1,8 +1,7 @@
 import { Injector, signal, type ProviderToken, type WritableSignal } from '@angular/core';
-import { Observable, catchError, forkJoin, map, of, switchMap, tap, throwError } from 'rxjs';
+import { Observable, catchError, map, of, switchMap, tap, throwError } from 'rxjs';
 
 import {
-  calcularDashboardOperacional,
   type AdicionarAoCarrinhoRequest,
   type AlterarQuantidadeRequest,
   type AnuncioResponse,
@@ -16,8 +15,6 @@ import {
   type ConsultarAnunciosResponse,
   type DashboardOperacionalResponse,
   type EditarPerfilRequest,
-  type EntradaAnuncioDashboard,
-  type EntradaPedidoDashboard,
   type EstadoPedido,
   ListarComprasRequest,
   ListarComprasResponse,
@@ -45,6 +42,7 @@ import { AutenticacaoApi } from './clientes/autenticacao-api';
 import { AvaliacaoApi } from './clientes/avaliacao-api';
 import { CarrinhoApi } from './clientes/carrinho-api';
 import { CategoriaApi } from './clientes/categoria-api';
+import { DashboardApi } from './clientes/dashboard-api';
 import { PedidoApi } from './clientes/pedido-api';
 import { UsuarioApi } from './clientes/usuario-api';
 import { FONTE_DADOS, type FonteDados } from './configuracao-api';
@@ -59,6 +57,7 @@ import {
   paraCompra,
   paraCondicaoApi,
   paraConservacaoApi,
+  paraDashboard,
   paraMeuAnuncio,
   paraPedido,
   paraPerfilVendedor,
@@ -826,136 +825,22 @@ export class DadosGeekhub {
   }
 
   carregarDashboard(): Observable<DashboardOperacionalResponse> {
+    const autorizadoAntes = this.usuarioEhAdmin();
+
     if (!this.usaApi) {
-      return of(this.app.obterDadosDashboard());
+      return autorizadoAntes
+        ? of(this.app.obterDadosDashboard())
+        : throwError(() => new Error('Acesso restrito a administradores.'));
     }
 
-    const anuncioApi = this.obter(AnuncioApi);
-    const categoriaApi = this.obter(CategoriaApi);
-    const avaliacaoApi = this.obter(AvaliacaoApi);
-    const pedidoApi = this.obter(PedidoApi);
-    const sessao = this.obter(SessaoApi);
-
-    const protegerSemAutorizacao = <T>(origem$: Observable<T>, padrao: T): Observable<T> =>
-      origem$.pipe(
-        catchError((erro: unknown) =>
-          statusErro(erro) === 401 || statusErro(erro) === 403
-            ? of(padrao)
-            : throwError(() => erro),
-        ),
-      );
-
-    const anuncios$: Observable<{ total: number; itens: EntradaAnuncioDashboard[] }> =
-      this.usuarioEhAdmin()
-        ? protegerSemAutorizacao(
-            anuncioApi.listarAdmin({ tamanho: 100 }).pipe(
-              map(pagina => ({
-                total: pagina.totalElementos,
-                itens: pagina.itens.map(item => ({
-                  categoria: item.categoriaNome,
-                  estoque: item.quantidadeDisponivel,
-                  disponivel: item.disponivel && item.quantidadeDisponivel > 0,
-                })),
-              })),
-            ),
-            { total: 0, itens: [] },
-          )
-        : anuncioApi.pesquisar({}, { tamanho: 100 }).pipe(
-            map(pagina => ({
-              total: pagina.totalElementos,
-              itens: pagina.itens.map(item => ({
-                categoria: item.categoriaNome,
-                estoque: item.quantidadeDisponivel,
-                disponivel: item.quantidadeDisponivel > 0,
-              })),
-            })),
-          );
-
-    const categorias$ = categoriaApi.listar({ ativa: true }, { tamanho: 100 });
-    const avaliacoes$ = avaliacaoApi.listar({}, { tamanho: 100 });
-
-    const nomeAtual = this.app.usuarioAtual?.nome ?? 'Você';
-    const pedidos$: Observable<{ total: number; itens: EntradaPedidoDashboard[] }> =
-      this.usuarioEhAdmin()
-        ? protegerSemAutorizacao(
-            pedidoApi.listarTodos({}, { tamanho: 100 }).pipe(
-              map(pagina => ({
-                total: pagina.totalElementos,
-                itens: pagina.itens.map(
-                  (item): EntradaPedidoDashboard => ({
-                    identificador: item.id,
-                    compradorNome: item.compradorNome,
-                    estado: item.estado,
-                    valorTotal: item.valorTotal,
-                    quantidadeItens: item.quantidadeItens,
-                    criadoEm: item.criadoEm,
-                  }),
-                ),
-              })),
-            ),
-            { total: 0, itens: [] },
-          )
-        : sessao.autenticado
-          ? forkJoin({
-              compras: protegerSemAutorizacao(
-                pedidoApi.listarCompras({}, { tamanho: 100 }),
-                { itens: [], numero: 0, tamanho: 0, totalElementos: 0, totalPaginas: 0 },
-              ),
-              vendas: protegerSemAutorizacao(
-                pedidoApi.listarVendas({}, { tamanho: 100 }),
-                { itens: [], numero: 0, tamanho: 0, totalElementos: 0, totalPaginas: 0 },
-              ),
-            }).pipe(
-              map(({ compras, vendas }) => {
-                const mapa = new Map<number, EntradaPedidoDashboard>();
-                for (const item of compras.itens) {
-                  mapa.set(item.id, {
-                    identificador: item.id,
-                    compradorNome: nomeAtual,
-                    estado: item.estado,
-                    valorTotal: item.valorTotal,
-                    quantidadeItens: item.quantidadeItens,
-                    criadoEm: item.criadoEm,
-                  });
-                }
-                for (const item of vendas.itens) {
-                  if (!mapa.has(item.id)) {
-                    mapa.set(item.id, {
-                      identificador: item.id,
-                      compradorNome: item.compradorNome,
-                      estado: item.estado,
-                      valorTotal: item.valorTotal,
-                      quantidadeItens: 1,
-                      criadoEm: item.criadoEm,
-                    });
-                  }
-                }
-                return { total: mapa.size, itens: Array.from(mapa.values()) };
-              }),
-            )
-          : of({ total: 0, itens: [] });
-
     return this.executarComFallback(
-      forkJoin({
-        anuncios: anuncios$,
-        categorias: categorias$,
-        avaliacoes: avaliacoes$,
-        pedidos: pedidos$,
-      }).pipe(
-        map(({ anuncios, categorias, avaliacoes, pedidos }) =>
-          calcularDashboardOperacional({
-            anuncios: anuncios.itens,
-            totalAnuncios: anuncios.total,
-            totalCategoriasAtivas: categorias.totalElementos,
-            pedidos: pedidos.itens,
-            totalPedidos: pedidos.total,
-            notasAvaliacoes: avaliacoes.itens.map(item => item.nota),
-            totalAvaliacoes: avaliacoes.totalElementos,
-            fonte: 'api',
-          }),
-        ),
-      ),
-      () => this.app.obterDadosDashboard(),
+      this.obter(DashboardApi).consultar().pipe(map(paraDashboard)),
+      () => {
+        if (!autorizadoAntes) {
+          throw new Error('Acesso restrito a administradores.');
+        }
+        return this.app.obterDadosDashboard();
+      },
     ).pipe(
       catchError((erro: unknown) => this.falhar(erro, 'Não foi possível carregar o dashboard.')),
     );

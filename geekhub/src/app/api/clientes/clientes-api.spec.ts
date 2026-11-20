@@ -9,6 +9,7 @@ import { AutenticacaoApi } from './autenticacao-api';
 import { AvaliacaoApi } from './avaliacao-api';
 import { CarrinhoApi } from './carrinho-api';
 import { CategoriaApi } from './categoria-api';
+import { DashboardApi } from './dashboard-api';
 import { PedidoApi } from './pedido-api';
 import { UsuarioApi } from './usuario-api';
 
@@ -148,5 +149,33 @@ describe('Clientes da API', () => {
     expect(
       http.expectOne(req => req.url === `${url}/avaliacoes` && req.method === 'GET').request.params.get('vendedorId'),
     ).toBe('3');
+  });
+
+  it('DashboardApi consulta GET /dashboard', async () => {
+    const resposta = firstValueFrom(TestBed.inject(DashboardApi).consultar());
+
+    const requisicao = http.expectOne({ method: 'GET', url: `${url}/dashboard` });
+    const payload = {
+      receitaTotal: 150,
+      ticketMedio: 150,
+      totalPedidos: 1,
+      pedidosConcluidos: 1,
+      pedidosEmAndamento: 0,
+      pedidosCancelados: 0,
+      taxaConclusao: 100,
+      totalAnuncios: 2,
+      anunciosDisponiveis: 2,
+      anunciosIndisponiveis: 0,
+      unidadesEmEstoque: 5,
+      totalCategoriasAtivas: 1,
+      notaMediaAvaliacoes: 5,
+      totalAvaliacoes: 1,
+      pedidosPorEstado: [],
+      anunciosPorCategoria: [],
+      pedidosRecentes: [],
+    };
+    requisicao.flush(payload);
+
+    expect(await resposta).toEqual(payload);
   });
 });

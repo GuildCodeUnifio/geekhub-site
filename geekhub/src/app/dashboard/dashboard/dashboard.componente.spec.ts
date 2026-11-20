@@ -1,8 +1,9 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { vi } from 'vitest';
 
 import { URL_TESTE, criarToken } from '../../api/apoio-testes-api';
 import { autenticacaoInterceptor } from '../../api/autenticacao.interceptor';
@@ -14,6 +15,7 @@ import { DashboardComponente } from './dashboard.componente';
 
 describe('DashboardComponente', () => {
   let app: App;
+  let roteador: Router;
   let component: DashboardComponente;
   let fixture: ComponentFixture<DashboardComponente>;
 
@@ -33,13 +35,41 @@ describe('DashboardComponente', () => {
     }).compileComponents();
 
     app = TestBed.inject(App);
+    roteador = TestBed.inject(Router);
+    vi.spyOn(roteador, 'navigate').mockResolvedValue(true);
   });
 
   afterEach(() => {
     localStorage.clear();
   });
 
-  it('calcula e exibe os quatro KPIs principais e distribuicoes a partir dos dados mockados', async () => {
+  it('redireciona usuario nao autenticado para entrar sem carregar indicadores', async () => {
+    await criarComponente();
+
+    expect(roteador.navigate).toHaveBeenCalledWith(['/entrar'], {
+      queryParams: { redirecionar: '/dashboard' },
+    });
+    expect(component.dados).toBeNull();
+  });
+
+  it('bloqueia acesso com aviso restrito quando usuario comum tenta acessar', async () => {
+    app.entrar({ email: 'teste@geekhub.com', senha: 'teste123' });
+
+    await criarComponente();
+
+    const elemento: HTMLElement = fixture.nativeElement;
+    expect(component.ehAdmin).toBe(false);
+    expect(component.dados).toBeNull();
+    expect(elemento.textContent).toContain('Acesso restrito a administradores');
+    expect(elemento.querySelectorAll('.kpi-cartao')).toHaveLength(0);
+    await expect(firstValueFrom(app.dados.carregarDashboard())).rejects.toThrow(
+      'Acesso restrito a administradores.',
+    );
+  });
+
+  it('calcula e exibe os quatro KPIs principais e distribuicoes para admin no modo mock', async () => {
+    app.entrar({ email: 'demo@geekhub.com', senha: '123456' });
+
     await criarComponente();
 
     const elemento: HTMLElement = fixture.nativeElement;
@@ -78,7 +108,7 @@ describe('DashboardComponente', () => {
     expect(component.dados?.totalPedidos).toBe(7);
   });
 
-  it('agrega indicadores pela API para admin e usa fallback automatico quando API esta offline', async () => {
+  it('consome GET /dashboard da API, nao faz fallback em 403 e usa fallback automatico quando API esta offline', async () => {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -93,52 +123,42 @@ describe('DashboardComponente', () => {
 
     const autoApp = TestBed.inject(App);
     const http = TestBed.inject(HttpTestingController);
-    autoApp.definirUsuarioAtual({ identificador: 1, nome: 'Admin', email: 'admin@geekhub.com' });
+    autoApp.definirUsuarioAtual({ identificador: 99, nome: 'Admin', email: 'admin@geekhub.com' });
     TestBed.inject(SessaoApi).iniciar({
-      accessToken: criarToken({ scope: ['ADMIN', 'USUARIO'], id: 1 }),
+      accessToken: criarToken({ scope: ['ADMIN', 'USUARIO'], id: 99 }),
       expiresIn: 3600,
     });
 
     const chamadaOnline = firstValueFrom(autoApp.dados.carregarDashboard());
-    http.expectOne(req => req.url === `${URL_TESTE}/anuncios/admin`).flush({
-      content: [
-        {
-          id: 1,
-          nome: 'Item',
-          preco: 100,
-          quantidadeDisponivel: 4,
-          disponivel: true,
-          categoriaNome: 'Jogos',
-          vendedorId: 2,
-          vendedorNome: 'Luiz',
-          criadoEm: '',
-        },
+    http.expectOne({ method: 'GET', url: `${URL_TESTE}/dashboard` }).flush({
+      receitaTotal: 150,
+      ticketMedio: 150,
+      totalPedidos: 1,
+      pedidosConcluidos: 1,
+      pedidosEmAndamento: 0,
+      pedidosCancelados: 0,
+      taxaConclusao: 100,
+      totalAnuncios: 1,
+      anunciosDisponiveis: 1,
+      anunciosIndisponiveis: 0,
+      unidadesEmEstoque: 4,
+      totalCategoriasAtivas: 1,
+      notaMediaAvaliacoes: 4,
+      totalAvaliacoes: 1,
+      pedidosPorEstado: [{ estado: 'CONCLUIDO', quantidade: 1, percentual: 100 }],
+      anunciosPorCategoria: [
+        { nome: 'Jogos', quantidadeAnuncios: 1, estoqueTotal: 4, percentual: 100 },
       ],
-      page: { size: 100, number: 0, totalElements: 1, totalPages: 1 },
-    });
-    http.expectOne(req => req.url === `${URL_TESTE}/categorias`).flush({
-      content: [{ id: 1, nome: 'Jogos', descricao: null, ativa: true, criadoEm: '' }],
-      page: { size: 100, number: 0, totalElements: 1, totalPages: 1 },
-    });
-    http.expectOne(req => req.url === `${URL_TESTE}/avaliacoes`).flush({
-      content: [{ id: 1, pedidoId: 10, vendedorId: 2, autor: { id: 1, nome: 'A', imagemPerfil: null }, nota: 4, comentario: null, criadoEm: '' }],
-      page: { size: 100, number: 0, totalElements: 1, totalPages: 1 },
-    });
-    http.expectOne(req => req.url === `${URL_TESTE}/pedidos`).flush({
-      content: [
+      pedidosRecentes: [
         {
           id: 10,
-          compradorId: 2,
           compradorNome: 'Joao',
-          compradorEmail: 'j@b.com',
-          valorTotal: 150,
           estado: 'CONCLUIDO',
-          avaliado: true,
+          valorTotal: 150,
           quantidadeItens: 2,
           criadoEm: '2026-11-20T12:00:00',
         },
       ],
-      page: { size: 100, number: 0, totalElements: 1, totalPages: 1 },
     });
 
     const online = await chamadaOnline;
@@ -146,13 +166,24 @@ describe('DashboardComponente', () => {
     expect(online.receitaTotal).toBe(150);
     expect(online.taxaConclusao).toBe(100);
     expect(online.notaMediaAvaliacoes).toBe(4);
+    expect(online.pedidosPorEstado[0].rotulo).toBe('Concluído');
+    expect(online.pedidosRecentes[0].identificador).toBe(10);
+
+    const chamadaProibida = firstValueFrom(autoApp.dados.carregarDashboard());
+    http
+      .expectOne({ method: 'GET', url: `${URL_TESTE}/dashboard` })
+      .flush(
+        { erro: 'Acesso negado: você não possui permissão para realizar esta operação.' },
+        { status: 403, statusText: 'Forbidden' },
+      );
+
+    await expect(chamadaProibida).rejects.toThrow('Acesso negado');
+    expect(autoApp.dados.usaApi).toBe(true);
 
     const chamadaOffline = firstValueFrom(autoApp.dados.carregarDashboard());
-    const reqAnuncios = http.expectOne(req => req.url === `${URL_TESTE}/anuncios/admin`);
-    http.expectOne(req => req.url === `${URL_TESTE}/categorias`);
-    http.expectOne(req => req.url === `${URL_TESTE}/avaliacoes`);
-    http.expectOne(req => req.url === `${URL_TESTE}/pedidos`);
-    reqAnuncios.error(new ProgressEvent('error'), { status: 0 });
+    http
+      .expectOne({ method: 'GET', url: `${URL_TESTE}/dashboard` })
+      .error(new ProgressEvent('error'), { status: 0 });
 
     const offline = await chamadaOffline;
     expect(offline.fonte).toBe('mock');
