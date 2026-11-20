@@ -230,6 +230,14 @@ export const ESTADOS_PEDIDO: readonly EstadoPedido[] = [
   'CANCELADO',
 ];
 
+export const ROTULOS_ESTADO_PEDIDO: Readonly<Record<EstadoPedido, string>> = {
+  CRIADO: 'Criado',
+  CONFIRMADO: 'Confirmado',
+  ENVIADO: 'Enviado',
+  CONCLUIDO: 'Concluído',
+  CANCELADO: 'Cancelado',
+};
+
 export interface ItemPedidoResponse {
   anuncioIdentificador: number;
   vendedorIdentificador: number;
