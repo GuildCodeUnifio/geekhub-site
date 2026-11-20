@@ -1,0 +1,167 @@
+<main class="pagina-vendas">
+  <nav class="trilha" aria-label="Navegação estrutural">
+    <a routerLink="/">Catálogo</a>
+    <span aria-hidden="true">/</span>
+    <span>Minhas vendas e pedidos</span>
+  </nav>
+
+  <header class="cabecalho-pagina">
+    <div>
+      <h1>{{ incluirTodosAdmin ? 'Gestão de pedidos (Admin)' : 'Minhas vendas' }}</h1>
+      <p class="subtitulo">Acompanhe, confirme, envie, conclua ou cancele pedidos recebidos.</p>
+    </div>
+
+    @if (ehAdmin) {
+      <mat-slide-toggle
+        [checked]="incluirTodosAdmin"
+        (change)="alternarVisaoAdmin($event.checked)"
+      >
+        Todos os pedidos (Admin)
+      </mat-slide-toggle>
+    }
+  </header>
+
+  <div class="filtros" role="group" aria-label="Filtrar por estado">
+    @for (filtro of filtros; track filtro.rotulo) {
+      <button
+        mat-stroked-button
+        type="button"
+        [color]="estadoSelecionado === filtro.estado ? 'primary' : undefined"
+        [class.filtro-ativo]="estadoSelecionado === filtro.estado"
+        (click)="filtrar(filtro.estado)"
+      >
+        {{ filtro.rotulo }}
+      </button>
+    }
+  </div>
+
+  @if (mensagem) {
+    <p class="banner-sucesso" role="status">{{ mensagem }}</p>
+  }
+
+  @if (erro) {
+    <p class="banner-erro" role="alert">{{ erro }}</p>
+  }
+
+  @if (carregando) {
+    <p class="estado-vazio">Carregando pedidos...</p>
+  } @else if (resposta && resposta.vendas.length > 0) {
+    <ul class="lista-vendas">
+      @for (venda of resposta.vendas; track venda.identificador) {
+        <li>
+          <mat-card appearance="outlined" class="cartao-venda">
+            <div class="conteudo-venda">
+              <div class="info-venda">
+                <div class="titulo-linha">
+                  <h2>Pedido #{{ venda.identificador }}</h2>
+                  <mat-chip-set>
+                    <mat-chip>{{ rotulosEstado[venda.estado] }}</mat-chip>
+                  </mat-chip-set>
+                </div>
+                <p class="meta">
+                  Comprador: <strong>{{ venda.compradorNome }}</strong>
+                  <span>•</span>
+                  <span>{{ venda.criadoEm | date: 'dd/MM/yyyy HH:mm' }}</span>
+                </p>
+                <p class="valor">{{ venda.valorTotal | currency: 'BRL' }}</p>
+              </div>
+
+              <div class="acoes-venda">
+                <a mat-stroked-button [routerLink]="['/pedidos', venda.identificador]">
+                  Detalhes
+                </a>
+
+                @if (obterProximaEtapa(venda.estado); as proxima) {
+                  <button
+                    mat-flat-button
+                    color="primary"
+                    type="button"
+                    [disabled]="processandoId === venda.identificador"
+                    (click)="avancarEstado(venda.identificador, venda.estado)"
+                  >
+                    {{ proxima.rotulo }}
+                  </button>
+                }
+
+                @if (podeCancelar(venda.estado)) {
+                  @if (confirmandoCancelamentoId === venda.identificador) {
+                    <button
+                      mat-flat-button
+                      color="warn"
+                      type="button"
+                      [disabled]="processandoId === venda.identificador"
+                      (click)="confirmarCancelamento(venda.identificador)"
+                    >
+                      Confirmar cancelamento
+                    </button>
+                    <button
+                      mat-button
+                      type="button"
+                      (click)="confirmandoCancelamentoId = null"
+                    >
+                      Voltar
+                    </button>
+                  } @else {
+                    <button
+                      mat-stroked-button
+                      color="warn"
+                      type="button"
+                      (click)="solicitarCancelamento(venda.identificador)"
+                    >
+                      Cancelar
+                    </button>
+                  }
+                }
+
+                @if (ehAdmin) {
+                  @if (confirmandoExclusaoId === venda.identificador) {
+                    <button
+                      mat-flat-button
+                      color="warn"
+                      type="button"
+                      [disabled]="processandoId === venda.identificador"
+                      (click)="confirmarExclusao(venda.identificador)"
+                    >
+                      Confirmar exclusão
+                    </button>
+                    <button
+                      mat-button
+                      type="button"
+                      (click)="confirmandoExclusaoId = null"
+                    >
+                      Manter
+                    </button>
+                  } @else {
+                    <button
+                      mat-button
+                      color="warn"
+                      type="button"
+                      (click)="solicitarExclusao(venda.identificador)"
+                    >
+                      Excluir
+                    </button>
+                  }
+                }
+              </div>
+            </div>
+          </mat-card>
+        </li>
+      }
+    </ul>
+
+    <div class="rodape-lista">
+      <span>Exibindo {{ inicioIntervalo }}–{{ fimIntervalo }} de {{ resposta.total }}</span>
+      <mat-paginator
+        [length]="resposta.total"
+        [pageIndex]="pagina - 1"
+        [pageSize]="itensPorPagina"
+        [hidePageSize]="true"
+        (page)="mudarPagina($event)"
+      />
+    </div>
+  } @else {
+    <mat-card appearance="outlined" class="estado-vazio">
+      <p>Nenhum pedido encontrado para os critérios selecionados.</p>
+    </mat-card>
+  }
+</main>

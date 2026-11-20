@@ -1,0 +1,121 @@
+<main class="pagina-categorias">
+  <nav class="trilha" aria-label="Navegação estrutural">
+    <a routerLink="/">Catálogo</a>
+    <span aria-hidden="true">/</span>
+    <span>Categorias</span>
+  </nav>
+
+  <header class="cabecalho-pagina">
+    <h1>Gerenciar categorias</h1>
+    <p class="subtitulo">Cadastre, edite, ative/desative ou remova categorias de produtos.</p>
+  </header>
+
+  @if (!ehAdmin) {
+    <mat-card appearance="outlined" class="painel-restrito">
+      <h2>Acesso restrito a administradores</h2>
+      <p>Entre com uma conta administrativa para gerenciar categorias.</p>
+      <a mat-stroked-button routerLink="/">Voltar ao catálogo</a>
+    </mat-card>
+  } @else {
+    @if (mensagem) {
+      <p class="banner-sucesso" role="status">{{ mensagem }}</p>
+    }
+
+    @if (erro) {
+      <p class="banner-erro" role="alert">{{ erro }}</p>
+    }
+
+    <mat-card appearance="outlined" class="painel-formulario">
+      <h2>{{ emEdicaoId !== null ? 'Editar categoria' : 'Nova categoria' }}</h2>
+      <form class="formulario-categoria" (ngSubmit)="salvar()">
+        <mat-form-field appearance="outline">
+          <mat-label>Nome</mat-label>
+          <input matInput name="nome" [(ngModel)]="nome" maxlength="100" required />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Descrição (opcional)</mat-label>
+          <input matInput name="descricao" [(ngModel)]="descricao" maxlength="255" />
+        </mat-form-field>
+
+        @if (emEdicaoId !== null) {
+          <mat-slide-toggle name="ativa" [(ngModel)]="ativa">Categoria ativa</mat-slide-toggle>
+        }
+
+        <div class="acoes-formulario">
+          @if (emEdicaoId !== null) {
+            <button mat-button type="button" (click)="cancelarEdicao()">Cancelar edição</button>
+          }
+          <button mat-flat-button color="primary" type="submit" [disabled]="salvando">
+            {{
+              salvando
+                ? 'Salvando...'
+                : emEdicaoId !== null
+                  ? 'Salvar categoria'
+                  : 'Adicionar categoria'
+            }}
+          </button>
+        </div>
+      </form>
+    </mat-card>
+
+    @if (carregando) {
+      <p>Carregando categorias...</p>
+    } @else {
+      <ul class="lista-categorias">
+        @for (categoria of categorias; track categoria.identificador) {
+          <li>
+            <mat-card appearance="outlined" class="cartao-categoria">
+              <div class="conteudo-categoria">
+                <div class="info-categoria">
+                  <div class="titulo-linha">
+                    <h3>{{ categoria.nome }}</h3>
+                    <mat-chip-set>
+                      <mat-chip>{{ categoria.ativa ? 'Ativa' : 'Inativa' }}</mat-chip>
+                    </mat-chip-set>
+                  </div>
+                  @if (categoria.descricao) {
+                    <p class="descricao">{{ categoria.descricao }}</p>
+                  }
+                </div>
+
+                <div class="acoes-categoria">
+                  <button
+                    mat-stroked-button
+                    color="primary"
+                    type="button"
+                    (click)="editar(categoria)"
+                  >
+                    Editar
+                  </button>
+
+                  @if (confirmandoExclusaoId === categoria.identificador) {
+                    <button
+                      mat-flat-button
+                      color="warn"
+                      type="button"
+                      [disabled]="removendoId === categoria.identificador"
+                      (click)="confirmarExclusao(categoria.identificador)"
+                    >
+                      Confirmar
+                    </button>
+                    <button mat-button type="button" (click)="cancelarExclusao()">Cancelar</button>
+                  } @else {
+                    <button
+                      mat-stroked-button
+                      color="warn"
+                      type="button"
+                      (click)="solicitarExclusao(categoria.identificador)"
+                    >
+                      Excluir
+                    </button>
+                  }
+                </div>
+              </div>
+            </mat-card>
+          </li>
+        }
+      </ul>
+    }
+  }
+</main>

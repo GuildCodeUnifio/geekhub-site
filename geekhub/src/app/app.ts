@@ -7,6 +7,7 @@ import type { UsuarioResponse } from './cabecalho/cabecalho/cabecalho';
 
 export interface ContaUsuario extends UsuarioResponse {
   senha: string;
+  admin?: boolean;
 }
 
 export interface CadastrarUsuarioRequest {
@@ -31,10 +32,13 @@ export interface ResultadoEdicaoPerfil {
 }
 
 const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const REGEX_URL_HTTP = /^https?:\/\/.+/i;
 
 const CHAVE_USUARIOS_STORAGE = 'geekhub.usuarios';
 const CHAVE_USUARIO_ATUAL_STORAGE = 'geekhub.usuarioAtual';
 const CHAVE_CARRINHOS_STORAGE = 'geekhub.carrinhos';
+const CHAVE_ANUNCIOS_STORAGE = 'geekhub.anuncios';
+const CHAVE_CATEGORIAS_STORAGE = 'geekhub.categorias';
 
 export interface ItemCarrinhoResponse {
   /** Identificador do item no carrinho (disponível quando os dados vêm da API). */
@@ -129,6 +133,7 @@ const CONTAS_PADRAO: readonly ContaUsuario[] = [
     nome: 'Usuário GeekHub',
     email: 'demo@geekhub.com',
     senha: '123456',
+    admin: true,
   },
   {
     identificador: 2,
@@ -168,6 +173,77 @@ export interface CategoriaResponse {
   nome: string;
 }
 
+export interface CategoriaDetalheResponse {
+  identificador: number;
+  nome: string;
+  descricao: string;
+  ativa: boolean;
+  criadoEm: string;
+}
+
+export interface SalvarCategoriaRequest {
+  nome: string;
+  descricao?: string;
+  ativa?: boolean;
+}
+
+export interface ResultadoOperacaoCategoria {
+  sucesso: boolean;
+  mensagem: string;
+  categoria: CategoriaDetalheResponse | null;
+}
+
+export interface VendaResponse {
+  identificador: number;
+  compradorNome: string;
+  valorTotal: number;
+  estado: EstadoPedido;
+  criadoEm: string;
+}
+
+export interface ListarVendasRequest {
+  vendedorIdentificador: number;
+  estado?: EstadoPedido;
+  pagina?: number;
+  itensPorPagina?: number;
+  incluirTodosAdmin?: boolean;
+}
+
+export interface ListarVendasResponse {
+  vendas: VendaResponse[];
+  pagina: number;
+  itensPorPagina: number;
+  total: number;
+}
+
+export interface UsuarioAdminResponse {
+  identificador: number;
+  nome: string;
+  email: string;
+  foto?: string;
+  ativo: boolean;
+  admin?: boolean;
+  criadoEm: string;
+}
+
+export interface ListarUsuariosResponse {
+  usuarios: UsuarioAdminResponse[];
+  pagina: number;
+  itensPorPagina: number;
+  total: number;
+}
+
+export interface ResultadoOperacaoUsuario {
+  sucesso: boolean;
+  mensagem: string;
+  admin?: boolean;
+}
+
+export interface ResultadoSimples {
+  sucesso: boolean;
+  mensagem: string;
+}
+
 export interface ConsultarAnunciosRequest {
   termo?: string;
   categoriaIdentificador?: number;
@@ -201,6 +277,54 @@ export interface AnuncioResponse {
 export interface ConsultarAnuncioRequest {
   anuncioIdentificador: number;
 }
+
+export interface MeuAnuncioResponse {
+  identificador: number;
+  nome: string;
+  preco: number;
+  estoque: number;
+  disponivel: boolean;
+  estado: 'Novo' | 'Usado';
+  conservacao: string;
+  categoria: string;
+  imagemPrincipal: string;
+  vendedorIdentificador?: number;
+  vendedorNome?: string;
+  criadoEm: string;
+}
+
+export interface ListarMeusAnunciosResponse {
+  anuncios: MeuAnuncioResponse[];
+  pagina: number;
+  itensPorPagina: number;
+  total: number;
+}
+
+export interface SalvarAnuncioRequest {
+  nome: string;
+  descricao: string;
+  categoriaIdentificador: number;
+  preco: number;
+  estoque: number;
+  disponivel?: boolean;
+  estado: 'Novo' | 'Usado';
+  conservacao: string;
+  imagens: string[];
+}
+
+export interface ResultadoOperacaoAnuncio {
+  sucesso: boolean;
+  mensagem: string;
+  anuncio: AnuncioResponse | null;
+}
+
+export type ConservacaoOpcao = 'Excelente' | 'Bom' | 'Regular';
+
+export const OPCOES_CONSERVACAO: readonly ConservacaoOpcao[] = [
+  'Excelente',
+  'Bom',
+  'Regular',
+];
 
 const CATEGORIAS_CATALOGO: readonly CategoriaResponse[] = [
   { identificador: 1, nome: 'Figuras colecionáveis' },
@@ -290,6 +414,162 @@ export interface ListarComprasResponse {
   pagina: number;
   itensPorPagina: number;
   total: number;
+}
+
+export interface EstadoKpiContagem {
+  estado: EstadoPedido;
+  rotulo: string;
+  quantidade: number;
+  percentual: number;
+}
+
+export interface CategoriaKpiContagem {
+  nome: string;
+  quantidadeAnuncios: number;
+  estoqueTotal: number;
+  percentual: number;
+}
+
+export interface PedidoRecenteDashboard {
+  identificador: number;
+  compradorNome: string;
+  estado: EstadoPedido;
+  valorTotal: number;
+  quantidadeItens: number;
+  criadoEm: string;
+}
+
+export interface DashboardOperacionalResponse {
+  receitaTotal: number;
+  ticketMedio: number;
+  totalPedidos: number;
+  pedidosConcluidos: number;
+  pedidosEmAndamento: number;
+  pedidosCancelados: number;
+  taxaConclusao: number;
+  totalAnuncios: number;
+  anunciosDisponiveis: number;
+  anunciosIndisponiveis: number;
+  unidadesEmEstoque: number;
+  totalCategoriasAtivas: number;
+  notaMediaAvaliacoes: number | null;
+  totalAvaliacoes: number;
+  pedidosPorEstado: EstadoKpiContagem[];
+  anunciosPorCategoria: CategoriaKpiContagem[];
+  pedidosRecentes: PedidoRecenteDashboard[];
+  fonte: 'api' | 'mock';
+}
+
+export interface EntradaAnuncioDashboard {
+  categoria: string;
+  estoque: number;
+  disponivel: boolean;
+}
+
+export interface EntradaPedidoDashboard {
+  identificador: number;
+  compradorNome: string;
+  estado: EstadoPedido;
+  valorTotal: number;
+  quantidadeItens: number;
+  criadoEm: string;
+}
+
+export function calcularDashboardOperacional(dados: {
+  anuncios: readonly EntradaAnuncioDashboard[];
+  totalAnuncios?: number;
+  totalCategoriasAtivas: number;
+  pedidos: readonly EntradaPedidoDashboard[];
+  totalPedidos?: number;
+  notasAvaliacoes: readonly number[];
+  totalAvaliacoes?: number;
+  fonte: 'api' | 'mock';
+}): DashboardOperacionalResponse {
+  const totalAnuncios = dados.totalAnuncios ?? dados.anuncios.length;
+  const anunciosDisponiveis = dados.anuncios.filter(a => a.disponivel && a.estoque > 0).length;
+  const anunciosIndisponiveis = Math.max(0, totalAnuncios - anunciosDisponiveis);
+  const unidadesEmEstoque = dados.anuncios.reduce((soma, a) => soma + Math.max(0, a.estoque), 0);
+
+  const mapaCategorias = new Map<string, { quantidadeAnuncios: number; estoqueTotal: number }>();
+  for (const anuncio of dados.anuncios) {
+    const nome = anuncio.categoria || 'Sem categoria';
+    const atual = mapaCategorias.get(nome) ?? { quantidadeAnuncios: 0, estoqueTotal: 0 };
+    atual.quantidadeAnuncios += 1;
+    atual.estoqueTotal += Math.max(0, anuncio.estoque);
+    mapaCategorias.set(nome, atual);
+  }
+
+  const baseAnuncios = Math.max(1, dados.anuncios.length);
+  const anunciosPorCategoria: CategoriaKpiContagem[] = Array.from(mapaCategorias.entries())
+    .map(([nome, valores]) => ({
+      nome,
+      quantidadeAnuncios: valores.quantidadeAnuncios,
+      estoqueTotal: valores.estoqueTotal,
+      percentual: Math.round((valores.quantidadeAnuncios / baseAnuncios) * 100),
+    }))
+    .sort((a, b) => b.quantidadeAnuncios - a.quantidadeAnuncios);
+
+  const totalPedidos = dados.totalPedidos ?? dados.pedidos.length;
+  const pedidosConcluidos = dados.pedidos.filter(p => p.estado === 'CONCLUIDO').length;
+  const pedidosCancelados = dados.pedidos.filter(p => p.estado === 'CANCELADO').length;
+  const pedidosEmAndamento = dados.pedidos.filter(
+    p => p.estado === 'CRIADO' || p.estado === 'CONFIRMADO' || p.estado === 'ENVIADO',
+  ).length;
+  const pedidosValidos = dados.pedidos.filter(p => p.estado !== 'CANCELADO');
+  const receitaEmCentavos = pedidosValidos.reduce(
+    (soma, p) => soma + Math.round(p.valorTotal * 100),
+    0,
+  );
+  const receitaTotal = receitaEmCentavos / 100;
+  const ticketMedio =
+    pedidosValidos.length > 0 ? Math.round(receitaEmCentavos / pedidosValidos.length) / 100 : 0;
+  const taxaConclusao =
+    totalPedidos > 0 ? Math.round((pedidosConcluidos / totalPedidos) * 100) : 0;
+
+  const basePedidos = Math.max(1, totalPedidos);
+  const pedidosPorEstado: EstadoKpiContagem[] = ESTADOS_PEDIDO.map(estado => {
+    const quantidade = dados.pedidos.filter(p => p.estado === estado).length;
+    return {
+      estado,
+      rotulo: ROTULOS_ESTADO_PEDIDO[estado],
+      quantidade,
+      percentual: totalPedidos > 0 ? Math.round((quantidade / basePedidos) * 100) : 0,
+    };
+  });
+
+  const pedidosRecentes: PedidoRecenteDashboard[] = dados.pedidos
+    .slice()
+    .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm))
+    .slice(0, 5)
+    .map(p => ({ ...p }));
+
+  const totalAvaliacoes = dados.totalAvaliacoes ?? dados.notasAvaliacoes.length;
+  const somaNotas = dados.notasAvaliacoes.reduce((soma, nota) => soma + nota, 0);
+  const notaMediaAvaliacoes =
+    dados.notasAvaliacoes.length > 0
+      ? Math.round((somaNotas / dados.notasAvaliacoes.length) * 10) / 10
+      : null;
+
+  return {
+    receitaTotal,
+    ticketMedio,
+    totalPedidos,
+    pedidosConcluidos,
+    pedidosEmAndamento,
+    pedidosCancelados,
+    taxaConclusao,
+    totalAnuncios,
+    anunciosDisponiveis,
+    anunciosIndisponiveis,
+    unidadesEmEstoque,
+    totalCategoriasAtivas: dados.totalCategoriasAtivas,
+    notaMediaAvaliacoes,
+    totalAvaliacoes,
+    pedidosPorEstado,
+    anunciosPorCategoria,
+    pedidosRecentes,
+    fonte: dados.fonte,
+  };
 }
 
 export interface AvaliarPedidoRequest {
@@ -421,6 +701,7 @@ export class App {
   protected readonly title = signal('geekhub');
 
   private readonly usuarios: ContaUsuario[] = this.carregarUsuarios();
+  private readonly categorias: CategoriaDetalheResponse[] = this.carregarCategorias();
   private readonly carrinhos: Map<number, ItemCarrinhoArmazenado[]> =
     this.carregarCarrinhos();
   private readonly versaoCarrinhos = signal(0);
@@ -441,6 +722,16 @@ export class App {
 
   get versaoEstadoCarrinhos(): number {
     return this.versaoCarrinhos();
+  }
+
+  get usuarioAtualEhAdmin(): boolean {
+    return this.dados.usuarioEhAdmin();
+  }
+
+  usuarioMockEhAdmin(identificador: number): boolean {
+    return Boolean(
+      this.usuarios.find(usuario => usuario.identificador === identificador)?.admin,
+    );
   }
 
   constructor(private readonly roteador: Router) {}
@@ -632,7 +923,14 @@ export class App {
           typeof (item as ContaUsuario).senha === 'string'
       );
 
-      return contas.length > 0 ? contas : padrao;
+      return contas.length > 0
+        ? contas.map(conta =>
+            conta.email.trim().toLowerCase() === 'demo@geekhub.com' &&
+            conta.admin === undefined
+              ? { ...conta, admin: true }
+              : conta,
+          )
+        : padrao;
     } catch {
       return padrao;
     }
@@ -742,7 +1040,7 @@ export class App {
     },
   ];
 
-  private readonly anuncios: AnuncioResponse[] = [
+  private readonly anunciosPadrao: readonly AnuncioResponse[] = [
     {
       identificador: 1,
       nome: 'Action figure Naruto',
@@ -987,28 +1285,53 @@ export class App {
     },
   ];
 
+  private readonly anuncios: AnuncioResponse[] = this.carregarAnuncios();
+
 buscarVendedor(identificador: number): PerfilVendedor | null {
     const vendedor = this.vendedores.find(
       vendedor => vendedor.identificador === identificador
     );
 
-    if(!vendedor){
+    if (vendedor) {
+      const contagem = vendedor.avaliacoes.length;
+      const somaDasNotas = vendedor.avaliacoes.reduce(
+        (soma, avaliacao) => soma + avaliacao.nota,
+        0
+      );
+      const media = contagem > 0 ? somaDasNotas / contagem : null;
+
+      return {
+        ...vendedor,
+        media,
+        contagem,
+        produtos: this.listarProdutosDoVendedor(identificador)
+      };
+    }
+
+    const usuario = this.usuarios.find(
+      item => item.identificador === identificador
+    );
+
+    if (!usuario) {
       return null;
     }
 
-    const contagem = vendedor.avaliacoes.length;
-
-    const somaDasNotas = vendedor.avaliacoes.reduce(
-      (soma, avaliacao) => soma + avaliacao.nota, 0
-    );
-
-    const media = contagem > 0
-      ? somaDasNotas / contagem : null;
+    const vendas = this.pedidos.filter(
+      pedido =>
+        pedido.estado !== 'CANCELADO' &&
+        pedido.itens.some(item => item.vendedorIdentificador === identificador)
+    ).length;
 
     return {
-      ...vendedor,
-      media,
-      contagem,
+      identificador: usuario.identificador,
+      nome: usuario.nome,
+      ...(usuario.foto ? { foto: usuario.foto } : {}),
+      media: null,
+      contagem: 0,
+      membroDesde: new Date().getFullYear(),
+      vendas,
+      taxaResposta: null,
+      avaliacoes: [],
       produtos: this.listarProdutosDoVendedor(identificador)
     };
   }
@@ -1050,7 +1373,327 @@ buscarAnuncio(
 }
 
 listarCategorias(): CategoriaResponse[] {
-  return CATEGORIAS_CATALOGO.map(categoria => ({ ...categoria }));
+  return this.categorias
+    .filter(categoria => categoria.ativa)
+    .map(categoria => ({ identificador: categoria.identificador, nome: categoria.nome }));
+}
+
+listarTodasCategorias(): CategoriaDetalheResponse[] {
+  return this.categorias
+    .slice()
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+    .map(categoria => ({ ...categoria }));
+}
+
+cadastrarCategoria(
+  usuarioIdentificador: number,
+  request: SalvarCategoriaRequest
+): ResultadoOperacaoCategoria {
+  if (!this.usuarioMockEhAdmin(usuarioIdentificador)) {
+    return { sucesso: false, mensagem: 'Acesso restrito a administradores.', categoria: null };
+  }
+
+  const nome = request.nome.trim();
+  const descricao = (request.descricao ?? '').trim();
+
+  if (!nome || nome.length > 100) {
+    return {
+      sucesso: false,
+      mensagem: 'Informe o nome da categoria (máximo 100 caracteres).',
+      categoria: null,
+    };
+  }
+
+  if (descricao.length > 255) {
+    return {
+      sucesso: false,
+      mensagem: 'A descrição deve ter no máximo 255 caracteres.',
+      categoria: null,
+    };
+  }
+
+  const duplicada = this.categorias.some(
+    categoria => categoria.nome.trim().toLowerCase() === nome.toLowerCase()
+  );
+
+  if (duplicada) {
+    return {
+      sucesso: false,
+      mensagem: 'Já existe uma categoria com este nome.',
+      categoria: null,
+    };
+  }
+
+  const proximoIdentificador =
+    this.categorias.reduce((maior, item) => Math.max(maior, item.identificador), 0) + 1;
+
+  const novaCategoria: CategoriaDetalheResponse = {
+    identificador: proximoIdentificador,
+    nome,
+    descricao,
+    ativa: true,
+    criadoEm: this.dataHoraAtual(),
+  };
+
+  this.categorias.push(novaCategoria);
+  this.salvarCategorias();
+
+  return {
+    sucesso: true,
+    mensagem: 'Categoria cadastrada com sucesso.',
+    categoria: { ...novaCategoria },
+  };
+}
+
+editarCategoria(
+  categoriaIdentificador: number,
+  usuarioIdentificador: number,
+  request: SalvarCategoriaRequest
+): ResultadoOperacaoCategoria {
+  if (!this.usuarioMockEhAdmin(usuarioIdentificador)) {
+    return { sucesso: false, mensagem: 'Acesso restrito a administradores.', categoria: null };
+  }
+
+  const categoria = this.categorias.find(
+    item => item.identificador === categoriaIdentificador
+  );
+
+  if (!categoria) {
+    return { sucesso: false, mensagem: 'Categoria não encontrada.', categoria: null };
+  }
+
+  const nome = request.nome.trim();
+  const descricao = (request.descricao ?? '').trim();
+
+  if (!nome || nome.length > 100) {
+    return {
+      sucesso: false,
+      mensagem: 'Informe o nome da categoria (máximo 100 caracteres).',
+      categoria: null,
+    };
+  }
+
+  if (descricao.length > 255) {
+    return {
+      sucesso: false,
+      mensagem: 'A descrição deve ter no máximo 255 caracteres.',
+      categoria: null,
+    };
+  }
+
+  const duplicada = this.categorias.some(
+    item =>
+      item.identificador !== categoriaIdentificador &&
+      item.nome.trim().toLowerCase() === nome.toLowerCase()
+  );
+
+  if (duplicada) {
+    return {
+      sucesso: false,
+      mensagem: 'Já existe uma categoria com este nome.',
+      categoria: null,
+    };
+  }
+
+  categoria.nome = nome;
+  categoria.descricao = descricao;
+  categoria.ativa = request.ativa ?? categoria.ativa;
+  this.salvarCategorias();
+
+  let anunciouMudanca = false;
+  for (const anuncio of this.anuncios) {
+    if (anuncio.categoriaIdentificador === categoriaIdentificador && anuncio.categoria !== nome) {
+      anuncio.categoria = nome;
+      anunciouMudanca = true;
+    }
+  }
+  if (anunciouMudanca) {
+    this.salvarAnuncios();
+  }
+
+  return {
+    sucesso: true,
+    mensagem: 'Categoria atualizada com sucesso.',
+    categoria: { ...categoria },
+  };
+}
+
+removerCategoria(
+  categoriaIdentificador: number,
+  usuarioIdentificador: number
+): ResultadoOperacaoCategoria {
+  if (!this.usuarioMockEhAdmin(usuarioIdentificador)) {
+    return { sucesso: false, mensagem: 'Acesso restrito a administradores.', categoria: null };
+  }
+
+  const indice = this.categorias.findIndex(
+    item => item.identificador === categoriaIdentificador
+  );
+
+  if (indice === -1) {
+    return { sucesso: false, mensagem: 'Categoria não encontrada.', categoria: null };
+  }
+
+  const emUso = this.anuncios.some(
+    anuncio => anuncio.categoriaIdentificador === categoriaIdentificador
+  );
+
+  if (emUso) {
+    return {
+      sucesso: false,
+      mensagem: 'Não é possível excluir uma categoria com anúncios vinculados.',
+      categoria: null,
+    };
+  }
+
+  this.categorias.splice(indice, 1);
+  this.salvarCategorias();
+
+  return {
+    sucesso: true,
+    mensagem: 'Categoria removida com sucesso.',
+    categoria: null,
+  };
+}
+
+private carregarCategorias(): CategoriaDetalheResponse[] {
+  const padrao = CATEGORIAS_CATALOGO.map(categoria => ({
+    identificador: categoria.identificador,
+    nome: categoria.nome,
+    descricao: '',
+    ativa: true,
+    criadoEm: '2026-09-01T00:00:00',
+  }));
+
+  if (typeof localStorage === 'undefined') {
+    return padrao;
+  }
+
+  try {
+    const salvo = localStorage.getItem(CHAVE_CATEGORIAS_STORAGE);
+    if (salvo === null) {
+      return padrao;
+    }
+
+    const dados: unknown = JSON.parse(salvo);
+    if (!Array.isArray(dados)) {
+      return padrao;
+    }
+
+    return dados
+      .filter(
+        (item): item is CategoriaDetalheResponse =>
+          typeof item === 'object' &&
+          item !== null &&
+          typeof (item as CategoriaDetalheResponse).identificador === 'number' &&
+          typeof (item as CategoriaDetalheResponse).nome === 'string' &&
+          typeof (item as CategoriaDetalheResponse).ativa === 'boolean'
+      )
+      .map(item => ({
+        identificador: item.identificador,
+        nome: item.nome,
+        descricao: typeof item.descricao === 'string' ? item.descricao : '',
+        ativa: item.ativa,
+        criadoEm: typeof item.criadoEm === 'string' ? item.criadoEm : '2026-09-01T00:00:00',
+      }));
+  } catch {
+    return padrao;
+  }
+}
+
+private salvarCategorias(): void {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+
+  try {
+    localStorage.setItem(CHAVE_CATEGORIAS_STORAGE, JSON.stringify(this.categorias));
+  } catch {
+    // Ignora indisponibilidade de storage no ambiente atual.
+  }
+}
+
+listarUsuariosAdmin(
+  solicitanteIdentificador: number,
+  paginaSolicitada = 1,
+  itensPorPagina = 10
+): ListarUsuariosResponse {
+  if (!this.usuarioMockEhAdmin(solicitanteIdentificador)) {
+    return { usuarios: [], pagina: 1, itensPorPagina, total: 0 };
+  }
+
+  const tamanho = Number.isInteger(itensPorPagina) && itensPorPagina > 0 ? itensPorPagina : 10;
+  const total = this.usuarios.length;
+  const totalPaginas = Math.max(1, Math.ceil(total / tamanho));
+  const pagina = Math.min(
+    Number.isInteger(paginaSolicitada) && paginaSolicitada >= 1 ? paginaSolicitada : 1,
+    totalPaginas
+  );
+  const inicio = (pagina - 1) * tamanho;
+
+  return {
+    usuarios: this.usuarios.slice(inicio, inicio + tamanho).map(conta => ({
+      identificador: conta.identificador,
+      nome: conta.nome,
+      email: conta.email,
+      ...(conta.foto ? { foto: conta.foto } : {}),
+      ativo: true,
+      admin: Boolean(conta.admin),
+      criadoEm: '2026-09-01T00:00:00',
+    })),
+    pagina,
+    itensPorPagina: tamanho,
+    total,
+  };
+}
+
+atualizarPermissaoUsuario(
+  alvoIdentificador: number,
+  solicitanteIdentificador: number,
+  admin: boolean
+): ResultadoOperacaoUsuario {
+  if (!this.usuarioMockEhAdmin(solicitanteIdentificador)) {
+    return { sucesso: false, mensagem: 'Acesso restrito a administradores.' };
+  }
+
+  const conta = this.usuarios.find(item => item.identificador === alvoIdentificador);
+  if (!conta) {
+    return { sucesso: false, mensagem: 'Usuário não encontrado.' };
+  }
+
+  conta.admin = admin;
+  this.salvarUsuarios();
+
+  return {
+    sucesso: true,
+    mensagem: admin
+      ? 'Permissão de administrador concedida.'
+      : 'Permissão de administrador removida.',
+    admin,
+  };
+}
+
+removerUsuario(
+  alvoIdentificador: number,
+  solicitanteIdentificador: number
+): ResultadoSimples {
+  if (!this.usuarioMockEhAdmin(solicitanteIdentificador)) {
+    return { sucesso: false, mensagem: 'Acesso restrito a administradores.' };
+  }
+
+  if (alvoIdentificador === solicitanteIdentificador) {
+    return { sucesso: false, mensagem: 'Não é possível excluir a própria conta ativa.' };
+  }
+
+  const indice = this.usuarios.findIndex(item => item.identificador === alvoIdentificador);
+  if (indice === -1) {
+    return { sucesso: false, mensagem: 'Usuário não encontrado.' };
+  }
+
+  this.usuarios.splice(indice, 1);
+  this.salvarUsuarios();
+
+  return { sucesso: true, mensagem: 'Usuário removido com sucesso.' };
 }
 
 consultarAnuncios(
@@ -1110,6 +1753,336 @@ consultarAnuncios(
 
 listarAnuncios(): AnuncioResponse[] {
   return this.anuncios;
+}
+
+listarMeusAnuncios(
+  usuarioIdentificador: number,
+  paginaSolicitada = 1,
+  itensPorPagina = 8,
+  incluirTodosAdmin = false
+): ListarMeusAnunciosResponse {
+  const tamanho =
+    Number.isInteger(itensPorPagina) && itensPorPagina > 0 ? itensPorPagina : 8;
+  const mostrarTodos =
+    incluirTodosAdmin && this.usuarioMockEhAdmin(usuarioIdentificador);
+
+  const filtrados = this.anuncios
+    .filter(
+      anuncio =>
+        mostrarTodos || anuncio.vendedor.identificador === usuarioIdentificador
+    )
+    .slice()
+    .sort((a, b) => b.identificador - a.identificador);
+
+  const total = filtrados.length;
+  const totalPaginas = Math.max(1, Math.ceil(total / tamanho));
+  const pagina = Math.min(
+    Number.isInteger(paginaSolicitada) && paginaSolicitada >= 1
+      ? paginaSolicitada
+      : 1,
+    totalPaginas
+  );
+  const inicio = (pagina - 1) * tamanho;
+
+  return {
+    anuncios: filtrados.slice(inicio, inicio + tamanho).map(anuncio => ({
+      identificador: anuncio.identificador,
+      nome: anuncio.nome,
+      preco: anuncio.preco,
+      estoque: anuncio.estoque,
+      disponivel: anuncio.disponivel ?? anuncio.estoque > 0,
+      estado: anuncio.estado,
+      conservacao: anuncio.conservacao,
+      categoria: anuncio.categoria,
+      imagemPrincipal: anuncio.imagens[0] ?? '',
+      vendedorIdentificador: anuncio.vendedor.identificador,
+      vendedorNome: anuncio.vendedor.nome,
+      criadoEm: this.dataHoraAtual(),
+    })),
+    pagina,
+    itensPorPagina: tamanho,
+    total,
+  };
+}
+
+cadastrarAnuncio(
+  vendedorIdentificador: number,
+  request: SalvarAnuncioRequest
+): ResultadoOperacaoAnuncio {
+  const vendedor = this.usuarios.find(
+    usuario => usuario.identificador === vendedorIdentificador
+  );
+
+  if (!vendedor) {
+    return { sucesso: false, mensagem: 'Usuário vendedor não encontrado.', anuncio: null };
+  }
+
+  const validacao = this.validarDadosAnuncio(request, false);
+  if (typeof validacao === 'string') {
+    return { sucesso: false, mensagem: validacao, anuncio: null };
+  }
+
+  const proximoIdentificador =
+    this.anuncios.reduce(
+      (maior, item) => Math.max(maior, item.identificador),
+      0
+    ) + 1;
+
+  const novoAnuncio: AnuncioResponse = {
+    identificador: proximoIdentificador,
+    nome: validacao.nome,
+    titulo: validacao.nome,
+    descricao: validacao.descricao,
+    imagens: validacao.imagens,
+    categoriaIdentificador: validacao.categoria.identificador,
+    categoria: validacao.categoria.nome,
+    preco: validacao.preco,
+    estado: request.estado,
+    conservacao: validacao.conservacao,
+    estoque: request.estoque,
+    disponivel: request.disponivel ?? request.estoque > 0,
+    vendedor: {
+      identificador: vendedor.identificador,
+      nome: vendedor.nome,
+      ...(vendedor.foto ? { foto: vendedor.foto } : {}),
+      media: null,
+      contagem: 0,
+    },
+  };
+
+  this.anuncios.unshift(novoAnuncio);
+  this.salvarAnuncios();
+
+  return {
+    sucesso: true,
+    mensagem: 'Anúncio cadastrado com sucesso.',
+    anuncio: this.copiarAnuncio(novoAnuncio),
+  };
+}
+
+editarAnuncio(
+  anuncioIdentificador: number,
+  usuarioIdentificador: number,
+  request: SalvarAnuncioRequest
+): ResultadoOperacaoAnuncio {
+  const anuncio = this.anuncios.find(
+    item => item.identificador === anuncioIdentificador
+  );
+
+  if (!anuncio) {
+    return { sucesso: false, mensagem: 'Anúncio não encontrado.', anuncio: null };
+  }
+
+  if (anuncio.vendedor.identificador !== usuarioIdentificador) {
+    return {
+      sucesso: false,
+      mensagem: 'Você só pode editar seus próprios anúncios.',
+      anuncio: null,
+    };
+  }
+
+  const validacao = this.validarDadosAnuncio(request, true);
+  if (typeof validacao === 'string') {
+    return { sucesso: false, mensagem: validacao, anuncio: null };
+  }
+
+  anuncio.nome = validacao.nome;
+  anuncio.titulo = validacao.nome;
+  anuncio.descricao = validacao.descricao;
+  anuncio.categoriaIdentificador = validacao.categoria.identificador;
+  anuncio.categoria = validacao.categoria.nome;
+  anuncio.preco = validacao.preco;
+  anuncio.estoque = request.estoque;
+  anuncio.disponivel = request.disponivel ?? request.estoque > 0;
+  anuncio.estado = request.estado;
+  anuncio.conservacao = validacao.conservacao;
+  anuncio.imagens = validacao.imagens;
+
+  this.salvarAnuncios();
+
+  for (const [compradorId, itens] of this.carrinhos.entries()) {
+    if (itens.some(item => item.anuncioIdentificador === anuncioIdentificador)) {
+      this.atualizarDisponibilidadeCarrinho(
+        compradorId,
+        anuncioIdentificador,
+        Boolean(anuncio.disponivel) && anuncio.estoque > 0,
+        anuncio.estoque
+      );
+    }
+  }
+
+  return {
+    sucesso: true,
+    mensagem: 'Anúncio atualizado com sucesso.',
+    anuncio: this.copiarAnuncio(anuncio),
+  };
+}
+
+removerAnuncio(
+  anuncioIdentificador: number,
+  usuarioIdentificador: number
+): ResultadoOperacaoAnuncio {
+  const indice = this.anuncios.findIndex(
+    item => item.identificador === anuncioIdentificador
+  );
+
+  if (indice === -1) {
+    return { sucesso: false, mensagem: 'Anúncio não encontrado.', anuncio: null };
+  }
+
+  const anuncio = this.anuncios[indice];
+  const podeRemover =
+    anuncio.vendedor.identificador === usuarioIdentificador ||
+    this.usuarioMockEhAdmin(usuarioIdentificador);
+
+  if (!podeRemover) {
+    return {
+      sucesso: false,
+      mensagem: 'Você não tem permissão para remover este anúncio.',
+      anuncio: null,
+    };
+  }
+
+  const vinculadoAPedido = this.pedidos.some(pedido =>
+    pedido.itens.some(item => item.anuncioIdentificador === anuncioIdentificador)
+  );
+
+  if (vinculadoAPedido) {
+    return {
+      sucesso: false,
+      mensagem: 'Não é possível excluir um anúncio vinculado a pedidos.',
+      anuncio: null,
+    };
+  }
+
+  this.anuncios.splice(indice, 1);
+  this.salvarAnuncios();
+
+  return {
+    sucesso: true,
+    mensagem: 'Anúncio removido com sucesso.',
+    anuncio: null,
+  };
+}
+
+private validarDadosAnuncio(
+  request: SalvarAnuncioRequest,
+  edicao: boolean
+):
+  | string
+  | {
+      nome: string;
+      descricao: string;
+      categoria: CategoriaResponse;
+      preco: number;
+      conservacao: string;
+      imagens: string[];
+    } {
+  const nome = request.nome.trim();
+  const descricao = request.descricao.trim();
+  const conservacao = request.conservacao.trim();
+  const categoria = this.listarCategorias().find(
+    item => item.identificador === request.categoriaIdentificador
+  );
+  const preco = Math.round(Number(request.preco) * 100) / 100;
+  const estoqueMinimo = edicao ? 0 : 1;
+  const imagens = request.imagens
+    .map(url => url.trim())
+    .filter(url => url.length > 0);
+
+  if (!nome || nome.length > 255) {
+    return 'Informe um nome válido para o anúncio (máximo 255 caracteres).';
+  }
+
+  if (!descricao || descricao.length > 2000) {
+    return 'Informe uma descrição válida (máximo 2000 caracteres).';
+  }
+
+  if (!categoria) {
+    return 'Selecione uma categoria ativa.';
+  }
+
+  if (!Number.isFinite(preco) || preco <= 0) {
+    return 'Informe um preço maior que zero.';
+  }
+
+  if (!Number.isInteger(request.estoque) || request.estoque < estoqueMinimo) {
+    return edicao
+      ? 'O estoque não pode ser negativo.'
+      : 'Informe um estoque inicial maior que zero.';
+  }
+
+  if (request.estado !== 'Novo' && request.estado !== 'Usado') {
+    return 'Selecione a condição do produto.';
+  }
+
+  if (!conservacao) {
+    return 'Selecione o estado de conservação.';
+  }
+
+  if (
+    imagens.length === 0 ||
+    imagens.some(url => url.length > 512 || !REGEX_URL_HTTP.test(url))
+  ) {
+    return 'Informe ao menos uma URL de imagem válida (http:// ou https://).';
+  }
+
+  return { nome, descricao, categoria, preco, conservacao, imagens };
+}
+
+private copiarAnuncio(anuncio: AnuncioResponse): AnuncioResponse {
+  return {
+    ...anuncio,
+    imagens: [...anuncio.imagens],
+    vendedor: { ...anuncio.vendedor },
+  };
+}
+
+private carregarAnuncios(): AnuncioResponse[] {
+  const padrao = this.anunciosPadrao.map(anuncio => this.copiarAnuncio(anuncio));
+
+  if (typeof localStorage === 'undefined') {
+    return padrao;
+  }
+
+  try {
+    const salvo = localStorage.getItem(CHAVE_ANUNCIOS_STORAGE);
+    if (salvo === null) {
+      return padrao;
+    }
+
+    const dados: unknown = JSON.parse(salvo);
+    if (!Array.isArray(dados)) {
+      return padrao;
+    }
+
+    return dados
+      .filter(
+        (item): item is AnuncioResponse =>
+          typeof item === 'object' &&
+          item !== null &&
+          typeof (item as AnuncioResponse).identificador === 'number' &&
+          typeof (item as AnuncioResponse).nome === 'string' &&
+          typeof (item as AnuncioResponse).preco === 'number' &&
+          Array.isArray((item as AnuncioResponse).imagens) &&
+          typeof (item as AnuncioResponse).vendedor?.identificador === 'number'
+      )
+      .map(anuncio => this.copiarAnuncio(anuncio));
+  } catch {
+    return padrao;
+  }
+}
+
+private salvarAnuncios(): void {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+
+  try {
+    localStorage.setItem(CHAVE_ANUNCIOS_STORAGE, JSON.stringify(this.anuncios));
+  } catch {
+    // Ignora indisponibilidade de storage no ambiente atual.
+  }
 }
 
 listarProdutosDoVendedor(identificador: number) {
@@ -1327,6 +2300,27 @@ removerDoCarrinho(
     sucesso: true,
     mensagem: '',
     carrinho: this.montarCarrinhoResponse(compradorIdentificador, filtrada),
+  };
+}
+
+limparCarrinho(compradorIdentificador: number): ResultadoOperacaoCarrinho {
+  if (!Number.isInteger(compradorIdentificador) || compradorIdentificador < 1) {
+    return {
+      sucesso: false,
+      mensagem: 'Comprador inválido.',
+      carrinho: this.consultarCarrinho(compradorIdentificador),
+    };
+  }
+
+  if ((this.carrinhos.get(compradorIdentificador) ?? []).length > 0) {
+    this.carrinhos.set(compradorIdentificador, []);
+    this.salvarCarrinhos();
+  }
+
+  return {
+    sucesso: true,
+    mensagem: '',
+    carrinho: this.montarCarrinhoResponse(compradorIdentificador, []),
   };
 }
 
@@ -1602,10 +2596,172 @@ detalharPedido(
   const pedido = this.pedidos.find(
     item =>
       item.identificador === pedidoIdentificador &&
-      item.compradorIdentificador === compradorIdentificador
+      (item.compradorIdentificador === compradorIdentificador ||
+        this.usuarioMockEhAdmin(compradorIdentificador) ||
+        (compradorIdentificador > 2 &&
+          item.itens.some(linha => linha.vendedorIdentificador === compradorIdentificador)))
   );
 
   return pedido ? this.copiarPedido(pedido) : null;
+}
+
+listarVendas(request: ListarVendasRequest): ListarVendasResponse {
+  const itensPorPagina =
+    request.itensPorPagina &&
+    Number.isInteger(request.itensPorPagina) &&
+    request.itensPorPagina > 0
+      ? request.itensPorPagina
+      : 10;
+  const mostrarTodos =
+    Boolean(request.incluirTodosAdmin) &&
+    this.usuarioMockEhAdmin(request.vendedorIdentificador);
+
+  const filtrados = this.pedidos
+    .filter(
+      pedido =>
+        (mostrarTodos ||
+          pedido.itens.some(item => item.vendedorIdentificador === request.vendedorIdentificador)) &&
+        (request.estado === undefined || pedido.estado === request.estado)
+    )
+    .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
+
+  const total = filtrados.length;
+  const totalPaginas = Math.max(1, Math.ceil(total / itensPorPagina));
+  const paginaSolicitada =
+    request.pagina && Number.isInteger(request.pagina) && request.pagina >= 1
+      ? request.pagina
+      : 1;
+  const pagina = Math.min(paginaSolicitada, totalPaginas);
+  const inicio = (pagina - 1) * itensPorPagina;
+
+  return {
+    vendas: filtrados.slice(inicio, inicio + itensPorPagina).map(pedido => ({
+      identificador: pedido.identificador,
+      compradorNome: pedido.compradorNome,
+      valorTotal: pedido.valorTotal,
+      estado: pedido.estado,
+      criadoEm: pedido.criadoEm,
+    })),
+    pagina,
+    itensPorPagina,
+    total,
+  };
+}
+
+atualizarEstadoPedido(
+  pedidoIdentificador: number,
+  usuarioIdentificador: number,
+  novoEstado: EstadoPedido
+): ResultadoOperacaoPedido {
+  const pedido = this.pedidos.find(item => item.identificador === pedidoIdentificador);
+  if (!pedido) {
+    return { sucesso: false, mensagem: 'Pedido não encontrado.', pedido: null };
+  }
+
+  const ehComprador = pedido.compradorIdentificador === usuarioIdentificador;
+  const ehVendedorOuAdmin =
+    this.usuarioMockEhAdmin(usuarioIdentificador) ||
+    pedido.itens.some(item => item.vendedorIdentificador === usuarioIdentificador);
+
+  if (!ehComprador && !ehVendedorOuAdmin) {
+    return {
+      sucesso: false,
+      mensagem: 'Você não possui permissão para atualizar este pedido.',
+      pedido: null,
+    };
+  }
+
+  if (novoEstado !== 'CANCELADO' && !ehVendedorOuAdmin) {
+    return {
+      sucesso: false,
+      mensagem: 'Você não possui permissão para avançar o estado deste pedido.',
+      pedido: this.copiarPedido(pedido),
+    };
+  }
+
+  const transicoesPermitidas: Record<EstadoPedido, readonly EstadoPedido[]> = {
+    CRIADO: ['CONFIRMADO', 'CANCELADO'],
+    CONFIRMADO: ['ENVIADO', 'CANCELADO'],
+    ENVIADO: ['CONCLUIDO'],
+    CONCLUIDO: [],
+    CANCELADO: [],
+  };
+
+  if (!transicoesPermitidas[pedido.estado].includes(novoEstado)) {
+    return {
+      sucesso: false,
+      mensagem: `Transição de estado inválida de ${pedido.estado} para ${novoEstado}.`,
+      pedido: this.copiarPedido(pedido),
+    };
+  }
+
+  if (novoEstado === 'CANCELADO') {
+    let estornouAnuncio = false;
+    for (const item of pedido.itens) {
+      const anuncio = this.anuncios.find(a => a.identificador === item.anuncioIdentificador);
+      if (anuncio) {
+        anuncio.estoque += item.quantidade;
+        if (anuncio.estoque > 0) {
+          anuncio.disponivel = true;
+        }
+        estornouAnuncio = true;
+      }
+    }
+    if (estornouAnuncio) {
+      this.salvarAnuncios();
+    }
+  }
+
+  pedido.estado = novoEstado;
+  pedido.historico.push({ estado: novoEstado, ocorridoEm: this.dataHoraAtual() });
+  this.salvarPedidos();
+
+  return {
+    sucesso: true,
+    mensagem: 'Estado do pedido atualizado com sucesso.',
+    pedido: this.copiarPedido(pedido),
+  };
+}
+
+removerPedido(pedidoIdentificador: number, usuarioIdentificador: number): ResultadoSimples {
+  if (!this.usuarioMockEhAdmin(usuarioIdentificador)) {
+    return { sucesso: false, mensagem: 'Acesso restrito a administradores.' };
+  }
+
+  const indice = this.pedidos.findIndex(item => item.identificador === pedidoIdentificador);
+  if (indice === -1) {
+    return { sucesso: false, mensagem: 'Pedido não encontrado.' };
+  }
+
+  this.pedidos.splice(indice, 1);
+  this.salvarPedidos();
+
+  return { sucesso: true, mensagem: 'Pedido removido com sucesso.' };
+}
+
+obterDadosDashboard(): DashboardOperacionalResponse {
+  const notas = this.vendedores.flatMap(vendedor =>
+    vendedor.avaliacoes.map(avaliacao => avaliacao.nota),
+  );
+
+  return calcularDashboardOperacional({
+    anuncios: this.anuncios.map(anuncio => ({
+      categoria: anuncio.categoria,
+      estoque: anuncio.estoque,
+      disponivel: anuncio.disponivel !== false && anuncio.estoque > 0,
+    })),
+    totalCategoriasAtivas: this.categorias.filter(categoria => categoria.ativa).length,
+    pedidos: this.pedidos.map(pedido => ({
+      identificador: pedido.identificador,
+      compradorNome: pedido.compradorNome,
+      estado: pedido.estado,
+      valorTotal: pedido.valorTotal,
+      quantidadeItens: pedido.itens.reduce((soma, item) => soma + item.quantidade, 0),
+      criadoEm: pedido.criadoEm,
+    })),
+    notasAvaliacoes: notas,
+    fonte: 'mock',
+  });
 }
 
 avaliarPedido(request: AvaliarPedidoRequest): ResultadoOperacaoPedido {

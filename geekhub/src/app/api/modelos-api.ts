@@ -84,6 +84,27 @@ export interface DetalharUsuarioResponse {
 
 export type EditarUsuarioResponse = DetalharUsuarioResponse;
 
+export interface ListarUsuarioResponse {
+  id: number;
+  nome: string;
+  email: string;
+  imagemPerfil: string | null;
+  ativo: boolean;
+  criadoEm: string;
+}
+
+export interface AtualizarPermissaoUsuarioRequest {
+  admin: boolean;
+}
+
+export interface AtualizarPermissaoUsuarioResponse {
+  id: number;
+  nome: string;
+  email: string;
+  admin: boolean;
+  permissoes: string[];
+}
+
 export interface AvaliacaoPerfilVendedorResponse {
   id: number;
   pedidoId: number;
@@ -129,6 +150,20 @@ export interface ListarCategoriaResponse {
   ativa: boolean;
   criadoEm: string;
 }
+
+export interface CadastrarCategoriaRequest {
+  nome: string;
+  descricao?: string | null;
+}
+
+export interface EditarCategoriaRequest {
+  nome: string;
+  descricao?: string | null;
+  ativa: boolean;
+}
+
+export type CadastrarCategoriaResponse = ListarCategoriaResponse;
+export type EditarCategoriaResponse = ListarCategoriaResponse;
 
 // Anúncios
 export interface PesquisarAnunciosFiltro {
@@ -179,6 +214,63 @@ export interface DetalharAnuncioResponse {
   vendedor: ResumoVendedorResponse;
   criadoEm: string;
 }
+
+export interface CadastrarAnuncioRequest {
+  nome: string;
+  descricao: string;
+  categoriaId: number;
+  preco: number;
+  quantidadeDisponivel: number;
+  condicao: CondicaoProduto;
+  conservacao: ConservacaoProduto;
+  imagens: string[];
+}
+
+export interface EditarAnuncioRequest extends CadastrarAnuncioRequest {
+  disponivel: boolean;
+}
+
+export interface ListarMeuAnuncioResponse {
+  id: number;
+  nome: string;
+  preco: number;
+  quantidadeDisponivel: number;
+  disponivel: boolean;
+  condicao: CondicaoProduto;
+  conservacao: ConservacaoProduto;
+  categoriaNome: string;
+  imagemPrincipal: string | null;
+  criadoEm: string;
+}
+
+export interface ListarAnuncioAdminResponse {
+  id: number;
+  nome: string;
+  preco: number;
+  quantidadeDisponivel: number;
+  disponivel: boolean;
+  categoriaNome: string;
+  vendedorId: number;
+  vendedorNome: string;
+  criadoEm: string;
+}
+
+export interface CadastrarAnuncioResponse {
+  id: number;
+  nome: string;
+  descricao: string | null;
+  categoriaId: number;
+  categoriaNome: string;
+  preco: number;
+  quantidadeDisponivel: number;
+  disponivel: boolean;
+  condicao: CondicaoProduto;
+  conservacao: ConservacaoProduto;
+  imagens: string[];
+  criadoEm: string;
+}
+
+export type EditarAnuncioResponse = CadastrarAnuncioResponse;
 
 // Carrinho
 export interface AdicionarItemCarrinhoRequest {
@@ -261,6 +353,37 @@ export type CriarPedidoResponse = DetalharPedidoResponse;
 
 export interface ListarCompraResponse {
   id: number;
+  valorTotal: number;
+  estado: EstadoPedido;
+  avaliado: boolean;
+  quantidadeItens: number;
+  criadoEm: string;
+}
+
+export interface AtualizarEstadoPedidoRequest {
+  estado: EstadoPedido;
+}
+
+export interface AtualizarEstadoPedidoResponse {
+  id: number;
+  estado: EstadoPedido;
+  historico: EventoPedidoResponse[];
+  avaliado: boolean;
+}
+
+export interface ListarVendaResponse {
+  id: number;
+  compradorNome: string;
+  valorTotal: number;
+  estado: EstadoPedido;
+  criadoEm: string;
+}
+
+export interface ListarPedidoAdminResponse {
+  id: number;
+  compradorId: number;
+  compradorNome: string;
+  compradorEmail: string;
   valorTotal: number;
   estado: EstadoPedido;
   avaliado: boolean;

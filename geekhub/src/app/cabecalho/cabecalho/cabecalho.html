@@ -80,9 +80,16 @@
       </button>
     </div>
 
+    @if (modoDemonstracao) {
+      <p class="aviso-modo-demo" role="status">
+        <mat-icon aria-hidden="true">cloud_off</mat-icon>
+        <span>Modo demonstração (dados locais)</span>
+      </p>
+    }
+
     <mat-nav-list aria-label="Navegação principal">
       @for (item of itensMenu; track item.caminho) {
-        @if (!item.exigeSessao || usuarioAtual) {
+        @if ((!item.exigeSessao || usuarioAtual) && (!item.exigeAdmin || ehAdmin)) {
           <a mat-list-item [routerLink]="item.caminho" (click)="menuLateral.close()">
             <mat-icon matListItemIcon>{{ item.icone }}</mat-icon>
             <span matListItemTitle>{{ item.rotulo }}</span>
