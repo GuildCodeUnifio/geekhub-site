@@ -40,6 +40,12 @@ const routes: Routes = [
                 .then(m => m.CategoriasModule),
     },
     {
+        path: 'dashboard',
+        loadChildren: () =>
+            import('./dashboard/dashboard-module')
+                .then(m => m.DashboardModule),
+    },
+    {
         path: 'autenticacao',
         loadChildren: () =>
             import('./autenticacao/autenticacao-module')
