@@ -106,10 +106,17 @@
         <p class="mensagem mensagem-erro" role="alert">{{ mensagemErro }}</p>
       }
       @if (mensagemSucesso) {
-        <p class="mensagem mensagem-sucesso" role="status">{{ mensagemSucesso }}</p>
+        <p class="mensagem mensagem-sucesso" role="status">
+          {{ mensagemSucesso }}
+          @if (exigeNovoLogin) {
+            <a routerLink="/entrar" [queryParams]="{ redirecionar: '/minha-conta/perfil' }">Entrar</a>
+          }
+        </p>
       }
 
-      <button type="submit" class="botao-salvar">SALVAR ALTERAÇÕES</button>
+      <button type="submit" class="botao-salvar" [disabled]="salvando || exigeNovoLogin">
+        {{ salvando ? 'SALVANDO...' : 'SALVAR ALTERAÇÕES' }}
+      </button>
     </form>
   </section>
 </main>

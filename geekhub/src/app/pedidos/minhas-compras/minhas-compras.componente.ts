@@ -35,6 +35,8 @@ export class MinhasComprasComponente implements OnInit {
   estadoSelecionado: EstadoPedido | undefined = undefined;
   pagina = 1;
   resposta: ListarComprasResponse | null = null;
+  carregando = false;
+  erro = '';
 
   ngOnInit(): void {
     if (!this.app.usuarioAtual) {
@@ -70,18 +72,32 @@ export class MinhasComprasComponente implements OnInit {
     this.carregar();
   }
 
-  private carregar(): void {
+  carregar(): void {
     const usuario = this.app.usuarioAtual;
     if (!usuario) {
       return;
     }
 
-    this.resposta = this.app.listarCompras({
-      compradorIdentificador: usuario.identificador,
-      estado: this.estadoSelecionado,
-      pagina: this.pagina,
-      itensPorPagina: this.itensPorPagina,
-    });
-    this.pagina = this.resposta.pagina;
+    this.carregando = true;
+    this.erro = '';
+
+    this.app.dados
+      .listarCompras({
+        compradorIdentificador: usuario.identificador,
+        estado: this.estadoSelecionado,
+        pagina: this.pagina,
+        itensPorPagina: this.itensPorPagina,
+      })
+      .subscribe({
+        next: resposta => {
+          this.resposta = resposta;
+          this.pagina = resposta.pagina;
+          this.carregando = false;
+        },
+        error: (erro: Error) => {
+          this.erro = erro.message;
+          this.carregando = false;
+        },
+      });
   }
 }

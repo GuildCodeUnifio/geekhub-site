@@ -18,6 +18,7 @@ export class RevisarPedidoComponente implements OnInit {
   carrinho: CarrinhoResponse | null = null;
   mensagemErro = '';
   confirmando = false;
+  carregando = false;
 
   ngOnInit(): void {
     this.comprador = this.app.usuarioAtual;
@@ -29,11 +30,21 @@ export class RevisarPedidoComponente implements OnInit {
       return;
     }
 
-    this.carrinho = this.app.consultarCarrinho(this.comprador.identificador);
+    this.carregando = true;
+    this.app.dados.consultarCarrinho(this.comprador.identificador).subscribe({
+      next: carrinho => {
+        this.carregando = false;
+        this.carrinho = carrinho;
 
-    if (this.carrinho.itens.length === 0) {
-      void this.roteador.navigate(['/carrinho']);
-    }
+        if (carrinho.itens.length === 0) {
+          void this.roteador.navigate(['/carrinho']);
+        }
+      },
+      error: (erro: Error) => {
+        this.carregando = false;
+        this.mensagemErro = erro.message;
+      },
+    });
   }
 
   confirmarPedido(): void {
@@ -44,15 +55,15 @@ export class RevisarPedidoComponente implements OnInit {
     this.confirmando = true;
     this.mensagemErro = '';
 
-    const resultado = this.app.criarPedido(this.comprador.identificador);
+    this.app.dados.criarPedido(this.comprador.identificador).subscribe(resultado => {
+      if (!resultado.sucesso || !resultado.pedido) {
+        this.mensagemErro = resultado.mensagem;
+        this.confirmando = false;
+        return;
+      }
 
-    if (!resultado.sucesso || !resultado.pedido) {
-      this.mensagemErro = resultado.mensagem;
-      this.confirmando = false;
-      return;
-    }
-
-    void this.roteador.navigate(['/pedidos', resultado.pedido.identificador]);
+      void this.roteador.navigate(['/pedidos', resultado.pedido.identificador]);
+    });
   }
 
   voltarAoCarrinho(): void {

@@ -1,6 +1,7 @@
 import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 import {
   App,
@@ -35,6 +36,10 @@ export class DetalhesPedidoComponente implements OnInit {
   pedido: PedidoResponse | null = null;
   etapas: EtapaPedido[] = [];
   erro = '';
+  carregando = false;
+  enviandoAvaliacao = false;
+
+  private consultaAtual?: Subscription;
 
   avaliando = false;
   nota = 0;
@@ -54,14 +59,36 @@ export class DetalhesPedidoComponente implements OnInit {
         return;
       }
 
-      this.pedido = Number.isInteger(identificador)
-        ? this.app.detalharPedido(usuario.identificador, identificador)
-        : null;
-      this.erro = this.pedido ? '' : 'Pedido não encontrado.';
-      this.etapas = this.pedido ? this.montarEtapas(this.pedido) : [];
+      this.consultaAtual?.unsubscribe();
       this.cancelarAvaliacao();
       this.mensagemAvaliacao = '';
+      this.pedido = null;
+      this.etapas = [];
+      this.erro = '';
+
+      if (!Number.isInteger(identificador) || identificador < 1) {
+        this.erro = 'Pedido não encontrado.';
+        return;
+      }
+
+      this.carregando = true;
+      this.consultaAtual = this.app.dados
+        .detalharPedido(usuario.identificador, identificador)
+        .subscribe({
+          next: pedido => {
+            this.carregando = false;
+            this.pedido = pedido;
+            this.erro = pedido ? '' : 'Pedido não encontrado.';
+            this.etapas = pedido ? this.montarEtapas(pedido) : [];
+          },
+          error: (erro: Error) => {
+            this.carregando = false;
+            this.erro = erro.message;
+          },
+        });
     });
+
+    this.destroyRef.onDestroy(() => this.consultaAtual?.unsubscribe());
   }
 
   get podeAvaliar(): boolean {
@@ -91,23 +118,33 @@ export class DetalhesPedidoComponente implements OnInit {
       return;
     }
 
-    const resultado = this.app.avaliarPedido({
-      compradorIdentificador: usuario.identificador,
-      pedidoIdentificador: this.pedido.identificador,
-      nota: this.nota,
-      comentario: this.comentario,
-    });
-
-    this.avaliacaoComErro = !resultado.sucesso;
-    this.mensagemAvaliacao = resultado.mensagem;
-
-    if (resultado.pedido) {
-      this.pedido = resultado.pedido;
+    if (this.enviandoAvaliacao) {
+      return;
     }
 
-    if (resultado.sucesso) {
-      this.cancelarAvaliacao();
-    }
+    this.enviandoAvaliacao = true;
+
+    this.app.dados
+      .avaliarPedido({
+        compradorIdentificador: usuario.identificador,
+        pedidoIdentificador: this.pedido.identificador,
+        nota: this.nota,
+        comentario: this.comentario,
+      })
+      .subscribe(resultado => {
+        this.enviandoAvaliacao = false;
+        this.avaliacaoComErro = !resultado.sucesso;
+        this.mensagemAvaliacao = resultado.mensagem;
+
+        if (resultado.pedido) {
+          this.pedido = resultado.pedido;
+          this.etapas = this.montarEtapas(resultado.pedido);
+        }
+
+        if (resultado.sucesso) {
+          this.cancelarAvaliacao();
+        }
+      });
   }
 
   private montarEtapas(pedido: PedidoResponse): EtapaPedido[] {

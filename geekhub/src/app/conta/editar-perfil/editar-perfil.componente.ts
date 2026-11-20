@@ -23,6 +23,8 @@ export class EditarPerfilComponente implements OnInit {
   errosCampos: Partial<Record<CampoPerfil, string>> = {};
   mensagemSucesso = '';
   mensagemErro = '';
+  salvando = false;
+  exigeNovoLogin = false;
 
   ngOnInit(): void {
     const usuario = this.app.usuarioAtual;
@@ -82,6 +84,10 @@ export class EditarPerfilComponente implements OnInit {
   }
 
   salvar(): void {
+    if (this.salvando) {
+      return;
+    }
+
     this.mensagemSucesso = '';
     this.mensagemErro = '';
 
@@ -97,23 +103,30 @@ export class EditarPerfilComponente implements OnInit {
       return;
     }
 
-    const resultado = this.app.editarPerfil({
-      usuarioIdentificador: usuario.identificador,
-      nome: this.nome,
-      email: this.email,
-      foto: this.foto,
-    });
+    this.salvando = true;
 
-    if (!resultado.sucesso || !resultado.usuario) {
-      this.mensagemErro = resultado.mensagem;
-      return;
-    }
+    this.app.dados
+      .editarPerfil({
+        usuarioIdentificador: usuario.identificador,
+        nome: this.nome,
+        email: this.email,
+        foto: this.foto,
+      })
+      .subscribe(resultado => {
+        this.salvando = false;
 
-    this.nome = resultado.usuario.nome;
-    this.email = resultado.usuario.email;
-    this.foto = resultado.usuario.foto ?? '';
-    this.editandoFoto = false;
-    this.mensagemSucesso = resultado.mensagem;
+        if (!resultado.sucesso || !resultado.usuario) {
+          this.mensagemErro = resultado.mensagem;
+          return;
+        }
+
+        this.nome = resultado.usuario.nome;
+        this.email = resultado.usuario.email;
+        this.foto = resultado.usuario.foto ?? '';
+        this.editandoFoto = false;
+        this.exigeNovoLogin = resultado.exigeNovoLogin ?? false;
+        this.mensagemSucesso = resultado.mensagem;
+      });
   }
 
   sair(): void {

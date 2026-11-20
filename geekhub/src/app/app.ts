@@ -26,6 +26,8 @@ export interface ResultadoEdicaoPerfil {
   sucesso: boolean;
   mensagem: string;
   usuario: UsuarioResponse | null;
+  /** Indica que a sessão foi encerrada (ex.: e-mail alterado invalida o token da API). */
+  exigeNovoLogin?: boolean;
 }
 
 const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

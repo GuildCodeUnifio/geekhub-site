@@ -1,6 +1,12 @@
 <main class="pagina-pedido">
   <h1>Revisar pedido</h1>
 
+  @if (carregando) {
+    <p role="status">Carregando itens do pedido...</p>
+  } @else if (!carrinho && mensagemErro) {
+    <p class="mensagem-erro" role="alert">{{ mensagemErro }}</p>
+  }
+
   @if (carrinho && comprador) {
     <div class="grade">
       <section class="painel itens-pedido" aria-labelledby="titulo-itens">
@@ -9,7 +15,11 @@
         <ul class="lista-itens">
           @for (item of carrinho.itens; track item.anuncioIdentificador) {
             <li class="item">
-              <img class="imagem-item" [src]="item.imagem" alt="" />
+              @if (item.imagem) {
+                <img class="imagem-item" [src]="item.imagem" alt="" />
+              } @else {
+                <span class="imagem-item" aria-hidden="true"></span>
+              }
               <div class="dados-item">
                 <a [routerLink]="['/produtos', item.anuncioIdentificador]">{{ item.nome }}</a>
                 <span>Qtd: {{ item.quantidade }}</span>

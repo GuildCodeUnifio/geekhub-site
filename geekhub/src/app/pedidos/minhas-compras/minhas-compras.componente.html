@@ -21,12 +21,25 @@
     }
   </div>
 
-  @if (resposta) {
+  @if (erro) {
+    <div class="estado-vazio" role="alert">
+      <p>{{ erro }}</p>
+      <button type="button" class="filtro" (click)="carregar()">Tentar novamente</button>
+    </div>
+  } @else if (carregando && !resposta) {
+    <p role="status">Carregando compras...</p>
+  } @else if (resposta) {
     <ul class="lista-compras">
       @for (compra of resposta.compras; track compra.identificador) {
         <li>
           <a class="compra" [routerLink]="['/pedidos', compra.identificador]">
-            <img class="imagem-compra" [src]="compra.imagem" alt="" />
+            @if (compra.imagem) {
+              <img class="imagem-compra" [src]="compra.imagem" alt="" />
+            } @else {
+              <span class="imagem-compra sem-imagem" aria-hidden="true">
+                <mat-icon fontSet="material-symbols-outlined">package_2</mat-icon>
+              </span>
+            }
             <div class="dados-compra">
               <strong>Pedido #{{ compra.identificador }}</strong>
               <span>

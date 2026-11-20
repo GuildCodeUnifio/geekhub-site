@@ -41,7 +41,11 @@
         <ul class="lista-itens">
           @for (item of p.itens; track item.anuncioIdentificador) {
             <li class="item">
-              <img class="imagem-item" [src]="item.imagemProduto" alt="" />
+              @if (item.imagemProduto) {
+                <img class="imagem-item" [src]="item.imagemProduto" alt="" />
+              } @else {
+                <span class="imagem-item" aria-hidden="true"></span>
+              }
               <div class="dados-item">
                 <a [routerLink]="['/produtos', item.anuncioIdentificador]">{{ item.nomeProduto }}</a>
                 <span>Qtd: {{ item.quantidade }}</span>
@@ -112,7 +116,9 @@
               ></textarea>
 
               <div class="acoes-avaliacao">
-                <button type="submit" class="botao botao-primario">ENVIAR</button>
+                <button type="submit" class="botao botao-primario" [disabled]="enviandoAvaliacao">
+                  {{ enviandoAvaliacao ? 'ENVIANDO...' : 'ENVIAR' }}
+                </button>
                 <button type="button" class="botao botao-secundario" (click)="cancelarAvaliacao()">
                   CANCELAR
                 </button>
@@ -128,6 +134,8 @@
         }
       </div>
     </div>
+  } @else if (carregando) {
+    <p role="status">Carregando pedido...</p>
   } @else if (erro) {
     <section class="painel nao-encontrado">
       <h1>{{ erro }}</h1>

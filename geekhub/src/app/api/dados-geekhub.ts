@@ -6,21 +6,30 @@ import type {
   AlterarQuantidadeRequest,
   AnuncioResponse,
   App,
+  AvaliarPedidoRequest,
   CadastrarUsuarioRequest,
   CarrinhoResponse,
   CategoriaResponse,
   ConsultarAnunciosRequest,
   ConsultarAnunciosResponse,
+  EditarPerfilRequest,
+  ListarComprasRequest,
+  ListarComprasResponse,
+  PedidoResponse,
   PerfilVendedor,
   RemoverDoCarrinhoRequest,
+  ResultadoEdicaoPerfil,
   ResultadoOperacaoCarrinho,
+  ResultadoOperacaoPedido,
 } from '../app';
 import type { EntrarRequest } from '../autenticacao/entrar/entrar.componente';
 import type { UsuarioResponse } from '../cabecalho/cabecalho/cabecalho';
 import { AnuncioApi } from './clientes/anuncio-api';
 import { AutenticacaoApi } from './clientes/autenticacao-api';
+import { AvaliacaoApi } from './clientes/avaliacao-api';
 import { CarrinhoApi } from './clientes/carrinho-api';
 import { CategoriaApi } from './clientes/categoria-api';
+import { PedidoApi } from './clientes/pedido-api';
 import { UsuarioApi } from './clientes/usuario-api';
 import { FONTE_DADOS, type FonteDados } from './configuracao-api';
 import {
@@ -28,6 +37,8 @@ import {
   paraAnuncioDoCatalogo,
   paraCarrinho,
   paraCategoria,
+  paraCompra,
+  paraPedido,
   paraPerfilVendedor,
   paraUsuario,
 } from './mapeadores-api';
@@ -225,6 +236,143 @@ export class DadosGeekhub {
     return this.operarItemDoCarrinho(request.anuncioIdentificador, identificador =>
       this.obter(CarrinhoApi).removerItem(identificador),
     );
+  }
+
+  editarPerfil(request: EditarPerfilRequest): Observable<ResultadoEdicaoPerfil> {
+    if (!this.usaApi) {
+      return of(this.app.editarPerfil(request));
+    }
+
+    const emailAnterior = this.app.usuarioAtual?.email;
+
+    return this.obter(UsuarioApi)
+      .editar(request.usuarioIdentificador, {
+        nome: request.nome.trim(),
+        email: request.email.trim().toLowerCase(),
+        imagemPerfil: request.foto?.trim() || null,
+      })
+      .pipe(
+        map(paraUsuario),
+        map((usuario): ResultadoEdicaoPerfil => {
+          // O token da API identifica o usuário pelo e-mail; ao trocá-lo, é preciso entrar novamente.
+          if (emailAnterior && emailAnterior !== usuario.email) {
+            this.obter(SessaoApi).limpar();
+            this.app.definirUsuarioAtual(null);
+            return {
+              sucesso: true,
+              mensagem: 'Perfil atualizado. Entre novamente com o novo e-mail.',
+              usuario,
+              exigeNovoLogin: true,
+            };
+          }
+
+          this.app.definirUsuarioAtual(usuario);
+          return { sucesso: true, mensagem: 'Perfil atualizado com sucesso.', usuario };
+        }),
+        catchError((erro: unknown) =>
+          of({
+            sucesso: false,
+            mensagem: extrairMensagemErro(erro, 'Não foi possível atualizar o perfil.'),
+            usuario: null,
+          }),
+        ),
+      );
+  }
+
+  criarPedido(compradorIdentificador: number): Observable<ResultadoOperacaoPedido> {
+    if (!this.usaApi) {
+      return of(this.app.criarPedido(compradorIdentificador));
+    }
+
+    return this.obter(PedidoApi)
+      .criar()
+      .pipe(
+        map(pedido => ({
+          sucesso: true,
+          mensagem: 'Pedido criado com sucesso.',
+          pedido: paraPedido(pedido),
+        })),
+        catchError((erro: unknown) =>
+          of({
+            sucesso: false,
+            mensagem: extrairMensagemErro(erro, 'Não foi possível criar o pedido.'),
+            pedido: null,
+          }),
+        ),
+      );
+  }
+
+  listarCompras(request: ListarComprasRequest): Observable<ListarComprasResponse> {
+    if (!this.usaApi) {
+      return of(this.app.listarCompras(request));
+    }
+
+    const itensPorPagina =
+      request.itensPorPagina && Number.isInteger(request.itensPorPagina) && request.itensPorPagina > 0
+        ? request.itensPorPagina
+        : 10;
+    const pagina =
+      request.pagina && Number.isInteger(request.pagina) && request.pagina >= 1 ? request.pagina : 1;
+
+    return this.obter(PedidoApi)
+      .listarCompras({ estado: request.estado }, { pagina: pagina - 1, tamanho: itensPorPagina })
+      .pipe(
+        map(resposta => ({
+          compras: resposta.itens.map(paraCompra),
+          pagina: resposta.numero + 1,
+          itensPorPagina: resposta.tamanho,
+          total: resposta.totalElementos,
+        })),
+        catchError((erro: unknown) => this.falhar(erro, 'Não foi possível carregar suas compras.')),
+      );
+  }
+
+  detalharPedido(
+    compradorIdentificador: number,
+    pedidoIdentificador: number,
+  ): Observable<PedidoResponse | null> {
+    if (!this.usaApi) {
+      return of(this.app.detalharPedido(compradorIdentificador, pedidoIdentificador));
+    }
+
+    return this.obter(PedidoApi)
+      .detalhar(pedidoIdentificador)
+      .pipe(
+        map(paraPedido),
+        catchError((erro: unknown) =>
+          statusErro(erro) === 404 || statusErro(erro) === 403
+            ? of(null)
+            : this.falhar(erro, 'Não foi possível carregar o pedido.'),
+        ),
+      );
+  }
+
+  avaliarPedido(request: AvaliarPedidoRequest): Observable<ResultadoOperacaoPedido> {
+    if (!this.usaApi) {
+      return of(this.app.avaliarPedido(request));
+    }
+
+    return this.obter(AvaliacaoApi)
+      .cadastrar({
+        pedidoId: request.pedidoIdentificador,
+        nota: request.nota,
+        comentario: request.comentario?.trim() || null,
+      })
+      .pipe(
+        switchMap(() => this.obter(PedidoApi).detalhar(request.pedidoIdentificador)),
+        map(pedido => ({
+          sucesso: true,
+          mensagem: 'Avaliação enviada. Obrigado!',
+          pedido: paraPedido(pedido),
+        })),
+        catchError((erro: unknown) =>
+          of({
+            sucesso: false,
+            mensagem: extrairMensagemErro(erro, 'Não foi possível enviar a avaliação.'),
+            pedido: null,
+          }),
+        ),
+      );
   }
 
   encerrarSessao(): void {
