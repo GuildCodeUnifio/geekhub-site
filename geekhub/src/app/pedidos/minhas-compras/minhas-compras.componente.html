@@ -1,1 +1,92 @@
-<p>minhas-compras works!</p>
+<main class="pagina-compras">
+  <nav class="trilha" aria-label="Trilha de navegação">
+    <a routerLink="/">Início</a>
+    <span aria-hidden="true">&gt;</span>
+    <span aria-current="page">Minhas compras</span>
+  </nav>
+
+  <h1 class="titulo-oculto">Minhas compras</h1>
+
+  <div class="filtros" role="group" aria-label="Filtrar compras por estado">
+    @for (filtro of filtros; track filtro.rotulo) {
+      <button
+        type="button"
+        class="filtro"
+        [class.ativo]="filtro.estado === estadoSelecionado"
+        [attr.aria-pressed]="filtro.estado === estadoSelecionado"
+        (click)="filtrar(filtro.estado)"
+      >
+        {{ filtro.rotulo }}
+      </button>
+    }
+  </div>
+
+  @if (erro) {
+    <div class="estado-vazio" role="alert">
+      <p>{{ erro }}</p>
+      <button type="button" class="filtro" (click)="carregar()">Tentar novamente</button>
+    </div>
+  } @else if (carregando && !resposta) {
+    <p role="status">Carregando compras...</p>
+  } @else if (resposta) {
+    <ul class="lista-compras">
+      @for (compra of resposta.compras; track compra.identificador) {
+        <li>
+          <a class="compra" [routerLink]="['/pedidos', compra.identificador]">
+            @if (compra.imagem) {
+              <img class="imagem-compra" [src]="compra.imagem" alt="" />
+            } @else {
+              <span class="imagem-compra sem-imagem" aria-hidden="true">
+                <mat-icon fontSet="material-symbols-outlined">package_2</mat-icon>
+              </span>
+            }
+            <div class="dados-compra">
+              <strong>Pedido #{{ compra.identificador }}</strong>
+              <span>
+                Data: {{ compra.criadoEm | date: 'dd/MM/yyyy' }} ·
+                {{ compra.quantidadeItens }}
+                {{ compra.quantidadeItens === 1 ? 'item' : 'itens' }}
+              </span>
+            </div>
+            <strong class="valor">{{ compra.valorTotal | currency: 'BRL' }}</strong>
+            <span class="estado" [attr.data-estado]="compra.estado">
+              {{ rotulosEstado[compra.estado] }}
+            </span>
+            <mat-icon fontSet="material-symbols-outlined" class="seta" aria-hidden="true">
+              chevron_right
+            </mat-icon>
+          </a>
+        </li>
+      } @empty {
+        <li class="estado-vazio">
+          <p>
+            {{ estadoSelecionado ? 'Nenhuma compra com este estado.' : 'Você ainda não fez compras.' }}
+          </p>
+          @if (!estadoSelecionado) {
+            <a routerLink="/">Explorar o catálogo</a>
+          }
+        </li>
+      }
+    </ul>
+
+    @if (resposta.total > 0) {
+      <div class="rodape-lista">
+        <p>
+          Mostrando {{ inicioIntervalo }} a {{ fimIntervalo }} de {{ resposta.total }}
+          {{ resposta.total === 1 ? 'pedido' : 'pedidos' }}
+        </p>
+
+        @if (resposta.total > itensPorPagina) {
+          <mat-paginator
+            [length]="resposta.total"
+            [pageIndex]="resposta.pagina - 1"
+            [pageSize]="itensPorPagina"
+            [hidePageSize]="true"
+            aria-label="Paginação das compras"
+            (page)="mudarPagina($event)"
+          />
+        }
+      </div>
+    }
+  }
+</main>

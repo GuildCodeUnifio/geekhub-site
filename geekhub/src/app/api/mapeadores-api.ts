@@ -2,6 +2,8 @@ import type {
   AnuncioResponse,
   CarrinhoResponse,
   CategoriaResponse,
+  CompraResponse,
+  PedidoResponse,
   PerfilVendedor,
 } from '../app';
 import type { UsuarioResponse } from '../cabecalho/cabecalho/cabecalho';
@@ -121,6 +123,42 @@ export function paraCarrinho(carrinho: api.ConsultarCarrinhoResponse): CarrinhoR
       subtotal: item.subtotal,
     })),
     total: carrinho.total ?? 0,
+  };
+}
+
+export function paraPedido(pedido: api.DetalharPedidoResponse): PedidoResponse {
+  return {
+    identificador: pedido.id,
+    compradorIdentificador: pedido.compradorId,
+    compradorNome: pedido.compradorNome,
+    compradorEmail: pedido.compradorEmail,
+    itens: (pedido.itens ?? []).map(item => ({
+      anuncioIdentificador: item.anuncioId,
+      vendedorIdentificador: item.vendedorId,
+      nomeProduto: item.nomeProduto,
+      imagemProduto: item.imagemProduto ?? '',
+      precoUnitario: item.precoUnitario,
+      quantidade: item.quantidade,
+      subtotal: item.subtotal,
+    })),
+    valorTotal: pedido.valorTotal,
+    estado: pedido.estado,
+    historico: (pedido.historico ?? []).map(evento => ({ ...evento })),
+    avaliado: Boolean(pedido.avaliado),
+    criadoEm: pedido.criadoEm,
+  };
+}
+
+/** A listagem de compras da API não traz imagem; o card mostra um marcador no lugar. */
+export function paraCompra(compra: api.ListarCompraResponse): CompraResponse {
+  return {
+    identificador: compra.id,
+    valorTotal: compra.valorTotal,
+    estado: compra.estado,
+    avaliado: Boolean(compra.avaliado),
+    quantidadeItens: compra.quantidadeItens,
+    imagem: '',
+    criadoEm: compra.criadoEm,
   };
 }
 

@@ -1,0 +1,362 @@
+:host {
+  display: block;
+  min-height: calc(100dvh - 64px);
+  background-color: #faf9f6;
+  color: #212121;
+  font-family: Arial, sans-serif;
+}
+
+.pagina-pedido {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  box-sizing: border-box;
+}
+
+.voltar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 20px;
+  color: #212121;
+  font-weight: 700;
+}
+
+.cabecalho-pedido {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+
+  h1 {
+    margin: 0;
+    font-size: 2.25rem;
+    font-weight: 700;
+  }
+}
+
+.estado {
+  padding: 10px 24px;
+  border: 1px solid #212121;
+  background-color: #f4f4f6;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+
+  &[data-estado='CANCELADO'] {
+    border-color: #b3261e;
+    color: #b3261e;
+  }
+}
+
+.painel {
+  border: 2px solid #212121;
+  background-color: #faf9f6;
+
+  h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+  }
+}
+
+.linha-tempo {
+  margin-bottom: 24px;
+  padding: 32px 24px;
+
+  ol {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 24px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+}
+
+.etapa {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: #9e9e9e;
+  text-align: center;
+
+  mat-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+  }
+
+  strong {
+    font-size: 1.1rem;
+  }
+
+  time,
+  span {
+    font-size: 0.9rem;
+  }
+
+  &.concluida {
+    color: #212121;
+
+    time {
+      color: #616161;
+    }
+  }
+
+  &[data-estado='CANCELADO'] {
+    color: #b3261e;
+  }
+}
+
+.grade {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+.cabecalho-painel {
+  padding: 24px;
+  border-bottom: 2px solid #212121;
+}
+
+.lista-itens {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+
+  & + & {
+    border-top: 2px solid #212121;
+  }
+}
+
+.imagem-item {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border: 1px solid #212121;
+  background-color: #bdbdbd;
+  object-fit: cover;
+}
+
+.dados-item {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+
+  a {
+    color: inherit;
+    font-weight: 700;
+  }
+
+  span {
+    color: #616161;
+    font-size: 0.9rem;
+  }
+}
+
+.valor {
+  font-size: 1.15rem;
+  white-space: nowrap;
+}
+
+.coluna-lateral {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.resumo {
+  padding: 24px 32px;
+
+  dl {
+    margin: 20px 0 0;
+  }
+
+  dl > div {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  dt {
+    color: #616161;
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 700;
+  }
+
+  .linha-total {
+    margin: 0;
+    padding-top: 16px;
+    border-top: 2px solid #212121;
+    font-size: 1.2rem;
+
+    dt {
+      color: #212121;
+      font-weight: 700;
+    }
+  }
+}
+
+.botao {
+  min-height: 48px;
+  padding: 0 24px;
+  border: 1px solid #212121;
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  cursor: pointer;
+}
+
+.botao-primario {
+  border-color: #3f51b5;
+  background-color: #3f51b5;
+  color: #fff;
+}
+
+.botao-secundario {
+  background-color: #f4f4f6;
+  color: #212121;
+}
+
+.botao-largo {
+  width: 100%;
+  min-height: 56px;
+}
+
+.voltar:focus-visible,
+.botao:focus-visible,
+.estrelas label:focus-within {
+  outline: 3px solid #3f51b5;
+  outline-offset: 2px;
+}
+
+.formulario-avaliacao {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px;
+
+  fieldset {
+    margin: 0;
+    padding: 0;
+    border: none;
+  }
+
+  legend,
+  .rotulo-comentario {
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+
+  textarea {
+    padding: 10px;
+    border: 1px solid #212121;
+    background-color: #fff;
+    font: inherit;
+    resize: vertical;
+  }
+}
+
+.estrelas {
+  display: flex;
+  gap: 4px;
+
+  label {
+    cursor: pointer;
+    color: #bdbdbd;
+    font-size: 2rem;
+    line-height: 1;
+
+    &.selecionada {
+      color: #f5a623;
+    }
+  }
+
+  input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
+}
+
+.acoes-avaliacao {
+  display: flex;
+  gap: 12px;
+
+  .botao {
+    flex: 1;
+  }
+}
+
+.mensagem {
+  margin: 0;
+  padding: 12px 16px;
+  border: 1px solid #1b5e20;
+  background-color: #e8f5e9;
+  color: #1b5e20;
+
+  &.mensagem-erro {
+    border-color: #b3261e;
+    background-color: #fcebea;
+    color: #b3261e;
+  }
+}
+
+.aviso-avaliado {
+  margin: 0;
+  color: #616161;
+  text-align: center;
+}
+
+.nao-encontrado {
+  padding: 32px;
+
+  h1 {
+    margin: 0 0 12px;
+  }
+
+  a {
+    color: #3f51b5;
+  }
+}
+
+@media (max-width: 768px) {
+  .pagina-pedido {
+    padding: 24px 16px;
+  }
+
+  .cabecalho-pedido h1 {
+    font-size: 1.75rem;
+  }
+
+  .linha-tempo ol {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grade {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .item {
+    padding: 12px 16px;
+  }
+}
