@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { App, type CarrinhoResponse } from '../../app';
@@ -12,12 +12,15 @@ import type { UsuarioResponse } from '../../cabecalho/cabecalho/cabecalho';
 })
 export class RevisarPedidoComponente implements OnInit {
   private readonly app = inject(App);
+  /** A aplicação é zoneless: respostas assíncronas da API precisam marcar a view para atualização. */
+  private readonly detector = inject(ChangeDetectorRef);
   private readonly roteador = inject(Router);
 
   comprador: UsuarioResponse | null = null;
   carrinho: CarrinhoResponse | null = null;
   mensagemErro = '';
   confirmando = false;
+  carregando = false;
 
   ngOnInit(): void {
     this.comprador = this.app.usuarioAtual;
@@ -29,11 +32,23 @@ export class RevisarPedidoComponente implements OnInit {
       return;
     }
 
-    this.carrinho = this.app.consultarCarrinho(this.comprador.identificador);
+    this.carregando = true;
+    this.app.dados.consultarCarrinho(this.comprador.identificador).subscribe({
+      next: carrinho => {
+        this.carregando = false;
+        this.carrinho = carrinho;
+        this.detector.markForCheck();
 
-    if (this.carrinho.itens.length === 0) {
-      void this.roteador.navigate(['/carrinho']);
-    }
+        if (carrinho.itens.length === 0) {
+          void this.roteador.navigate(['/carrinho']);
+        }
+      },
+      error: (erro: Error) => {
+        this.carregando = false;
+        this.mensagemErro = erro.message;
+        this.detector.markForCheck();
+      },
+    });
   }
 
   confirmarPedido(): void {
@@ -44,15 +59,16 @@ export class RevisarPedidoComponente implements OnInit {
     this.confirmando = true;
     this.mensagemErro = '';
 
-    const resultado = this.app.criarPedido(this.comprador.identificador);
+    this.app.dados.criarPedido(this.comprador.identificador).subscribe(resultado => {
+      if (!resultado.sucesso || !resultado.pedido) {
+        this.mensagemErro = resultado.mensagem;
+        this.confirmando = false;
+        this.detector.markForCheck();
+        return;
+      }
 
-    if (!resultado.sucesso || !resultado.pedido) {
-      this.mensagemErro = resultado.mensagem;
-      this.confirmando = false;
-      return;
-    }
-
-    void this.roteador.navigate(['/pedidos', resultado.pedido.identificador]);
+      void this.roteador.navigate(['/pedidos', resultado.pedido.identificador]);
+    });
   }
 
   voltarAoCarrinho(): void {

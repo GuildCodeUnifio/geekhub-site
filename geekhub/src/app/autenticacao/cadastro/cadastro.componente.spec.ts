@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { firstValueFrom } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { provideRouter, Router } from '@angular/router';
 import { vi } from 'vitest';
@@ -79,13 +80,13 @@ describe('CadastroComponente', () => {
     expect(link?.textContent).toContain('Entrar');
   });
 
-  it('cadastra a conta no App e no localStorage sem expor a senha', () => {
-    const resultado = component.cadastrarUsuario({
+  it('cadastra a conta no App e no localStorage sem expor a senha', async () => {
+    const resultado = await firstValueFrom(component.cadastrarUsuario({
       nome: '  Pessoa Teste  ',
       email: '  TESTE@GEEKHUB.EXAMPLE  ',
       senha: ' demo123 ',
       confirmacaoSenha: ' demo123 ',
-    });
+    }));
 
     expect(resultado.sucesso).toBe(true);
     expect(resultado.mensagem).toBe('Conta criada com sucesso!');
@@ -127,13 +128,13 @@ describe('CadastroComponente', () => {
     expect(component.cadastroConcluido).toBe(true);
   });
 
-  it('exibe erros em todos os campos obrigatorios vazios sem parar no primeiro', () => {
-    const resultado = component.cadastrarUsuario({
+  it('exibe erros em todos os campos obrigatorios vazios sem parar no primeiro', async () => {
+    const resultado = await firstValueFrom(component.cadastrarUsuario({
       nome: '   ',
       email: '   ',
       senha: '   ',
       confirmacaoSenha: '',
-    });
+    }));
 
     expect(resultado.sucesso).toBe(false);
     expect(component.errosCampos).toEqual({
@@ -145,13 +146,13 @@ describe('CadastroComponente', () => {
     expect(navegar).not.toHaveBeenCalled();
   });
 
-  it('rejeita e-mail invalido e confirmacao de senha diferente', () => {
-    const resultado = component.cadastrarUsuario({
+  it('rejeita e-mail invalido e confirmacao de senha diferente', async () => {
+    const resultado = await firstValueFrom(component.cadastrarUsuario({
       nome: 'João',
       email: 'email-invalido',
       senha: '123',
       confirmacaoSenha: '456',
-    });
+    }));
 
     expect(resultado.sucesso).toBe(false);
     expect(component.errosCampos).toEqual({
@@ -163,13 +164,13 @@ describe('CadastroComponente', () => {
     expect(component.errosCampos.email).toBeUndefined();
   });
 
-  it('bloqueia e-mail ja cadastrado mantendo a mensagem esperada', () => {
-    const resultado = component.cadastrarUsuario({
+  it('bloqueia e-mail ja cadastrado mantendo a mensagem esperada', async () => {
+    const resultado = await firstValueFrom(component.cadastrarUsuario({
       nome: 'Outro Usuário',
       email: '  DEMO@GEEKHUB.COM  ',
       senha: '123',
       confirmacaoSenha: '123',
-    });
+    }));
 
     expect(resultado).toEqual({
       sucesso: false,

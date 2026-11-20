@@ -1,6 +1,7 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Observable, catchError, map, of } from 'rxjs';
 
 import { App } from '../../app';
 import type { UsuarioResponse } from '../../cabecalho/cabecalho/cabecalho';
@@ -34,6 +35,8 @@ export interface CadastroResultado {
 export class CadastroComponente {
   private readonly app = inject(App);
   private readonly roteador = inject(Router);
+  /** A aplicação é zoneless: respostas assíncronas da API precisam marcar a view para atualização. */
+  private readonly detector = inject(ChangeDetectorRef);
   private readonly snackBar = inject(MatSnackBar);
 
   nome = '';
@@ -41,6 +44,9 @@ export class CadastroComponente {
   senha = '';
   confirmacaoSenha = '';
   cadastroConcluido = false;
+  enviando = false;
+  /** Erro que não pertence a um campo específico (ex.: API indisponível). */
+  erroGeral = '';
   errosCampos: ErrosCamposCadastro = {};
 
   senhaVisivel = false;
@@ -63,27 +69,29 @@ export class CadastroComponente {
   };
 
   cadastrar(): void {
-    if (this.cadastroConcluido) {
+    if (this.cadastroConcluido || this.enviando) {
       return;
     }
 
-    const resultado = this.cadastrarUsuario({
+    this.cadastrarUsuario({
       nome: this.nome,
       email: this.email,
       senha: this.senha,
       confirmacaoSenha: this.confirmacaoSenha,
+    }).subscribe(resultado => {
+      if (resultado.sucesso) {
+        this.cadastroConcluido = true;
+        this.snackBar.open(resultado.mensagem, 'Fechar', {
+          duration: 4000,
+        });
+        void this.roteador.navigate(['/entrar']);
+      } else if (this.erroGeral) {
+        this.snackBar.open(this.erroGeral, 'Fechar', { duration: 5000 });
+      }
     });
-
-    if (resultado.sucesso) {
-      this.cadastroConcluido = true;
-      this.snackBar.open(resultado.mensagem, 'Fechar', {
-        duration: 4000,
-      });
-      void this.roteador.navigate(['/entrar']);
-    }
   }
 
-  cadastrarUsuario(request: CadastroRequest): CadastroResultado {
+  cadastrarUsuario(request: CadastroRequest): Observable<CadastroResultado> {
     this.errosCampos = {};
 
     const nome = request.nome.trim();
@@ -116,29 +124,39 @@ export class CadastroComponente {
       this.errosCampos.confirmacaoSenha;
 
     if (primeiroErro) {
-      return {
+      return of({
         sucesso: false,
         mensagem: primeiroErro,
-      };
+      });
     }
 
-    const usuario = this.app.cadastrar({
-      nome,
-      email,
-      senha: request.senha,
-    });
+    this.enviando = true;
+    this.erroGeral = '';
 
-    if (!usuario) {
-      const mensagem = 'E-mail já cadastrado';
-      this.errosCampos.email = mensagem;
-      return { sucesso: false, mensagem };
-    }
+    return this.app.dados.cadastrar({ nome, email, senha: request.senha }).pipe(
+      map((usuario): CadastroResultado => {
+        this.enviando = false;
+        this.detector.markForCheck();
 
-    return {
-      sucesso: true,
-      mensagem: 'Conta criada com sucesso!',
-      usuario,
-    };
+        if (!usuario) {
+          const mensagem = 'E-mail já cadastrado';
+          this.errosCampos.email = mensagem;
+          return { sucesso: false, mensagem };
+        }
+
+        return {
+          sucesso: true,
+          mensagem: 'Conta criada com sucesso!',
+          usuario,
+        };
+      }),
+      catchError((erro: Error) => {
+        this.enviando = false;
+        this.erroGeral = erro.message;
+        this.detector.markForCheck();
+        return of({ sucesso: false, mensagem: erro.message });
+      }),
+    );
   }
 
   alternarVisibilidadeSenha(): void {

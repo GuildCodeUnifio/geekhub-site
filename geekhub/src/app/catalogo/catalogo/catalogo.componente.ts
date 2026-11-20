@@ -1,7 +1,8 @@
-import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PageEvent } from '@angular/material/paginator';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Observable, Subscription } from 'rxjs';
 
 import {
   App,
@@ -30,20 +31,21 @@ export class CatalogoComponente implements OnInit {
   private readonly roteador = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly categorias: CategoriaResponse[] = this.app.listarCategorias();
+  readonly categorias = signal<CategoriaResponse[]>([]);
   readonly categoriaSelecionada = signal<number | undefined>(undefined);
   readonly termoBusca = signal('');
   readonly paginaAtual = signal(1);
   readonly itensPorPagina = signal(8);
+  readonly carregando = signal(false);
+  readonly erro = signal('');
+  readonly resultado = signal<ConsultarAnunciosResponse>({
+    anuncios: [],
+    pagina: 1,
+    itensPorPagina: 8,
+    total: 0,
+  });
 
-  readonly resultado = computed<ConsultarAnunciosResponse>(() =>
-    this.consultarAnuncios({
-      termo: this.termoBusca() || undefined,
-      categoriaIdentificador: this.categoriaSelecionada(),
-      pagina: this.paginaAtual(),
-      itensPorPagina: this.itensPorPagina(),
-    }),
-  );
+  private consultaAtual?: Subscription;
 
   get anuncios(): AnuncioResponse[] {
     return this.resultado().anuncios;
@@ -58,6 +60,14 @@ export class CatalogoComponente implements OnInit {
   }
 
   ngOnInit(): void {
+    this.app.dados
+      .listarCategorias()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (categorias) => this.categorias.set(categorias),
+        error: (erro: Error) => this.erro.set(erro.message),
+      });
+
     this.rota.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((parametros) => {
       const novoTermo = (parametros.get('busca') ?? '').trim();
       if (novoTermo !== this.termoBusca()) {
@@ -68,20 +78,51 @@ export class CatalogoComponente implements OnInit {
       const categoriaParam = parametros.get('categoria');
       if (categoriaParam !== null) {
         const categoriaId = Number(categoriaParam);
-        const valida = this.categorias.some((categoria) => categoria.identificador === categoriaId);
+        const categorias = this.categorias();
+        const valida =
+          Number.isInteger(categoriaId) &&
+          (categorias.length === 0 ||
+            categorias.some((categoria) => categoria.identificador === categoriaId));
         this.categoriaSelecionada.set(valida ? categoriaId : undefined);
         this.paginaAtual.set(1);
       }
+
+      this.atualizarAnuncios();
     });
+
+    this.destroyRef.onDestroy(() => this.consultaAtual?.unsubscribe());
   }
 
-  consultarAnuncios(request: ConsultarAnunciosRequest = {}): ConsultarAnunciosResponse {
-    return this.app.consultarAnuncios(request);
+  consultarAnuncios(request: ConsultarAnunciosRequest = {}): Observable<ConsultarAnunciosResponse> {
+    return this.app.dados.consultarAnuncios(request);
+  }
+
+  atualizarAnuncios(): void {
+    this.consultaAtual?.unsubscribe();
+    this.carregando.set(true);
+    this.erro.set('');
+
+    this.consultaAtual = this.consultarAnuncios({
+      termo: this.termoBusca() || undefined,
+      categoriaIdentificador: this.categoriaSelecionada(),
+      pagina: this.paginaAtual(),
+      itensPorPagina: this.itensPorPagina(),
+    }).subscribe({
+      next: (resultado) => {
+        this.resultado.set(resultado);
+        this.carregando.set(false);
+      },
+      error: (erro: Error) => {
+        this.erro.set(erro.message);
+        this.carregando.set(false);
+      },
+    });
   }
 
   selecionarCategoria(categoriaIdentificador?: number): void {
     this.categoriaSelecionada.set(categoriaIdentificador);
     this.paginaAtual.set(1);
+    this.atualizarAnuncios();
 
     if (this.rota.snapshot.queryParamMap.has('categoria')) {
       void this.roteador.navigate([], {
@@ -98,6 +139,7 @@ export class CatalogoComponente implements OnInit {
     }
 
     this.paginaAtual.set(evento.pageIndex + 1);
+    this.atualizarAnuncios();
   }
 
   limparSelecao(): void {
@@ -106,6 +148,7 @@ export class CatalogoComponente implements OnInit {
     this.categoriaSelecionada.set(undefined);
     this.termoBusca.set('');
     this.paginaAtual.set(1);
+    this.atualizarAnuncios();
 
     if (tinhaBusca || tinhaCategoriaNaRota) {
       void this.roteador.navigate([], {

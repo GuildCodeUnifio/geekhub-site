@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, Injector, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { DadosGeekhub } from './api/dados-geekhub';
 import type { EntrarRequest } from './autenticacao/entrar/entrar.componente';
 import type { UsuarioResponse } from './cabecalho/cabecalho/cabecalho';
 
@@ -25,6 +26,8 @@ export interface ResultadoEdicaoPerfil {
   sucesso: boolean;
   mensagem: string;
   usuario: UsuarioResponse | null;
+  /** Indica que a sessão foi encerrada (ex.: e-mail alterado invalida o token da API). */
+  exigeNovoLogin?: boolean;
 }
 
 const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -34,6 +37,8 @@ const CHAVE_USUARIO_ATUAL_STORAGE = 'geekhub.usuarioAtual';
 const CHAVE_CARRINHOS_STORAGE = 'geekhub.carrinhos';
 
 export interface ItemCarrinhoResponse {
+  /** Identificador do item no carrinho (disponível quando os dados vêm da API). */
+  identificador?: number;
   anuncioIdentificador: number;
   nome: string;
   imagem: string;
@@ -141,7 +146,8 @@ export interface PerfilVendedor {
   contagem: number;
   membroDesde: number;
   vendas: number;
-  taxaResposta: number;
+  /** Não fornecida pela API; `null` oculta o indicador. */
+  taxaResposta: number | null;
   avaliacoes: {
     identificador: number;
     autor: string;
@@ -422,6 +428,9 @@ export class App {
     this.carregarUsuarioAtual()
   );
 
+  /** Acesso aos dados pela API ou pelos dados de exemplo, conforme `CONFIGURACAO_API`. */
+  readonly dados = new DadosGeekhub(this, inject(Injector));
+
   get usuarioAtual(): UsuarioResponse | null {
     return this.usuarioAtualSinal();
   }
@@ -510,7 +519,13 @@ export class App {
     });
   }
 
+  definirUsuarioAtual(usuario: UsuarioResponse | null): void {
+    this.usuarioAtual = usuario;
+    this.salvarUsuarioAtual();
+  }
+
   sair(): void {
+    this.dados.encerrarSessao();
     this.usuarioAtual = null;
     this.salvarUsuarioAtual();
     void this.roteador.navigate(['/entrar']);

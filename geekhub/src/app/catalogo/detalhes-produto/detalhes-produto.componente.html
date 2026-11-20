@@ -171,8 +171,8 @@
           matButton="filled"
           type="button"
           class="botao-adicionar-carrinho botao-primario"
-          [disabled]="!disponivelParaCompra(produto)"
-          (click)="adicionarAoCarrinho(produto)"
+          [disabled]="!disponivelParaCompra(produto) || adicionando()"
+          (click)="aoAdicionarAoCarrinho(produto)"
         >
           <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">shopping_bag</mat-icon>
           <span>{{
@@ -204,11 +204,13 @@
         </mat-card-content>
       </mat-card>
     </div>
+  } @else if (carregando()) {
+    <p class="carregando" role="status">Carregando produto...</p>
   } @else {
     <mat-card class="estado-nao-encontrado caixa-borda" appearance="outlined">
       <mat-card-content>
-        <h1>Produto não encontrado</h1>
-        <p>Não existe um anúncio com esse identificador.</p>
+        <h1>{{ erro() ? 'Não foi possível carregar o produto' : 'Produto não encontrado' }}</h1>
+        <p>{{ erro() || 'Não existe um anúncio com esse identificador.' }}</p>
         <a matButton="filled" class="botao-voltar-catalogo botao-primario" routerLink="/"
           >Voltar ao catálogo</a
         >

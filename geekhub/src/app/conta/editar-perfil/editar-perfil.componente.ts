@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { App } from '../../app';
@@ -13,6 +13,8 @@ type CampoPerfil = 'nome' | 'email' | 'foto';
 })
 export class EditarPerfilComponente implements OnInit {
   private readonly app = inject(App);
+  /** A aplicação é zoneless: respostas assíncronas da API precisam marcar a view para atualização. */
+  private readonly detector = inject(ChangeDetectorRef);
   private readonly roteador = inject(Router);
 
   nome = '';
@@ -23,6 +25,8 @@ export class EditarPerfilComponente implements OnInit {
   errosCampos: Partial<Record<CampoPerfil, string>> = {};
   mensagemSucesso = '';
   mensagemErro = '';
+  salvando = false;
+  exigeNovoLogin = false;
 
   ngOnInit(): void {
     const usuario = this.app.usuarioAtual;
@@ -82,6 +86,10 @@ export class EditarPerfilComponente implements OnInit {
   }
 
   salvar(): void {
+    if (this.salvando) {
+      return;
+    }
+
     this.mensagemSucesso = '';
     this.mensagemErro = '';
 
@@ -97,23 +105,31 @@ export class EditarPerfilComponente implements OnInit {
       return;
     }
 
-    const resultado = this.app.editarPerfil({
-      usuarioIdentificador: usuario.identificador,
-      nome: this.nome,
-      email: this.email,
-      foto: this.foto,
-    });
+    this.salvando = true;
 
-    if (!resultado.sucesso || !resultado.usuario) {
-      this.mensagemErro = resultado.mensagem;
-      return;
-    }
+    this.app.dados
+      .editarPerfil({
+        usuarioIdentificador: usuario.identificador,
+        nome: this.nome,
+        email: this.email,
+        foto: this.foto,
+      })
+      .subscribe(resultado => {
+        this.salvando = false;
+        this.detector.markForCheck();
 
-    this.nome = resultado.usuario.nome;
-    this.email = resultado.usuario.email;
-    this.foto = resultado.usuario.foto ?? '';
-    this.editandoFoto = false;
-    this.mensagemSucesso = resultado.mensagem;
+        if (!resultado.sucesso || !resultado.usuario) {
+          this.mensagemErro = resultado.mensagem;
+          return;
+        }
+
+        this.nome = resultado.usuario.nome;
+        this.email = resultado.usuario.email;
+        this.foto = resultado.usuario.foto ?? '';
+        this.editandoFoto = false;
+        this.exigeNovoLogin = resultado.exigeNovoLogin ?? false;
+        this.mensagemSucesso = resultado.mensagem;
+      });
   }
 
   sair(): void {

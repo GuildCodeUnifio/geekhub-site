@@ -97,6 +97,12 @@
   object-fit: cover;
 }
 
+.sem-imagem {
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+
 .dados-compra {
   display: flex;
   flex: 1;
