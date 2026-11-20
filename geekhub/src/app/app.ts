@@ -14,6 +14,21 @@ export interface CadastrarUsuarioRequest {
   senha: string;
 }
 
+export interface EditarPerfilRequest {
+  usuarioIdentificador: number;
+  nome: string;
+  email: string;
+  foto?: string;
+}
+
+export interface ResultadoEdicaoPerfil {
+  sucesso: boolean;
+  mensagem: string;
+  usuario: UsuarioResponse | null;
+}
+
+const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const CHAVE_USUARIOS_STORAGE = 'geekhub.usuarios';
 const CHAVE_USUARIO_ATUAL_STORAGE = 'geekhub.usuarioAtual';
 const CHAVE_CARRINHOS_STORAGE = 'geekhub.carrinhos';
@@ -309,6 +324,66 @@ export class App {
 
   encerrarSessao(): void {
     this.sair();
+  }
+
+  editarPerfil(request: EditarPerfilRequest): ResultadoEdicaoPerfil {
+    const nome = request.nome.trim();
+    const email = request.email.trim().toLowerCase();
+    const foto = request.foto?.trim() ?? '';
+    const conta = this.usuarios.find(
+      usuario => usuario.identificador === request.usuarioIdentificador
+    );
+
+    if (!conta) {
+      return { sucesso: false, mensagem: 'Usuário não encontrado.', usuario: null };
+    }
+
+    if (!nome || nome.length > 255) {
+      return { sucesso: false, mensagem: 'Informe um nome válido.', usuario: null };
+    }
+
+    if (!REGEX_EMAIL.test(email) || email.length > 255) {
+      return { sucesso: false, mensagem: 'Informe um e-mail válido.', usuario: null };
+    }
+
+    if (foto.length > 512) {
+      return {
+        sucesso: false,
+        mensagem: 'O endereço da foto deve ter no máximo 512 caracteres.',
+        usuario: null,
+      };
+    }
+
+    const emailEmUso = this.usuarios.some(
+      usuario =>
+        usuario.identificador !== conta.identificador &&
+        usuario.email.trim().toLowerCase() === email
+    );
+
+    if (emailEmUso) {
+      return {
+        sucesso: false,
+        mensagem: 'Este e-mail já está em uso por outra conta.',
+        usuario: null,
+      };
+    }
+
+    conta.nome = nome;
+    conta.email = email;
+    if (foto) {
+      conta.foto = foto;
+    } else {
+      delete conta.foto;
+    }
+    this.salvarUsuarios();
+
+    const usuario = this.paraUsuarioResponse(conta);
+    if (this.usuarioAtual?.identificador === conta.identificador) {
+      this.usuarioAtual = usuario;
+      this.salvarUsuarioAtual();
+    }
+
+    return { sucesso: true, mensagem: 'Perfil atualizado com sucesso.', usuario };
   }
 
   private paraUsuarioResponse(conta: ContaUsuario): UsuarioResponse {

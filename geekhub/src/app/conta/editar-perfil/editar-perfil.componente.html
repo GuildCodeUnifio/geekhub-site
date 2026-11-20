@@ -1,1 +1,115 @@
-<p>editar-perfil works!</p>
+<main class="pagina-conta">
+  <nav class="painel menu-conta" aria-labelledby="titulo-menu-conta">
+    <h2 id="titulo-menu-conta">Minha conta</h2>
+
+    <a class="opcao-menu ativa" routerLink="/minha-conta/perfil" aria-current="page">
+      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">person</mat-icon>
+      Perfil
+    </a>
+    <a class="opcao-menu" routerLink="/pedidos">
+      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">package_2</mat-icon>
+      Pedidos
+    </a>
+    <button type="button" class="opcao-menu" (click)="sair()">
+      <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">logout</mat-icon>
+      Sair
+    </button>
+  </nav>
+
+  <section class="painel conteudo-perfil" aria-labelledby="titulo-editar-perfil">
+    <h1 id="titulo-editar-perfil">Editar perfil</h1>
+
+    <form class="formulario-perfil" (ngSubmit)="salvar()" novalidate>
+      <div class="area-foto">
+        <div class="foto-perfil">
+          @if (foto.trim() && !fotoComErro) {
+            <img [src]="foto.trim()" alt="Foto de perfil" (error)="fotoComErro = true" />
+          } @else {
+            <span aria-hidden="true">{{ iniciais }}</span>
+          }
+        </div>
+
+        <button
+          type="button"
+          class="botao-contorno"
+          aria-controls="campo-foto"
+          [attr.aria-expanded]="editandoFoto"
+          (click)="alternarEdicaoFoto()"
+        >
+          ALTERAR FOTO
+        </button>
+      </div>
+
+      <div class="campos">
+        <mat-form-field appearance="outline" floatLabel="always" subscriptSizing="dynamic">
+          <mat-label>Nome</mat-label>
+          <input
+            matInput
+            name="nome"
+            maxlength="255"
+            autocomplete="name"
+            [(ngModel)]="nome"
+            (ngModelChange)="limparErroCampo('nome')"
+            [attr.aria-invalid]="!!errosCampos.nome"
+            [attr.aria-describedby]="errosCampos.nome ? 'erro-nome' : null"
+          />
+        </mat-form-field>
+        @if (errosCampos.nome) {
+          <p id="erro-nome" class="erro-campo" role="alert">{{ errosCampos.nome }}</p>
+        }
+
+        <mat-form-field appearance="outline" floatLabel="always" subscriptSizing="dynamic">
+          <mat-label>E-mail</mat-label>
+          <input
+            matInput
+            type="email"
+            name="email"
+            maxlength="255"
+            autocomplete="email"
+            [(ngModel)]="email"
+            (ngModelChange)="limparErroCampo('email')"
+            [attr.aria-invalid]="!!errosCampos.email"
+            [attr.aria-describedby]="errosCampos.email ? 'erro-email' : null"
+          />
+        </mat-form-field>
+        @if (errosCampos.email) {
+          <p id="erro-email" class="erro-campo" role="alert">{{ errosCampos.email }}</p>
+        }
+
+        @if (editandoFoto) {
+          <mat-form-field
+            id="campo-foto"
+            appearance="outline"
+            floatLabel="always"
+            subscriptSizing="dynamic"
+          >
+            <mat-label>Endereço da foto</mat-label>
+            <input
+              matInput
+              type="url"
+              name="foto"
+              maxlength="512"
+              placeholder="https://..."
+              [(ngModel)]="foto"
+              (ngModelChange)="aoAlterarFoto()"
+              [attr.aria-invalid]="!!errosCampos.foto"
+              [attr.aria-describedby]="errosCampos.foto ? 'erro-foto' : null"
+            />
+          </mat-form-field>
+          @if (errosCampos.foto) {
+            <p id="erro-foto" class="erro-campo" role="alert">{{ errosCampos.foto }}</p>
+          }
+        }
+      </div>
+
+      @if (mensagemErro) {
+        <p class="mensagem mensagem-erro" role="alert">{{ mensagemErro }}</p>
+      }
+      @if (mensagemSucesso) {
+        <p class="mensagem mensagem-sucesso" role="status">{{ mensagemSucesso }}</p>
+      }
+
+      <button type="submit" class="botao-salvar">SALVAR ALTERAÇÕES</button>
+    </form>
+  </section>
+</main>
