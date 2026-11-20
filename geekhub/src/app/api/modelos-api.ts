@@ -418,3 +418,46 @@ export interface ListarAvaliacaoResponse {
   comentario: string | null;
   criadoEm: string;
 }
+
+// Dashboard (ADMIN)
+export interface EstadoPedidoKpiApiResponse {
+  estado: EstadoPedido;
+  quantidade: number;
+  percentual: number;
+}
+
+export interface CategoriaKpiApiResponse {
+  nome: string;
+  quantidadeAnuncios: number;
+  estoqueTotal: number;
+  percentual: number;
+}
+
+export interface PedidoRecenteDashboardApiResponse {
+  id: number;
+  compradorNome: string;
+  estado: EstadoPedido;
+  valorTotal: number;
+  quantidadeItens: number;
+  criadoEm: string;
+}
+
+export interface ConsultarDashboardApiResponse {
+  receitaTotal: number;
+  ticketMedio: number;
+  totalPedidos: number;
+  pedidosConcluidos: number;
+  pedidosEmAndamento: number;
+  pedidosCancelados: number;
+  taxaConclusao: number;
+  totalAnuncios: number;
+  anunciosDisponiveis: number;
+  anunciosIndisponiveis: number;
+  unidadesEmEstoque: number;
+  totalCategoriasAtivas: number;
+  notaMediaAvaliacoes: number | null;
+  totalAvaliacoes: number;
+  pedidosPorEstado: EstadoPedidoKpiApiResponse[];
+  anunciosPorCategoria: CategoriaKpiApiResponse[];
+  pedidosRecentes: PedidoRecenteDashboardApiResponse[];
+}

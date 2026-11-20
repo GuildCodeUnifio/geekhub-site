@@ -57,7 +57,7 @@ export class Cabecalho {
 
   readonly itensMenu: ItemMenuNavegacao[] = [
     { rotulo: 'Catálogo', icone: 'home', caminho: '/' },
-    { rotulo: 'Dashboard', icone: 'dashboard', caminho: '/dashboard' },
+    { rotulo: 'Dashboard', icone: 'dashboard', caminho: '/dashboard', exigeSessao: true, exigeAdmin: true },
     { rotulo: 'Carrinho', icone: 'shopping_cart', caminho: '/carrinho' },
     { rotulo: 'Minhas compras', icone: 'orders', caminho: '/pedidos', exigeSessao: true },
     { rotulo: 'Minhas vendas', icone: 'local_shipping', caminho: '/pedidos/vendas', exigeSessao: true },

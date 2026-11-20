@@ -22,20 +22,29 @@
         </mat-chip-set>
       }
 
-      <button mat-stroked-button color="primary" type="button" (click)="carregar()">
-        <mat-icon>refresh</mat-icon>
-        Atualizar indicadores
-      </button>
+      @if (ehAdmin) {
+        <button mat-stroked-button color="primary" type="button" (click)="carregar()">
+          <mat-icon>refresh</mat-icon>
+          Atualizar indicadores
+        </button>
+      }
     </div>
   </header>
 
-  @if (erro) {
-    <p class="banner-erro" role="alert">{{ erro }}</p>
-  }
+  @if (!ehAdmin) {
+    <mat-card appearance="outlined" class="painel-restrito">
+      <h2>Acesso restrito a administradores</h2>
+      <p>Entre com uma conta administrativa para visualizar os indicadores operacionais do sistema.</p>
+      <a mat-stroked-button routerLink="/">Voltar ao catálogo</a>
+    </mat-card>
+  } @else {
+    @if (erro) {
+      <p class="banner-erro" role="alert">{{ erro }}</p>
+    }
 
-  @if (carregando && !dados) {
-    <p role="status">Calculando indicadores...</p>
-  } @else if (dados; as d) {
+    @if (carregando && !dados) {
+      <p role="status">Calculando indicadores...</p>
+    } @else if (dados; as d) {
     <section class="grade-kpis" aria-label="Indicadores principais">
       <mat-card appearance="outlined" class="kpi-cartao" data-kpi="receita">
         <div class="kpi-topo">
@@ -120,10 +129,8 @@
         <div class="atalhos">
           <a mat-stroked-button routerLink="/meus-anuncios">Gerenciar anúncios</a>
           <a mat-stroked-button routerLink="/pedidos/vendas">Gerenciar pedidos</a>
-          @if (ehAdmin) {
-            <a mat-stroked-button routerLink="/categorias">Categorias</a>
-            <a mat-stroked-button routerLink="/minha-conta/usuarios">Usuários</a>
-          }
+          <a mat-stroked-button routerLink="/categorias">Categorias</a>
+          <a mat-stroked-button routerLink="/minha-conta/usuarios">Usuários</a>
         </div>
       </div>
 
@@ -167,14 +174,9 @@
           </table>
         </div>
       } @else {
-        <p class="aviso-pedidos">
-          {{
-            usuarioAutenticado
-              ? 'Nenhum pedido registrado no momento.'
-              : 'Entre na sua conta para acompanhar os seus pedidos recentes neste painel.'
-          }}
-        </p>
+        <p class="aviso-pedidos">Nenhum pedido registrado no momento.</p>
       }
     </mat-card>
+  }
   }
 </main>
