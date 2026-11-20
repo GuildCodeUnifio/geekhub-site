@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { App, type CarrinhoResponse } from '../../app';
@@ -12,6 +12,8 @@ import type { UsuarioResponse } from '../../cabecalho/cabecalho/cabecalho';
 })
 export class RevisarPedidoComponente implements OnInit {
   private readonly app = inject(App);
+  /** A aplicação é zoneless: respostas assíncronas da API precisam marcar a view para atualização. */
+  private readonly detector = inject(ChangeDetectorRef);
   private readonly roteador = inject(Router);
 
   comprador: UsuarioResponse | null = null;
@@ -35,6 +37,7 @@ export class RevisarPedidoComponente implements OnInit {
       next: carrinho => {
         this.carregando = false;
         this.carrinho = carrinho;
+        this.detector.markForCheck();
 
         if (carrinho.itens.length === 0) {
           void this.roteador.navigate(['/carrinho']);
@@ -43,6 +46,7 @@ export class RevisarPedidoComponente implements OnInit {
       error: (erro: Error) => {
         this.carregando = false;
         this.mensagemErro = erro.message;
+        this.detector.markForCheck();
       },
     });
   }
@@ -59,6 +63,7 @@ export class RevisarPedidoComponente implements OnInit {
       if (!resultado.sucesso || !resultado.pedido) {
         this.mensagemErro = resultado.mensagem;
         this.confirmando = false;
+        this.detector.markForCheck();
         return;
       }
 

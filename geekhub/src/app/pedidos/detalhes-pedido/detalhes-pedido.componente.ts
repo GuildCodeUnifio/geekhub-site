@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -26,6 +26,8 @@ const FLUXO_PEDIDO: readonly EstadoPedido[] = ['CRIADO', 'CONFIRMADO', 'ENVIADO'
 })
 export class DetalhesPedidoComponente implements OnInit {
   private readonly app = inject(App);
+  /** A aplicação é zoneless: respostas assíncronas da API precisam marcar a view para atualização. */
+  private readonly detector = inject(ChangeDetectorRef);
   private readonly rota = inject(ActivatedRoute);
   private readonly roteador = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
@@ -80,10 +82,12 @@ export class DetalhesPedidoComponente implements OnInit {
             this.pedido = pedido;
             this.erro = pedido ? '' : 'Pedido não encontrado.';
             this.etapas = pedido ? this.montarEtapas(pedido) : [];
+            this.detector.markForCheck();
           },
           error: (erro: Error) => {
             this.carregando = false;
             this.erro = erro.message;
+            this.detector.markForCheck();
           },
         });
     });
@@ -133,6 +137,7 @@ export class DetalhesPedidoComponente implements OnInit {
       })
       .subscribe(resultado => {
         this.enviandoAvaliacao = false;
+        this.detector.markForCheck();
         this.avaliacaoComErro = !resultado.sucesso;
         this.mensagemAvaliacao = resultado.mensagem;
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { App } from '../../app';
@@ -13,6 +13,8 @@ type CampoPerfil = 'nome' | 'email' | 'foto';
 })
 export class EditarPerfilComponente implements OnInit {
   private readonly app = inject(App);
+  /** A aplicação é zoneless: respostas assíncronas da API precisam marcar a view para atualização. */
+  private readonly detector = inject(ChangeDetectorRef);
   private readonly roteador = inject(Router);
 
   nome = '';
@@ -114,6 +116,7 @@ export class EditarPerfilComponente implements OnInit {
       })
       .subscribe(resultado => {
         this.salvando = false;
+        this.detector.markForCheck();
 
         if (!resultado.sucesso || !resultado.usuario) {
           this.mensagemErro = resultado.mensagem;

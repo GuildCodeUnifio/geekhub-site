@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
 import { Router } from '@angular/router';
 
@@ -23,6 +23,8 @@ interface FiltroEstado {
 })
 export class MinhasComprasComponente implements OnInit {
   private readonly app = inject(App);
+  /** A aplicação é zoneless: respostas assíncronas da API precisam marcar a view para atualização. */
+  private readonly detector = inject(ChangeDetectorRef);
   private readonly roteador = inject(Router);
 
   readonly itensPorPagina = 4;
@@ -93,10 +95,12 @@ export class MinhasComprasComponente implements OnInit {
           this.resposta = resposta;
           this.pagina = resposta.pagina;
           this.carregando = false;
+          this.detector.markForCheck();
         },
         error: (erro: Error) => {
           this.erro = erro.message;
           this.carregando = false;
+          this.detector.markForCheck();
         },
       });
   }
