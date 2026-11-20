@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -14,6 +14,8 @@ import { App, type PerfilVendedor } from '../../app';
 export class PerfilVendedorComponente implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  /** A aplicação é zoneless: respostas assíncronas da API precisam marcar a view para atualização. */
+  private readonly detector = inject(ChangeDetectorRef);
 
   private readonly app = inject(App);
 
@@ -48,10 +50,12 @@ export class PerfilVendedorComponente implements OnInit {
             this.vendedor = vendedor;
             this.erro = vendedor ? '' : 'Vendedor não encontrado.';
             this.carregando = false;
+            this.detector.markForCheck();
           },
           error: (erro: Error) => {
             this.erro = erro.message;
             this.carregando = false;
+            this.detector.markForCheck();
           },
         });
       });
