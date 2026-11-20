@@ -1,45 +1,13 @@
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { Router, provideRouter } from '@angular/router';
+import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { vi } from 'vitest';
 
-import { App } from '../app';
-import { autenticacaoInterceptor } from './autenticacao.interceptor';
-import { FONTE_DADOS, URL_API } from './configuracao-api';
+import type { App } from '../app';
+import { URL_TESTE, autenticar, configurarModoApi, criarToken } from './apoio-testes-api';
 import { SessaoApi } from './sessao-api';
 import { MENSAGEM_API_INDISPONIVEL } from './utilitarios-api';
-
-export const URL_TESTE = 'http://api.teste';
-
-export function criarToken(claims: object): string {
-  const codificar = (valor: object) =>
-    btoa(JSON.stringify(valor)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  return `${codificar({ alg: 'RS256' })}.${codificar(claims)}.assinatura`;
-}
-
-export function configurarModoApi(): { app: App; http: HttpTestingController } {
-  TestBed.configureTestingModule({
-    providers: [
-      provideRouter([]),
-      provideHttpClient(withInterceptors([autenticacaoInterceptor])),
-      provideHttpClientTesting(),
-      { provide: FONTE_DADOS, useValue: 'api' },
-      { provide: URL_API, useValue: URL_TESTE },
-      App,
-    ],
-  });
-
-  return { app: TestBed.inject(App), http: TestBed.inject(HttpTestingController) };
-}
-
-export function autenticar(): void {
-  TestBed.inject(SessaoApi).iniciar({
-    accessToken: criarToken({ sub: 'Usuario GeekHub', email: 'usuario@geekhub.com' }),
-    expiresIn: 3600,
-  });
-}
 
 describe('DadosGeekhub — autenticacao pela API', () => {
   let app: App;

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, catchError, map, of } from 'rxjs';
 
@@ -24,6 +24,8 @@ export interface ErrosCamposEntrar {
 export class EntrarComponente {
   private readonly app = inject(App);
   private readonly roteador = inject(Router);
+  /** A aplicação é zoneless: respostas assíncronas da API precisam marcar a view para atualização. */
+  private readonly detector = inject(ChangeDetectorRef);
   private readonly rota = inject(ActivatedRoute, { optional: true });
 
   email = '';
@@ -72,6 +74,7 @@ export class EntrarComponente {
     return this.app.dados.entrar({ email, senha: request.senha }).pipe(
       map(usuario => {
         this.enviando = false;
+        this.detector.markForCheck();
 
         if (!usuario) {
           this.mensagemErro = 'E-mail ou senha incorretos.';
@@ -85,6 +88,7 @@ export class EntrarComponente {
       catchError((erro: Error) => {
         this.enviando = false;
         this.mensagemErro = erro.message;
+        this.detector.markForCheck();
         return of(false);
       }),
     );

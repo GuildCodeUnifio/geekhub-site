@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Observable, catchError, map, of } from 'rxjs';
@@ -35,6 +35,8 @@ export interface CadastroResultado {
 export class CadastroComponente {
   private readonly app = inject(App);
   private readonly roteador = inject(Router);
+  /** A aplicação é zoneless: respostas assíncronas da API precisam marcar a view para atualização. */
+  private readonly detector = inject(ChangeDetectorRef);
   private readonly snackBar = inject(MatSnackBar);
 
   nome = '';
@@ -134,6 +136,7 @@ export class CadastroComponente {
     return this.app.dados.cadastrar({ nome, email, senha: request.senha }).pipe(
       map((usuario): CadastroResultado => {
         this.enviando = false;
+        this.detector.markForCheck();
 
         if (!usuario) {
           const mensagem = 'E-mail já cadastrado';
@@ -150,6 +153,7 @@ export class CadastroComponente {
       catchError((erro: Error) => {
         this.enviando = false;
         this.erroGeral = erro.message;
+        this.detector.markForCheck();
         return of({ sucesso: false, mensagem: erro.message });
       }),
     );
