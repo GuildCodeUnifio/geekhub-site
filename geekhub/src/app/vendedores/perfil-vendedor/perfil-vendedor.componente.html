@@ -128,6 +128,8 @@
         }
       </div>
     </section>
+  } @else if (carregando) {
+    <p class="painel" role="status">Carregando perfil...</p>
   } @else {
     <section class="painel">
       <h1>{{ erro }}</h1>

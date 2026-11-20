@@ -1,6 +1,7 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Observable, Subscription, catchError, of, tap } from 'rxjs';
 
 import {
   App,
@@ -33,6 +34,11 @@ export class DetalhesProdutoComponente implements OnInit {
   readonly imagemSelecionada = signal(0);
   readonly quantidade = signal(1);
   readonly feedbackCarrinho = signal<{ sucesso: boolean; mensagem: string } | null>(null);
+  readonly carregando = signal(false);
+  readonly erro = signal('');
+  readonly adicionando = signal(false);
+
+  private consultaAtual?: Subscription;
 
   ngOnInit(): void {
     this.rota.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((parametros) => {
@@ -40,18 +46,34 @@ export class DetalhesProdutoComponente implements OnInit {
       this.quantidade.set(1);
       this.feedbackCarrinho.set(null);
 
+      this.erro.set('');
+      this.consultaAtual?.unsubscribe();
+
       const identificador = Number(parametros.get('identificador'));
       if (!Number.isInteger(identificador) || identificador < 1) {
         this.anuncio.set(null);
         return;
       }
 
-      this.anuncio.set(this.buscarAnuncio({ anuncioIdentificador: identificador }));
+      this.carregando.set(true);
+      this.consultaAtual = this.buscarAnuncio({ anuncioIdentificador: identificador }).subscribe({
+        next: (anuncio) => {
+          this.anuncio.set(anuncio);
+          this.carregando.set(false);
+        },
+        error: (erro: Error) => {
+          this.anuncio.set(null);
+          this.erro.set(erro.message);
+          this.carregando.set(false);
+        },
+      });
     });
+
+    this.destroyRef.onDestroy(() => this.consultaAtual?.unsubscribe());
   }
 
-  buscarAnuncio(request: ConsultarAnuncioRequest): AnuncioResponse | null {
-    return this.app.buscarAnuncio(request);
+  buscarAnuncio(request: ConsultarAnuncioRequest): Observable<AnuncioResponse | null> {
+    return this.app.dados.buscarAnuncio(request.anuncioIdentificador);
   }
 
   selecionarImagem(indice: number, totalImagens: number): void {
@@ -81,11 +103,18 @@ export class DetalhesProdutoComponente implements OnInit {
     }
   }
 
+  aoAdicionarAoCarrinho(anuncio: AnuncioResponse): void {
+    if (!this.adicionando()) {
+      this.adicionarAoCarrinho(anuncio).subscribe();
+    }
+  }
+
   adicionarAoCarrinho(
     anuncio: AnuncioResponse,
     quantidade = this.quantidade(),
-  ): ResultadoOperacaoCarrinho {
+  ): Observable<ResultadoOperacaoCarrinho> {
     this.feedbackCarrinho.set(null);
+    const carrinhoVazio = { compradorIdentificador: 0, itens: [], total: 0 };
 
     const usuario = this.app.usuarioAtual;
     if (!usuario) {
@@ -94,37 +123,19 @@ export class DetalhesProdutoComponente implements OnInit {
       void this.roteador.navigate(['/entrar'], {
         queryParams: { redirecionar: `/produtos/${anuncio.identificador}` },
       });
-      return {
-        sucesso: false,
-        mensagem,
-        carrinho: {
-          compradorIdentificador: 0,
-          itens: [],
-          total: 0,
-        },
-      };
+      return of({ sucesso: false, mensagem, carrinho: carrinhoVazio });
     }
-
-    const carrinhoAtual = this.app.consultarCarrinho(usuario.identificador);
 
     if (!this.disponivelParaCompra(anuncio)) {
       const mensagem = 'Este anúncio está indisponível para compra no momento.';
       this.feedbackCarrinho.set({ sucesso: false, mensagem });
-      return {
-        sucesso: false,
-        mensagem,
-        carrinho: carrinhoAtual,
-      };
+      return of({ sucesso: false, mensagem, carrinho: carrinhoVazio });
     }
 
     if (!this.app.quantidadeValida(quantidade, anuncio.estoque)) {
       const mensagem = `Informe uma quantidade inteira entre 1 e ${anuncio.estoque}.`;
       this.feedbackCarrinho.set({ sucesso: false, mensagem });
-      return {
-        sucesso: false,
-        mensagem,
-        carrinho: carrinhoAtual,
-      };
+      return of({ sucesso: false, mensagem, carrinho: carrinhoVazio });
     }
 
     const request: AdicionarAoCarrinhoRequest = {
@@ -138,11 +149,17 @@ export class DetalhesProdutoComponente implements OnInit {
       estoqueDisponivel: anuncio.estoque,
     };
 
-    const resultado = this.app.adicionarAoCarrinho(request);
-    this.feedbackCarrinho.set({
-      sucesso: resultado.sucesso,
-      mensagem: resultado.mensagem,
-    });
-    return resultado;
+    this.adicionando.set(true);
+
+    return this.app.dados.adicionarAoCarrinho(request).pipe(
+      catchError((erro: Error) => of({ sucesso: false, mensagem: erro.message, carrinho: carrinhoVazio })),
+      tap((resultado) => {
+        this.adicionando.set(false);
+        this.feedbackCarrinho.set({
+          sucesso: resultado.sucesso,
+          mensagem: resultado.mensagem,
+        });
+      }),
+    );
   }
 }
