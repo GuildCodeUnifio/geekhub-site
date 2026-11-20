@@ -47,8 +47,8 @@
             </p>
             }
 
-            <button mat-flat-button type="submit" class="botao-entrar">
-                ENTRAR
+            <button mat-flat-button type="submit" class="botao-entrar" [disabled]="enviando">
+                {{ enviando ? 'ENTRANDO...' : 'ENTRAR' }}
             </button>
         </form>
 

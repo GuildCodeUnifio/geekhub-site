@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Observable, catchError, map, of } from 'rxjs';
 
 import { App } from '../../app';
 import type { UsuarioResponse } from '../../cabecalho/cabecalho/cabecalho';
@@ -29,18 +30,23 @@ export class EntrarComponente {
   senha = '';
   senhaVisivel = false;
   mensagemErro = '';
+  enviando = false;
 
   errosCampos: ErrosCamposEntrar = {};
   usuarioAtual: UsuarioResponse | null = null;
 
   aoEnviar(): void {
+    if (this.enviando) {
+      return;
+    }
+
     this.entrar({
       email: this.email,
       senha: this.senha,
-    });
+    }).subscribe();
   }
 
-  entrar(request: EntrarRequest): boolean {
+  entrar(request: EntrarRequest): Observable<boolean> {
     this.mensagemErro = '';
     this.errosCampos = {};
     this.usuarioAtual = null;
@@ -58,29 +64,39 @@ export class EntrarComponente {
     }
 
     if (this.errosCampos.email || this.errosCampos.senha) {
-      return false;
+      return of(false);
     }
 
-    const usuario = this.app.entrar({
-      email,
-      senha: request.senha,
-    });
+    this.enviando = true;
 
-    if (!usuario) {
-      this.mensagemErro = 'E-mail ou senha incorretos.';
-      return false;
-    }
+    return this.app.dados.entrar({ email, senha: request.senha }).pipe(
+      map(usuario => {
+        this.enviando = false;
 
-    this.usuarioAtual = usuario;
+        if (!usuario) {
+          this.mensagemErro = 'E-mail ou senha incorretos.';
+          return false;
+        }
 
+        this.usuarioAtual = usuario;
+        this.redirecionarAposEntrar();
+        return true;
+      }),
+      catchError((erro: Error) => {
+        this.enviando = false;
+        this.mensagemErro = erro.message;
+        return of(false);
+      }),
+    );
+  }
+
+  private redirecionarAposEntrar(): void {
     const redirecionar = this.rota?.snapshot.queryParamMap.get('redirecionar') ?? '';
     if (redirecionar.startsWith('/') && !redirecionar.startsWith('//')) {
       void this.roteador.navigateByUrl(redirecionar);
     } else {
       void this.roteador.navigate(['/']);
     }
-
-    return true;
   }
 
   alternarVisibilidadeSenha(): void {

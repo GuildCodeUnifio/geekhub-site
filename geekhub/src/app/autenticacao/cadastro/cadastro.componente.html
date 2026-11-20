@@ -97,7 +97,7 @@
         mat-flat-button
         type="submit"
         class="botao-cadastrar"
-        [disabled]="cadastroConcluido"
+        [disabled]="cadastroConcluido || enviando"
       >
         CADASTRAR
       </button>

@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, Injector, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { DadosGeekhub } from './api/dados-geekhub';
 import type { EntrarRequest } from './autenticacao/entrar/entrar.componente';
 import type { UsuarioResponse } from './cabecalho/cabecalho/cabecalho';
 
@@ -216,6 +217,9 @@ export class App {
     this.carregarUsuarioAtual()
   );
 
+  /** Acesso aos dados pela API ou pelos dados de exemplo, conforme `CONFIGURACAO_API`. */
+  readonly dados = new DadosGeekhub(this, inject(Injector));
+
   get usuarioAtual(): UsuarioResponse | null {
     return this.usuarioAtualSinal();
   }
@@ -304,7 +308,13 @@ export class App {
     });
   }
 
+  definirUsuarioAtual(usuario: UsuarioResponse | null): void {
+    this.usuarioAtual = usuario;
+    this.salvarUsuarioAtual();
+  }
+
   sair(): void {
+    this.dados.encerrarSessao();
     this.usuarioAtual = null;
     this.salvarUsuarioAtual();
     void this.roteador.navigate(['/entrar']);
