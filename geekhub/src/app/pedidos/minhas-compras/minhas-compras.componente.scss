@@ -1,0 +1,215 @@
+:host {
+  display: block;
+  min-height: calc(100dvh - 64px);
+  background-color: #faf9f6;
+  color: #212121;
+  font-family: Arial, sans-serif;
+}
+
+.pagina-compras {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  box-sizing: border-box;
+}
+
+.titulo-oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.trilha {
+  display: flex;
+  gap: 12px;
+  margin: 0 0 28px 20px;
+  color: #757575;
+
+  a {
+    color: #3f51b5;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.filtro {
+  min-height: 36px;
+  padding: 0 16px;
+  border: 1px solid #212121;
+  background-color: #e0e0e0;
+  color: #757575;
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+
+  &.ativo {
+    border-color: #3f51b5;
+    background-color: #3f51b5;
+    color: #fff;
+  }
+}
+
+.lista-compras {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.compra {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 24px;
+  border: 2px solid #212121;
+  background-color: #faf9f6;
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    background-color: #f2efe9;
+  }
+}
+
+.imagem-compra {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border: 1px solid #212121;
+  background-color: #bdbdbd;
+  object-fit: cover;
+}
+
+.sem-imagem {
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+
+.dados-compra {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+
+  strong {
+    font-size: 1.2rem;
+  }
+
+  span {
+    color: #616161;
+  }
+}
+
+.valor {
+  font-size: 1.2rem;
+  white-space: nowrap;
+}
+
+.estado {
+  min-width: 120px;
+  padding: 6px 12px;
+  border: 1px solid #212121;
+  background-color: #f4f4f6;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-align: center;
+  text-transform: uppercase;
+
+  &[data-estado='CANCELADO'] {
+    border-color: #b3261e;
+    color: #b3261e;
+  }
+}
+
+.filtro:focus-visible,
+.compra:focus-visible,
+.trilha a:focus-visible {
+  outline: 3px solid #3f51b5;
+  outline-offset: 2px;
+}
+
+.estado-vazio {
+  padding: 32px 24px;
+  border: 2px dashed #9e9e9e;
+  text-align: center;
+
+  p {
+    margin: 0 0 12px;
+  }
+
+  a {
+    color: #3f51b5;
+  }
+}
+
+.rodape-lista {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 32px;
+
+  p {
+    margin: 0;
+    color: #616161;
+    font-size: 1.05rem;
+  }
+
+  mat-paginator {
+    background: transparent;
+  }
+}
+
+@media (max-width: 768px) {
+  .pagina-compras {
+    padding: 24px 16px;
+  }
+
+  .trilha {
+    margin-left: 0;
+  }
+
+  .compra {
+    flex-wrap: wrap;
+    gap: 12px 16px;
+    padding: 16px;
+  }
+
+  .dados-compra {
+    flex-basis: calc(100% - 96px);
+  }
+
+  .valor {
+    margin-left: 80px;
+  }
+
+  .estado {
+    min-width: 0;
+    margin-left: auto;
+  }
+
+  .seta {
+    display: none;
+  }
+}

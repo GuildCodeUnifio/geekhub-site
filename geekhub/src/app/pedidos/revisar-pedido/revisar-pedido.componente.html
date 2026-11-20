@@ -1,1 +1,67 @@
-<p>revisar-pedido works!</p>
+<main class="pagina-pedido">
+  <h1>Revisar pedido</h1>
+
+  @if (carregando) {
+    <p role="status">Carregando itens do pedido...</p>
+  } @else if (!carrinho && mensagemErro) {
+    <p class="mensagem-erro" role="alert">{{ mensagemErro }}</p>
+  }
+
+  @if (carrinho && comprador) {
+    <div class="grade">
+      <section class="painel itens-pedido" aria-labelledby="titulo-itens">
+        <h2 id="titulo-itens" class="cabecalho-painel">Itens do pedido</h2>
+
+        <ul class="lista-itens">
+          @for (item of carrinho.itens; track item.anuncioIdentificador) {
+            <li class="item">
+              @if (item.imagem) {
+                <img class="imagem-item" [src]="item.imagem" alt="" />
+              } @else {
+                <span class="imagem-item" aria-hidden="true"></span>
+              }
+              <div class="dados-item">
+                <a [routerLink]="['/produtos', item.anuncioIdentificador]">{{ item.nome }}</a>
+                <span>Qtd: {{ item.quantidade }}</span>
+              </div>
+              <strong class="valor">{{ item.subtotal | currency: 'BRL' }}</strong>
+            </li>
+          }
+        </ul>
+
+        <div class="total">
+          <span>Total do pedido</span>
+          <strong>{{ carrinho.total | currency: 'BRL' }}</strong>
+        </div>
+      </section>
+
+      <section class="painel resumo-comprador" aria-labelledby="titulo-comprador">
+        <h2 id="titulo-comprador">Resumo do comprador</h2>
+        <dl>
+          <dt>Nome</dt>
+          <dd>{{ comprador.nome }}</dd>
+          <dt>E-mail</dt>
+          <dd>{{ comprador.email }}</dd>
+        </dl>
+      </section>
+    </div>
+
+    @if (mensagemErro) {
+      <p class="mensagem-erro" role="alert">{{ mensagemErro }}</p>
+    }
+
+    <div class="acoes">
+      <button
+        type="button"
+        class="botao botao-primario"
+        [disabled]="confirmando"
+        (click)="confirmarPedido()"
+      >
+        CONFIRMAR PEDIDO
+      </button>
+      <button type="button" class="botao botao-secundario" (click)="voltarAoCarrinho()">
+        VOLTAR AO CARRINHO
+      </button>
+    </div>
+  }
+</main>

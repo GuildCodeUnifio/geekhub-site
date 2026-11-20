@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { firstValueFrom } from 'rxjs';
 import { provideRouter, Router } from '@angular/router';
 import { App } from '../../app';
 import { CatalogoModule } from '../catalogo-module';
@@ -26,7 +27,7 @@ describe('CatalogoComponente', () => {
     expect(component).toBeTruthy();
   });
 
-  it('exibe botão Todos, categorias disponíveis e 8 cartões na primeira página ocultando anúncios indisponíveis', () => {
+  it('exibe botão Todos, categorias disponíveis e 8 cartões na primeira página ocultando anúncios indisponíveis', async () => {
     const botoesCategoria = Array.from<HTMLButtonElement>(
       fixture.nativeElement.querySelectorAll('.barra-categorias .botao-categoria'),
     );
@@ -48,7 +49,7 @@ describe('CatalogoComponente', () => {
     expect(component.totalResultados).toBe(10);
     expect(links[0].getAttribute('href')).toBe('/produtos/1');
 
-    const pagina2 = component.consultarAnuncios({ pagina: 2, itensPorPagina: 8 });
+    const pagina2 = await firstValueFrom(component.consultarAnuncios({ pagina: 2, itensPorPagina: 8 }));
     const todosDisponiveis = [...component.anuncios, ...pagina2.anuncios];
     expect(todosDisponiveis.some((anuncio) => anuncio.identificador === 11)).toBe(false);
     expect(
@@ -113,7 +114,7 @@ describe('CatalogoComponente', () => {
     expect(fixture.nativeElement.querySelectorAll('app-cartao-produto')).toHaveLength(4);
     expect(elementoPaginador!.textContent).toContain('1 – 4 de 10');
 
-    const paginaForaLimite = component.consultarAnuncios({ pagina: 99, itensPorPagina: 8 });
+    const paginaForaLimite = await firstValueFrom(component.consultarAnuncios({ pagina: 99, itensPorPagina: 8 }));
     expect(paginaForaLimite.pagina).toBe(2);
     expect(paginaForaLimite.anuncios).toHaveLength(2);
   });

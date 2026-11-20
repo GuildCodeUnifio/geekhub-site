@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { firstValueFrom } from 'rxjs';
 import {
   ActivatedRoute,
   convertToParamMap,
@@ -158,11 +159,11 @@ describe('DetalhesProdutoComponente', () => {
     expect(botaoAdicionar?.disabled).toBe(true);
 
     app.entrar({ email: 'demo@geekhub.com', senha: '123456' });
-    const respostaBloqueada = component.adicionarAoCarrinho({
+    const respostaBloqueada = await firstValueFrom(component.adicionarAoCarrinho({
       ...component.anuncio()!,
       estoque: 2,
       disponivel: false,
-    });
+    }));
     expect(respostaBloqueada.sucesso).toBe(false);
     expect(respostaBloqueada.mensagem).toContain('indisponível');
   });
@@ -206,7 +207,7 @@ describe('DetalhesProdutoComponente', () => {
       1,
     );
 
-    const tentativaExcedente = component.adicionarAoCarrinho(component.anuncio()!, 1);
+    const tentativaExcedente = await firstValueFrom(component.adicionarAoCarrinho(component.anuncio()!, 1));
     fixture.detectChanges();
     await fixture.whenStable();
 
