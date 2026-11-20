@@ -38,6 +38,7 @@ const CHAVE_USUARIOS_STORAGE = 'geekhub.usuarios';
 const CHAVE_USUARIO_ATUAL_STORAGE = 'geekhub.usuarioAtual';
 const CHAVE_CARRINHOS_STORAGE = 'geekhub.carrinhos';
 const CHAVE_ANUNCIOS_STORAGE = 'geekhub.anuncios';
+const CHAVE_CATEGORIAS_STORAGE = 'geekhub.categorias';
 
 export interface ItemCarrinhoResponse {
   /** Identificador do item no carrinho (disponível quando os dados vêm da API). */
@@ -170,6 +171,77 @@ export interface PerfilVendedor {
 export interface CategoriaResponse {
   identificador: number;
   nome: string;
+}
+
+export interface CategoriaDetalheResponse {
+  identificador: number;
+  nome: string;
+  descricao: string;
+  ativa: boolean;
+  criadoEm: string;
+}
+
+export interface SalvarCategoriaRequest {
+  nome: string;
+  descricao?: string;
+  ativa?: boolean;
+}
+
+export interface ResultadoOperacaoCategoria {
+  sucesso: boolean;
+  mensagem: string;
+  categoria: CategoriaDetalheResponse | null;
+}
+
+export interface VendaResponse {
+  identificador: number;
+  compradorNome: string;
+  valorTotal: number;
+  estado: EstadoPedido;
+  criadoEm: string;
+}
+
+export interface ListarVendasRequest {
+  vendedorIdentificador: number;
+  estado?: EstadoPedido;
+  pagina?: number;
+  itensPorPagina?: number;
+  incluirTodosAdmin?: boolean;
+}
+
+export interface ListarVendasResponse {
+  vendas: VendaResponse[];
+  pagina: number;
+  itensPorPagina: number;
+  total: number;
+}
+
+export interface UsuarioAdminResponse {
+  identificador: number;
+  nome: string;
+  email: string;
+  foto?: string;
+  ativo: boolean;
+  admin?: boolean;
+  criadoEm: string;
+}
+
+export interface ListarUsuariosResponse {
+  usuarios: UsuarioAdminResponse[];
+  pagina: number;
+  itensPorPagina: number;
+  total: number;
+}
+
+export interface ResultadoOperacaoUsuario {
+  sucesso: boolean;
+  mensagem: string;
+  admin?: boolean;
+}
+
+export interface ResultadoSimples {
+  sucesso: boolean;
+  mensagem: string;
 }
 
 export interface ConsultarAnunciosRequest {
@@ -473,6 +545,7 @@ export class App {
   protected readonly title = signal('geekhub');
 
   private readonly usuarios: ContaUsuario[] = this.carregarUsuarios();
+  private readonly categorias: CategoriaDetalheResponse[] = this.carregarCategorias();
   private readonly carrinhos: Map<number, ItemCarrinhoArmazenado[]> =
     this.carregarCarrinhos();
   private readonly versaoCarrinhos = signal(0);
@@ -1144,7 +1217,327 @@ buscarAnuncio(
 }
 
 listarCategorias(): CategoriaResponse[] {
-  return CATEGORIAS_CATALOGO.map(categoria => ({ ...categoria }));
+  return this.categorias
+    .filter(categoria => categoria.ativa)
+    .map(categoria => ({ identificador: categoria.identificador, nome: categoria.nome }));
+}
+
+listarTodasCategorias(): CategoriaDetalheResponse[] {
+  return this.categorias
+    .slice()
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+    .map(categoria => ({ ...categoria }));
+}
+
+cadastrarCategoria(
+  usuarioIdentificador: number,
+  request: SalvarCategoriaRequest
+): ResultadoOperacaoCategoria {
+  if (!this.usuarioMockEhAdmin(usuarioIdentificador)) {
+    return { sucesso: false, mensagem: 'Acesso restrito a administradores.', categoria: null };
+  }
+
+  const nome = request.nome.trim();
+  const descricao = (request.descricao ?? '').trim();
+
+  if (!nome || nome.length > 100) {
+    return {
+      sucesso: false,
+      mensagem: 'Informe o nome da categoria (máximo 100 caracteres).',
+      categoria: null,
+    };
+  }
+
+  if (descricao.length > 255) {
+    return {
+      sucesso: false,
+      mensagem: 'A descrição deve ter no máximo 255 caracteres.',
+      categoria: null,
+    };
+  }
+
+  const duplicada = this.categorias.some(
+    categoria => categoria.nome.trim().toLowerCase() === nome.toLowerCase()
+  );
+
+  if (duplicada) {
+    return {
+      sucesso: false,
+      mensagem: 'Já existe uma categoria com este nome.',
+      categoria: null,
+    };
+  }
+
+  const proximoIdentificador =
+    this.categorias.reduce((maior, item) => Math.max(maior, item.identificador), 0) + 1;
+
+  const novaCategoria: CategoriaDetalheResponse = {
+    identificador: proximoIdentificador,
+    nome,
+    descricao,
+    ativa: true,
+    criadoEm: this.dataHoraAtual(),
+  };
+
+  this.categorias.push(novaCategoria);
+  this.salvarCategorias();
+
+  return {
+    sucesso: true,
+    mensagem: 'Categoria cadastrada com sucesso.',
+    categoria: { ...novaCategoria },
+  };
+}
+
+editarCategoria(
+  categoriaIdentificador: number,
+  usuarioIdentificador: number,
+  request: SalvarCategoriaRequest
+): ResultadoOperacaoCategoria {
+  if (!this.usuarioMockEhAdmin(usuarioIdentificador)) {
+    return { sucesso: false, mensagem: 'Acesso restrito a administradores.', categoria: null };
+  }
+
+  const categoria = this.categorias.find(
+    item => item.identificador === categoriaIdentificador
+  );
+
+  if (!categoria) {
+    return { sucesso: false, mensagem: 'Categoria não encontrada.', categoria: null };
+  }
+
+  const nome = request.nome.trim();
+  const descricao = (request.descricao ?? '').trim();
+
+  if (!nome || nome.length > 100) {
+    return {
+      sucesso: false,
+      mensagem: 'Informe o nome da categoria (máximo 100 caracteres).',
+      categoria: null,
+    };
+  }
+
+  if (descricao.length > 255) {
+    return {
+      sucesso: false,
+      mensagem: 'A descrição deve ter no máximo 255 caracteres.',
+      categoria: null,
+    };
+  }
+
+  const duplicada = this.categorias.some(
+    item =>
+      item.identificador !== categoriaIdentificador &&
+      item.nome.trim().toLowerCase() === nome.toLowerCase()
+  );
+
+  if (duplicada) {
+    return {
+      sucesso: false,
+      mensagem: 'Já existe uma categoria com este nome.',
+      categoria: null,
+    };
+  }
+
+  categoria.nome = nome;
+  categoria.descricao = descricao;
+  categoria.ativa = request.ativa ?? categoria.ativa;
+  this.salvarCategorias();
+
+  let anunciouMudanca = false;
+  for (const anuncio of this.anuncios) {
+    if (anuncio.categoriaIdentificador === categoriaIdentificador && anuncio.categoria !== nome) {
+      anuncio.categoria = nome;
+      anunciouMudanca = true;
+    }
+  }
+  if (anunciouMudanca) {
+    this.salvarAnuncios();
+  }
+
+  return {
+    sucesso: true,
+    mensagem: 'Categoria atualizada com sucesso.',
+    categoria: { ...categoria },
+  };
+}
+
+removerCategoria(
+  categoriaIdentificador: number,
+  usuarioIdentificador: number
+): ResultadoOperacaoCategoria {
+  if (!this.usuarioMockEhAdmin(usuarioIdentificador)) {
+    return { sucesso: false, mensagem: 'Acesso restrito a administradores.', categoria: null };
+  }
+
+  const indice = this.categorias.findIndex(
+    item => item.identificador === categoriaIdentificador
+  );
+
+  if (indice === -1) {
+    return { sucesso: false, mensagem: 'Categoria não encontrada.', categoria: null };
+  }
+
+  const emUso = this.anuncios.some(
+    anuncio => anuncio.categoriaIdentificador === categoriaIdentificador
+  );
+
+  if (emUso) {
+    return {
+      sucesso: false,
+      mensagem: 'Não é possível excluir uma categoria com anúncios vinculados.',
+      categoria: null,
+    };
+  }
+
+  this.categorias.splice(indice, 1);
+  this.salvarCategorias();
+
+  return {
+    sucesso: true,
+    mensagem: 'Categoria removida com sucesso.',
+    categoria: null,
+  };
+}
+
+private carregarCategorias(): CategoriaDetalheResponse[] {
+  const padrao = CATEGORIAS_CATALOGO.map(categoria => ({
+    identificador: categoria.identificador,
+    nome: categoria.nome,
+    descricao: '',
+    ativa: true,
+    criadoEm: '2026-09-01T00:00:00',
+  }));
+
+  if (typeof localStorage === 'undefined') {
+    return padrao;
+  }
+
+  try {
+    const salvo = localStorage.getItem(CHAVE_CATEGORIAS_STORAGE);
+    if (salvo === null) {
+      return padrao;
+    }
+
+    const dados: unknown = JSON.parse(salvo);
+    if (!Array.isArray(dados)) {
+      return padrao;
+    }
+
+    return dados
+      .filter(
+        (item): item is CategoriaDetalheResponse =>
+          typeof item === 'object' &&
+          item !== null &&
+          typeof (item as CategoriaDetalheResponse).identificador === 'number' &&
+          typeof (item as CategoriaDetalheResponse).nome === 'string' &&
+          typeof (item as CategoriaDetalheResponse).ativa === 'boolean'
+      )
+      .map(item => ({
+        identificador: item.identificador,
+        nome: item.nome,
+        descricao: typeof item.descricao === 'string' ? item.descricao : '',
+        ativa: item.ativa,
+        criadoEm: typeof item.criadoEm === 'string' ? item.criadoEm : '2026-09-01T00:00:00',
+      }));
+  } catch {
+    return padrao;
+  }
+}
+
+private salvarCategorias(): void {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+
+  try {
+    localStorage.setItem(CHAVE_CATEGORIAS_STORAGE, JSON.stringify(this.categorias));
+  } catch {
+    // Ignora indisponibilidade de storage no ambiente atual.
+  }
+}
+
+listarUsuariosAdmin(
+  solicitanteIdentificador: number,
+  paginaSolicitada = 1,
+  itensPorPagina = 10
+): ListarUsuariosResponse {
+  if (!this.usuarioMockEhAdmin(solicitanteIdentificador)) {
+    return { usuarios: [], pagina: 1, itensPorPagina, total: 0 };
+  }
+
+  const tamanho = Number.isInteger(itensPorPagina) && itensPorPagina > 0 ? itensPorPagina : 10;
+  const total = this.usuarios.length;
+  const totalPaginas = Math.max(1, Math.ceil(total / tamanho));
+  const pagina = Math.min(
+    Number.isInteger(paginaSolicitada) && paginaSolicitada >= 1 ? paginaSolicitada : 1,
+    totalPaginas
+  );
+  const inicio = (pagina - 1) * tamanho;
+
+  return {
+    usuarios: this.usuarios.slice(inicio, inicio + tamanho).map(conta => ({
+      identificador: conta.identificador,
+      nome: conta.nome,
+      email: conta.email,
+      ...(conta.foto ? { foto: conta.foto } : {}),
+      ativo: true,
+      admin: Boolean(conta.admin),
+      criadoEm: '2026-09-01T00:00:00',
+    })),
+    pagina,
+    itensPorPagina: tamanho,
+    total,
+  };
+}
+
+atualizarPermissaoUsuario(
+  alvoIdentificador: number,
+  solicitanteIdentificador: number,
+  admin: boolean
+): ResultadoOperacaoUsuario {
+  if (!this.usuarioMockEhAdmin(solicitanteIdentificador)) {
+    return { sucesso: false, mensagem: 'Acesso restrito a administradores.' };
+  }
+
+  const conta = this.usuarios.find(item => item.identificador === alvoIdentificador);
+  if (!conta) {
+    return { sucesso: false, mensagem: 'Usuário não encontrado.' };
+  }
+
+  conta.admin = admin;
+  this.salvarUsuarios();
+
+  return {
+    sucesso: true,
+    mensagem: admin
+      ? 'Permissão de administrador concedida.'
+      : 'Permissão de administrador removida.',
+    admin,
+  };
+}
+
+removerUsuario(
+  alvoIdentificador: number,
+  solicitanteIdentificador: number
+): ResultadoSimples {
+  if (!this.usuarioMockEhAdmin(solicitanteIdentificador)) {
+    return { sucesso: false, mensagem: 'Acesso restrito a administradores.' };
+  }
+
+  if (alvoIdentificador === solicitanteIdentificador) {
+    return { sucesso: false, mensagem: 'Não é possível excluir a própria conta ativa.' };
+  }
+
+  const indice = this.usuarios.findIndex(item => item.identificador === alvoIdentificador);
+  if (indice === -1) {
+    return { sucesso: false, mensagem: 'Usuário não encontrado.' };
+  }
+
+  this.usuarios.splice(indice, 1);
+  this.salvarUsuarios();
+
+  return { sucesso: true, mensagem: 'Usuário removido com sucesso.' };
 }
 
 consultarAnuncios(
@@ -2047,10 +2440,147 @@ detalharPedido(
   const pedido = this.pedidos.find(
     item =>
       item.identificador === pedidoIdentificador &&
-      item.compradorIdentificador === compradorIdentificador
+      (item.compradorIdentificador === compradorIdentificador ||
+        this.usuarioMockEhAdmin(compradorIdentificador) ||
+        (compradorIdentificador > 2 &&
+          item.itens.some(linha => linha.vendedorIdentificador === compradorIdentificador)))
   );
 
   return pedido ? this.copiarPedido(pedido) : null;
+}
+
+listarVendas(request: ListarVendasRequest): ListarVendasResponse {
+  const itensPorPagina =
+    request.itensPorPagina &&
+    Number.isInteger(request.itensPorPagina) &&
+    request.itensPorPagina > 0
+      ? request.itensPorPagina
+      : 10;
+  const mostrarTodos =
+    Boolean(request.incluirTodosAdmin) &&
+    this.usuarioMockEhAdmin(request.vendedorIdentificador);
+
+  const filtrados = this.pedidos
+    .filter(
+      pedido =>
+        (mostrarTodos ||
+          pedido.itens.some(item => item.vendedorIdentificador === request.vendedorIdentificador)) &&
+        (request.estado === undefined || pedido.estado === request.estado)
+    )
+    .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
+
+  const total = filtrados.length;
+  const totalPaginas = Math.max(1, Math.ceil(total / itensPorPagina));
+  const paginaSolicitada =
+    request.pagina && Number.isInteger(request.pagina) && request.pagina >= 1
+      ? request.pagina
+      : 1;
+  const pagina = Math.min(paginaSolicitada, totalPaginas);
+  const inicio = (pagina - 1) * itensPorPagina;
+
+  return {
+    vendas: filtrados.slice(inicio, inicio + itensPorPagina).map(pedido => ({
+      identificador: pedido.identificador,
+      compradorNome: pedido.compradorNome,
+      valorTotal: pedido.valorTotal,
+      estado: pedido.estado,
+      criadoEm: pedido.criadoEm,
+    })),
+    pagina,
+    itensPorPagina,
+    total,
+  };
+}
+
+atualizarEstadoPedido(
+  pedidoIdentificador: number,
+  usuarioIdentificador: number,
+  novoEstado: EstadoPedido
+): ResultadoOperacaoPedido {
+  const pedido = this.pedidos.find(item => item.identificador === pedidoIdentificador);
+  if (!pedido) {
+    return { sucesso: false, mensagem: 'Pedido não encontrado.', pedido: null };
+  }
+
+  const ehComprador = pedido.compradorIdentificador === usuarioIdentificador;
+  const ehVendedorOuAdmin =
+    this.usuarioMockEhAdmin(usuarioIdentificador) ||
+    pedido.itens.some(item => item.vendedorIdentificador === usuarioIdentificador);
+
+  if (!ehComprador && !ehVendedorOuAdmin) {
+    return {
+      sucesso: false,
+      mensagem: 'Você não possui permissão para atualizar este pedido.',
+      pedido: null,
+    };
+  }
+
+  if (novoEstado !== 'CANCELADO' && !ehVendedorOuAdmin) {
+    return {
+      sucesso: false,
+      mensagem: 'Você não possui permissão para avançar o estado deste pedido.',
+      pedido: this.copiarPedido(pedido),
+    };
+  }
+
+  const transicoesPermitidas: Record<EstadoPedido, readonly EstadoPedido[]> = {
+    CRIADO: ['CONFIRMADO', 'CANCELADO'],
+    CONFIRMADO: ['ENVIADO', 'CANCELADO'],
+    ENVIADO: ['CONCLUIDO'],
+    CONCLUIDO: [],
+    CANCELADO: [],
+  };
+
+  if (!transicoesPermitidas[pedido.estado].includes(novoEstado)) {
+    return {
+      sucesso: false,
+      mensagem: `Transição de estado inválida de ${pedido.estado} para ${novoEstado}.`,
+      pedido: this.copiarPedido(pedido),
+    };
+  }
+
+  if (novoEstado === 'CANCELADO') {
+    let estornouAnuncio = false;
+    for (const item of pedido.itens) {
+      const anuncio = this.anuncios.find(a => a.identificador === item.anuncioIdentificador);
+      if (anuncio) {
+        anuncio.estoque += item.quantidade;
+        if (anuncio.estoque > 0) {
+          anuncio.disponivel = true;
+        }
+        estornouAnuncio = true;
+      }
+    }
+    if (estornouAnuncio) {
+      this.salvarAnuncios();
+    }
+  }
+
+  pedido.estado = novoEstado;
+  pedido.historico.push({ estado: novoEstado, ocorridoEm: this.dataHoraAtual() });
+  this.salvarPedidos();
+
+  return {
+    sucesso: true,
+    mensagem: 'Estado do pedido atualizado com sucesso.',
+    pedido: this.copiarPedido(pedido),
+  };
+}
+
+removerPedido(pedidoIdentificador: number, usuarioIdentificador: number): ResultadoSimples {
+  if (!this.usuarioMockEhAdmin(usuarioIdentificador)) {
+    return { sucesso: false, mensagem: 'Acesso restrito a administradores.' };
+  }
+
+  const indice = this.pedidos.findIndex(item => item.identificador === pedidoIdentificador);
+  if (indice === -1) {
+    return { sucesso: false, mensagem: 'Pedido não encontrado.' };
+  }
+
+  this.pedidos.splice(indice, 1);
+  this.salvarPedidos();
+
+  return { sucesso: true, mensagem: 'Pedido removido com sucesso.' };
 }
 
 avaliarPedido(request: AvaliarPedidoRequest): ResultadoOperacaoPedido {

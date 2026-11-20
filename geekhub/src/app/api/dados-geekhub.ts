@@ -9,21 +9,30 @@ import type {
   AvaliarPedidoRequest,
   CadastrarUsuarioRequest,
   CarrinhoResponse,
+  CategoriaDetalheResponse,
   CategoriaResponse,
   ConsultarAnunciosRequest,
   ConsultarAnunciosResponse,
   EditarPerfilRequest,
+  EstadoPedido,
   ListarComprasRequest,
   ListarComprasResponse,
   ListarMeusAnunciosResponse,
+  ListarUsuariosResponse,
+  ListarVendasRequest,
+  ListarVendasResponse,
   PedidoResponse,
   PerfilVendedor,
   RemoverDoCarrinhoRequest,
   ResultadoEdicaoPerfil,
   ResultadoOperacaoAnuncio,
   ResultadoOperacaoCarrinho,
+  ResultadoOperacaoCategoria,
   ResultadoOperacaoPedido,
+  ResultadoOperacaoUsuario,
+  ResultadoSimples,
   SalvarAnuncioRequest,
+  SalvarCategoriaRequest,
 } from '../app';
 import type { EntrarRequest } from '../autenticacao/entrar/entrar.componente';
 import type { UsuarioResponse } from '../cabecalho/cabecalho/cabecalho';
@@ -42,6 +51,7 @@ import {
   paraAnuncioSalvo,
   paraCarrinho,
   paraCategoria,
+  paraCategoriaDetalhe,
   paraCompra,
   paraCondicaoApi,
   paraConservacaoApi,
@@ -49,6 +59,9 @@ import {
   paraPedido,
   paraPerfilVendedor,
   paraUsuario,
+  paraUsuarioAdmin,
+  paraVenda,
+  paraVendaAdmin,
 } from './mapeadores-api';
 import { SessaoApi } from './sessao-api';
 import { ehErroConexaoApi, extrairMensagemErro, statusErro } from './utilitarios-api';
@@ -553,6 +566,256 @@ export class DadosGeekhub {
           sucesso: false,
           mensagem: extrairMensagemErro(erro, 'Não foi possível enviar a avaliação.'),
           pedido: null,
+        }),
+      ),
+    );
+  }
+
+  listarTodasCategorias(): Observable<CategoriaDetalheResponse[]> {
+    return this.executarComFallback(
+      this.obter(CategoriaApi)
+        .listar({}, { tamanho: 100, ordenacao: 'nome' })
+        .pipe(map(pagina => pagina.itens.map(paraCategoriaDetalhe))),
+      () => this.app.listarTodasCategorias(),
+    ).pipe(
+      catchError((erro: unknown) => this.falhar(erro, 'Não foi possível carregar as categorias.')),
+    );
+  }
+
+  cadastrarCategoria(
+    usuarioIdentificador: number,
+    request: SalvarCategoriaRequest,
+  ): Observable<ResultadoOperacaoCategoria> {
+    return this.executarComFallback(
+      this.obter(CategoriaApi)
+        .cadastrar({
+          nome: request.nome.trim(),
+          descricao: request.descricao?.trim() || null,
+        })
+        .pipe(
+          map(categoria => ({
+            sucesso: true,
+            mensagem: 'Categoria cadastrada com sucesso.',
+            categoria: paraCategoriaDetalhe(categoria),
+          })),
+        ),
+      () => this.app.cadastrarCategoria(usuarioIdentificador, request),
+    ).pipe(
+      catchError((erro: unknown) =>
+        of({
+          sucesso: false,
+          mensagem: extrairMensagemErro(erro, 'Não foi possível cadastrar a categoria.'),
+          categoria: null,
+        }),
+      ),
+    );
+  }
+
+  editarCategoria(
+    categoriaIdentificador: number,
+    usuarioIdentificador: number,
+    request: SalvarCategoriaRequest,
+  ): Observable<ResultadoOperacaoCategoria> {
+    return this.executarComFallback(
+      this.obter(CategoriaApi)
+        .editar(categoriaIdentificador, {
+          nome: request.nome.trim(),
+          descricao: request.descricao?.trim() || null,
+          ativa: request.ativa ?? true,
+        })
+        .pipe(
+          map(categoria => ({
+            sucesso: true,
+            mensagem: 'Categoria atualizada com sucesso.',
+            categoria: paraCategoriaDetalhe(categoria),
+          })),
+        ),
+      () => this.app.editarCategoria(categoriaIdentificador, usuarioIdentificador, request),
+    ).pipe(
+      catchError((erro: unknown) =>
+        of({
+          sucesso: false,
+          mensagem: extrairMensagemErro(erro, 'Não foi possível atualizar a categoria.'),
+          categoria: null,
+        }),
+      ),
+    );
+  }
+
+  removerCategoria(
+    categoriaIdentificador: number,
+    usuarioIdentificador: number,
+  ): Observable<ResultadoOperacaoCategoria> {
+    return this.executarComFallback(
+      this.obter(CategoriaApi)
+        .remover(categoriaIdentificador)
+        .pipe(
+          map(() => ({
+            sucesso: true,
+            mensagem: 'Categoria removida com sucesso.',
+            categoria: null,
+          })),
+        ),
+      () => this.app.removerCategoria(categoriaIdentificador, usuarioIdentificador),
+    ).pipe(
+      catchError((erro: unknown) =>
+        of({
+          sucesso: false,
+          mensagem: extrairMensagemErro(erro, 'Não foi possível remover a categoria.'),
+          categoria: null,
+        }),
+      ),
+    );
+  }
+
+  listarVendas(request: ListarVendasRequest): Observable<ListarVendasResponse> {
+    const itensPorPagina =
+      request.itensPorPagina && Number.isInteger(request.itensPorPagina) && request.itensPorPagina > 0
+        ? request.itensPorPagina
+        : 10;
+    const pagina =
+      request.pagina && Number.isInteger(request.pagina) && request.pagina >= 1 ? request.pagina : 1;
+    const ehAdmin = Boolean(request.incluirTodosAdmin) && this.usuarioEhAdmin();
+    const pedidoApi = this.obter(PedidoApi);
+
+    const chamada$ = ehAdmin
+      ? pedidoApi
+          .listarTodos({ estado: request.estado }, { pagina: pagina - 1, tamanho: itensPorPagina })
+          .pipe(
+            map(resposta => ({
+              vendas: resposta.itens.map(paraVendaAdmin),
+              pagina: resposta.numero + 1,
+              itensPorPagina: resposta.tamanho,
+              total: resposta.totalElementos,
+            })),
+          )
+      : pedidoApi
+          .listarVendas({ estado: request.estado }, { pagina: pagina - 1, tamanho: itensPorPagina })
+          .pipe(
+            map(resposta => ({
+              vendas: resposta.itens.map(paraVenda),
+              pagina: resposta.numero + 1,
+              itensPorPagina: resposta.tamanho,
+              total: resposta.totalElementos,
+            })),
+          );
+
+    return this.executarComFallback(chamada$, () => this.app.listarVendas(request)).pipe(
+      catchError((erro: unknown) => this.falhar(erro, 'Não foi possível carregar as vendas.')),
+    );
+  }
+
+  atualizarEstadoPedido(
+    pedidoIdentificador: number,
+    usuarioIdentificador: number,
+    novoEstado: EstadoPedido,
+  ): Observable<ResultadoOperacaoPedido> {
+    return this.executarComFallback(
+      this.obter(PedidoApi)
+        .atualizarEstado(pedidoIdentificador, { estado: novoEstado })
+        .pipe(
+          switchMap(() => this.obter(PedidoApi).detalhar(pedidoIdentificador)),
+          map(pedido => ({
+            sucesso: true,
+            mensagem: 'Estado do pedido atualizado com sucesso.',
+            pedido: paraPedido(pedido),
+          })),
+        ),
+      () => this.app.atualizarEstadoPedido(pedidoIdentificador, usuarioIdentificador, novoEstado),
+    ).pipe(
+      catchError((erro: unknown) =>
+        of({
+          sucesso: false,
+          mensagem: extrairMensagemErro(erro, 'Não foi possível atualizar o estado do pedido.'),
+          pedido: null,
+        }),
+      ),
+    );
+  }
+
+  removerPedido(pedidoIdentificador: number, usuarioIdentificador: number): Observable<ResultadoSimples> {
+    return this.executarComFallback(
+      this.obter(PedidoApi)
+        .remover(pedidoIdentificador)
+        .pipe(map(() => ({ sucesso: true, mensagem: 'Pedido removido com sucesso.' }))),
+      () => this.app.removerPedido(pedidoIdentificador, usuarioIdentificador),
+    ).pipe(
+      catchError((erro: unknown) =>
+        of({
+          sucesso: false,
+          mensagem: extrairMensagemErro(erro, 'Não foi possível remover o pedido.'),
+        }),
+      ),
+    );
+  }
+
+  listarUsuarios(
+    solicitanteIdentificador: number,
+    pagina = 1,
+    itensPorPagina = 10,
+  ): Observable<ListarUsuariosResponse> {
+    const tamanho = Number.isInteger(itensPorPagina) && itensPorPagina > 0 ? itensPorPagina : 10;
+    const numeroPagina = Number.isInteger(pagina) && pagina >= 1 ? pagina : 1;
+
+    return this.executarComFallback(
+      this.obter(UsuarioApi)
+        .listar({ pagina: numeroPagina - 1, tamanho })
+        .pipe(
+          map(resposta => ({
+            usuarios: resposta.itens.map(paraUsuarioAdmin),
+            pagina: resposta.numero + 1,
+            itensPorPagina: resposta.tamanho,
+            total: resposta.totalElementos,
+          })),
+        ),
+      () => this.app.listarUsuariosAdmin(solicitanteIdentificador, numeroPagina, tamanho),
+    ).pipe(
+      catchError((erro: unknown) => this.falhar(erro, 'Não foi possível carregar os usuários.')),
+    );
+  }
+
+  atualizarPermissaoUsuario(
+    alvoIdentificador: number,
+    solicitanteIdentificador: number,
+    admin: boolean,
+  ): Observable<ResultadoOperacaoUsuario> {
+    return this.executarComFallback(
+      this.obter(UsuarioApi)
+        .atualizarPermissao(alvoIdentificador, { admin })
+        .pipe(
+          map(resposta => ({
+            sucesso: true,
+            mensagem: resposta.admin
+              ? 'Permissão de administrador concedida.'
+              : 'Permissão de administrador removida.',
+            admin: resposta.admin,
+          })),
+        ),
+      () => this.app.atualizarPermissaoUsuario(alvoIdentificador, solicitanteIdentificador, admin),
+    ).pipe(
+      catchError((erro: unknown) =>
+        of({
+          sucesso: false,
+          mensagem: extrairMensagemErro(erro, 'Não foi possível atualizar a permissão.'),
+        }),
+      ),
+    );
+  }
+
+  removerUsuario(
+    alvoIdentificador: number,
+    solicitanteIdentificador: number,
+  ): Observable<ResultadoSimples> {
+    return this.executarComFallback(
+      this.obter(UsuarioApi)
+        .remover(alvoIdentificador)
+        .pipe(map(() => ({ sucesso: true, mensagem: 'Usuário removido com sucesso.' }))),
+      () => this.app.removerUsuario(alvoIdentificador, solicitanteIdentificador),
+    ).pipe(
+      catchError((erro: unknown) =>
+        of({
+          sucesso: false,
+          mensagem: extrairMensagemErro(erro, 'Não foi possível remover o usuário.'),
         }),
       ),
     );

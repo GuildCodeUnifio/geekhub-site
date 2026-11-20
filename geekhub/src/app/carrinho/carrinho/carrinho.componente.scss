@@ -171,6 +171,14 @@
   width: 100%;
 }
 
+.botao-limpar-carrinho {
+  width: 100%;
+  margin-top: 8px;
+  font-weight: 600;
+  --mat-button-text-label-text-color: #b3261e;
+  --mdc-text-button-label-text-color: #b3261e;
+}
+
 .botao-catalogo {
   padding: 0 24px;
   margin-top: 8px;

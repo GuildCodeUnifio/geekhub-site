@@ -1,11 +1,14 @@
 import type {
   AnuncioResponse,
   CarrinhoResponse,
+  CategoriaDetalheResponse,
   CategoriaResponse,
   CompraResponse,
   MeuAnuncioResponse,
   PedidoResponse,
   PerfilVendedor,
+  UsuarioAdminResponse,
+  VendaResponse,
   VendedorResponse,
 } from '../app';
 import type { UsuarioResponse } from '../cabecalho/cabecalho/cabecalho';
@@ -50,6 +53,29 @@ export function paraUsuario(
 
 export function paraCategoria(categoria: api.ListarCategoriaResponse): CategoriaResponse {
   return { identificador: categoria.id, nome: categoria.nome };
+}
+
+export function paraCategoriaDetalhe(
+  categoria: api.ListarCategoriaResponse,
+): CategoriaDetalheResponse {
+  return {
+    identificador: categoria.id,
+    nome: categoria.nome,
+    descricao: categoria.descricao ?? '',
+    ativa: categoria.ativa,
+    criadoEm: categoria.criadoEm,
+  };
+}
+
+export function paraUsuarioAdmin(usuario: api.ListarUsuarioResponse): UsuarioAdminResponse {
+  return {
+    identificador: usuario.id,
+    nome: usuario.nome,
+    email: usuario.email,
+    ...(usuario.imagemPerfil ? { foto: usuario.imagemPerfil } : {}),
+    ativo: usuario.ativo,
+    criadoEm: usuario.criadoEm,
+  };
 }
 
 export function paraAnuncioDoCatalogo(anuncio: api.ListarAnuncioResponse): AnuncioResponse {
@@ -229,6 +255,26 @@ export function paraCompra(compra: api.ListarCompraResponse): CompraResponse {
     quantidadeItens: compra.quantidadeItens,
     imagem: '',
     criadoEm: compra.criadoEm,
+  };
+}
+
+export function paraVenda(venda: api.ListarVendaResponse): VendaResponse {
+  return {
+    identificador: venda.id,
+    compradorNome: venda.compradorNome,
+    valorTotal: venda.valorTotal,
+    estado: venda.estado,
+    criadoEm: venda.criadoEm,
+  };
+}
+
+export function paraVendaAdmin(pedido: api.ListarPedidoAdminResponse): VendaResponse {
+  return {
+    identificador: pedido.id,
+    compradorNome: pedido.compradorNome,
+    valorTotal: pedido.valorTotal,
+    estado: pedido.estado,
+    criadoEm: pedido.criadoEm,
   };
 }
 

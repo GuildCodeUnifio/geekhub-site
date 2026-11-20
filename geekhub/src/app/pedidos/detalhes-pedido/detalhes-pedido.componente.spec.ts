@@ -94,4 +94,24 @@ describe('DetalhesPedidoComponente', () => {
     expect(component.pedido?.avaliado).toBe(true);
     expect(component.podeAvaliar).toBe(false);
   });
+
+  it('permite cancelar pedido em aberto com estorno de estoque e avancar estado como admin', async () => {
+    app.entrar({ email: 'demo@geekhub.com', senha: '123456' });
+    await criarComponente('1006');
+
+    expect(component.podeAvancarEstado).toBe(true);
+    expect(component.podeCancelarPedido).toBe(true);
+
+    component.avancarEstado();
+    await fixture.whenStable();
+    expect(component.pedido?.estado).toBe('CONFIRMADO');
+
+    const estoqueAntes = app.buscarAnuncio(1)!.estoque;
+    component.solicitarCancelamento();
+    component.confirmarCancelamento();
+    await fixture.whenStable();
+
+    expect(component.pedido?.estado).toBe('CANCELADO');
+    expect(app.buscarAnuncio(1)!.estoque).toBe(estoqueAntes + 1);
+  });
 });

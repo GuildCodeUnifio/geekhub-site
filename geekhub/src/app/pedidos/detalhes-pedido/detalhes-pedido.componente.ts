@@ -40,6 +40,10 @@ export class DetalhesPedidoComponente implements OnInit {
   erro = '';
   carregando = false;
   enviandoAvaliacao = false;
+  atualizandoEstado = false;
+  confirmandoCancelamento = false;
+  mensagemEstado = '';
+  estadoComErro = false;
 
   private consultaAtual?: Subscription;
 
@@ -64,6 +68,9 @@ export class DetalhesPedidoComponente implements OnInit {
       this.consultaAtual?.unsubscribe();
       this.cancelarAvaliacao();
       this.mensagemAvaliacao = '';
+      this.confirmandoCancelamento = false;
+      this.mensagemEstado = '';
+      this.estadoComErro = false;
       this.pedido = null;
       this.etapas = [];
       this.erro = '';
@@ -97,6 +104,97 @@ export class DetalhesPedidoComponente implements OnInit {
 
   get podeAvaliar(): boolean {
     return this.pedido?.estado === 'CONCLUIDO' && !this.pedido.avaliado;
+  }
+
+  get ehVendedorOuAdmin(): boolean {
+    const usuario = this.app.usuarioAtual;
+    if (!usuario || !this.pedido) {
+      return false;
+    }
+
+    return (
+      this.app.usuarioAtualEhAdmin ||
+      this.pedido.itens.some(item => item.vendedorIdentificador === usuario.identificador)
+    );
+  }
+
+  get proximoEstado(): { estado: EstadoPedido; rotulo: string } | null {
+    switch (this.pedido?.estado) {
+      case 'CRIADO':
+        return { estado: 'CONFIRMADO', rotulo: 'Confirmar pedido' };
+      case 'CONFIRMADO':
+        return { estado: 'ENVIADO', rotulo: 'Marcar como enviado' };
+      case 'ENVIADO':
+        return { estado: 'CONCLUIDO', rotulo: 'Marcar como concluído' };
+      default:
+        return null;
+    }
+  }
+
+  get podeAvancarEstado(): boolean {
+    return this.ehVendedorOuAdmin && this.proximoEstado !== null;
+  }
+
+  get podeCancelarPedido(): boolean {
+    return this.pedido?.estado === 'CRIADO' || this.pedido?.estado === 'CONFIRMADO';
+  }
+
+  avancarEstado(): void {
+    const proximo = this.proximoEstado;
+    if (!proximo) {
+      return;
+    }
+
+    this.alterarEstadoPedido(proximo.estado);
+  }
+
+  solicitarCancelamento(): void {
+    this.confirmandoCancelamento = true;
+    this.mensagemEstado = '';
+  }
+
+  desistirCancelamento(): void {
+    this.confirmandoCancelamento = false;
+  }
+
+  confirmarCancelamento(): void {
+    this.alterarEstadoPedido('CANCELADO');
+  }
+
+  private alterarEstadoPedido(novoEstado: EstadoPedido): void {
+    const usuario = this.app.usuarioAtual;
+    if (!this.pedido || !usuario || this.atualizandoEstado) {
+      return;
+    }
+
+    this.atualizandoEstado = true;
+    this.mensagemEstado = '';
+    this.estadoComErro = false;
+
+    this.app.dados
+      .atualizarEstadoPedido(this.pedido.identificador, usuario.identificador, novoEstado)
+      .subscribe({
+        next: resultado => {
+          this.atualizandoEstado = false;
+          this.confirmandoCancelamento = false;
+          this.estadoComErro = !resultado.sucesso;
+          this.mensagemEstado = resultado.mensagem;
+
+          if (resultado.pedido) {
+            this.pedido = resultado.pedido;
+            this.etapas = this.montarEtapas(resultado.pedido);
+          }
+
+          this.detector.markForCheck();
+        },
+        error: (erro: Error) => {
+          this.atualizandoEstado = false;
+          this.confirmandoCancelamento = false;
+          this.estadoComErro = true;
+          this.mensagemEstado = erro.message;
+          this.detector.markForCheck();
+        },
+      });
   }
 
   abrirAvaliacao(): void {
