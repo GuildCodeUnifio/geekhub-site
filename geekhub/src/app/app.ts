@@ -19,6 +19,8 @@ const CHAVE_USUARIO_ATUAL_STORAGE = 'geekhub.usuarioAtual';
 const CHAVE_CARRINHOS_STORAGE = 'geekhub.carrinhos';
 
 export interface ItemCarrinhoResponse {
+  /** Identificador do item no carrinho (disponível quando os dados vêm da API). */
+  identificador?: number;
   anuncioIdentificador: number;
   nome: string;
   imagem: string;
@@ -126,7 +128,8 @@ export interface PerfilVendedor {
   contagem: number;
   membroDesde: number;
   vendas: number;
-  taxaResposta: number;
+  /** Não fornecida pela API; `null` oculta o indicador. */
+  taxaResposta: number | null;
   avaliacoes: {
     identificador: number;
     autor: string;

@@ -37,10 +37,12 @@
           <dt>Vendas</dt>
           <dd>{{ perfil.vendas }}</dd>
         </div>
-        <div>
-          <dt>Taxa de resposta</dt>
-          <dd>{{ perfil.taxaResposta }}%</dd>
-        </div>
+        @if (perfil.taxaResposta !== null) {
+          <div>
+            <dt>Taxa de resposta</dt>
+            <dd>{{ perfil.taxaResposta }}%</dd>
+          </div>
+        }
       </dl>
     </header>
 
