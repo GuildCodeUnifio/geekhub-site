@@ -15,12 +15,15 @@ import type {
   EditarPerfilRequest,
   ListarComprasRequest,
   ListarComprasResponse,
+  ListarMeusAnunciosResponse,
   PedidoResponse,
   PerfilVendedor,
   RemoverDoCarrinhoRequest,
   ResultadoEdicaoPerfil,
+  ResultadoOperacaoAnuncio,
   ResultadoOperacaoCarrinho,
   ResultadoOperacaoPedido,
+  SalvarAnuncioRequest,
 } from '../app';
 import type { EntrarRequest } from '../autenticacao/entrar/entrar.componente';
 import type { UsuarioResponse } from '../cabecalho/cabecalho/cabecalho';
@@ -34,10 +37,15 @@ import { UsuarioApi } from './clientes/usuario-api';
 import { FONTE_DADOS, type FonteDados } from './configuracao-api';
 import {
   paraAnuncio,
+  paraAnuncioAdmin,
   paraAnuncioDoCatalogo,
+  paraAnuncioSalvo,
   paraCarrinho,
   paraCategoria,
   paraCompra,
+  paraCondicaoApi,
+  paraConservacaoApi,
+  paraMeuAnuncio,
   paraPedido,
   paraPerfilVendedor,
   paraUsuario,
@@ -207,6 +215,157 @@ export class DadosGeekhub {
         statusErro(erro) === 404 ? of(null) : this.falhar(erro, 'Não foi possível carregar o anúncio.'),
       ),
     );
+  }
+
+  listarMeusAnuncios(
+    usuarioIdentificador: number,
+    pagina = 1,
+    itensPorPagina = 8,
+    incluirTodosAdmin = false,
+  ): Observable<ListarMeusAnunciosResponse> {
+    const tamanho =
+      Number.isInteger(itensPorPagina) && itensPorPagina > 0 ? itensPorPagina : 8;
+    const numeroPagina = Number.isInteger(pagina) && pagina >= 1 ? pagina : 1;
+    const paginacao = { pagina: numeroPagina - 1, tamanho };
+    const ehAdmin = incluirTodosAdmin && this.usuarioEhAdmin();
+    const anuncioApi = this.obter(AnuncioApi);
+
+    const chamada$ = ehAdmin
+      ? anuncioApi.listarAdmin(paginacao).pipe(
+          map(resposta => ({
+            anuncios: resposta.itens.map(paraAnuncioAdmin),
+            pagina: resposta.numero + 1,
+            itensPorPagina: resposta.tamanho,
+            total: resposta.totalElementos,
+          })),
+        )
+      : anuncioApi.listarMeus(paginacao).pipe(
+          map(resposta => ({
+            anuncios: resposta.itens.map(paraMeuAnuncio),
+            pagina: resposta.numero + 1,
+            itensPorPagina: resposta.tamanho,
+            total: resposta.totalElementos,
+          })),
+        );
+
+    return this.executarComFallback(chamada$, () =>
+      this.app.listarMeusAnuncios(usuarioIdentificador, numeroPagina, tamanho, incluirTodosAdmin),
+    ).pipe(
+      catchError((erro: unknown) => this.falhar(erro, 'Não foi possível carregar os anúncios.')),
+    );
+  }
+
+  cadastrarAnuncio(
+    vendedorIdentificador: number,
+    request: SalvarAnuncioRequest,
+  ): Observable<ResultadoOperacaoAnuncio> {
+    const imagens = request.imagens.map(url => url.trim()).filter(Boolean);
+
+    return this.executarComFallback(
+      this.obter(AnuncioApi)
+        .cadastrar({
+          nome: request.nome.trim(),
+          descricao: request.descricao.trim(),
+          categoriaId: request.categoriaIdentificador,
+          preco: request.preco,
+          quantidadeDisponivel: request.estoque,
+          condicao: paraCondicaoApi(request.estado),
+          conservacao: paraConservacaoApi(request.conservacao),
+          imagens,
+        })
+        .pipe(
+          map(anuncio => ({
+            sucesso: true,
+            mensagem: 'Anúncio cadastrado com sucesso.',
+            anuncio: paraAnuncioSalvo(anuncio, this.vendedorAtualResumo(vendedorIdentificador)),
+          })),
+        ),
+      () => this.app.cadastrarAnuncio(vendedorIdentificador, request),
+    ).pipe(
+      catchError((erro: unknown) =>
+        of({
+          sucesso: false,
+          mensagem: extrairMensagemErro(erro, 'Não foi possível cadastrar o anúncio.'),
+          anuncio: null,
+        }),
+      ),
+    );
+  }
+
+  editarAnuncio(
+    anuncioIdentificador: number,
+    usuarioIdentificador: number,
+    request: SalvarAnuncioRequest,
+  ): Observable<ResultadoOperacaoAnuncio> {
+    const imagens = request.imagens.map(url => url.trim()).filter(Boolean);
+
+    return this.executarComFallback(
+      this.obter(AnuncioApi)
+        .editar(anuncioIdentificador, {
+          nome: request.nome.trim(),
+          descricao: request.descricao.trim(),
+          categoriaId: request.categoriaIdentificador,
+          preco: request.preco,
+          quantidadeDisponivel: request.estoque,
+          disponivel: request.disponivel ?? request.estoque > 0,
+          condicao: paraCondicaoApi(request.estado),
+          conservacao: paraConservacaoApi(request.conservacao),
+          imagens,
+        })
+        .pipe(
+          map(anuncio => ({
+            sucesso: true,
+            mensagem: 'Anúncio atualizado com sucesso.',
+            anuncio: paraAnuncioSalvo(anuncio, this.vendedorAtualResumo(usuarioIdentificador)),
+          })),
+        ),
+      () => this.app.editarAnuncio(anuncioIdentificador, usuarioIdentificador, request),
+    ).pipe(
+      catchError((erro: unknown) =>
+        of({
+          sucesso: false,
+          mensagem: extrairMensagemErro(erro, 'Não foi possível atualizar o anúncio.'),
+          anuncio: null,
+        }),
+      ),
+    );
+  }
+
+  removerAnuncio(
+    anuncioIdentificador: number,
+    usuarioIdentificador: number,
+  ): Observable<ResultadoOperacaoAnuncio> {
+    return this.executarComFallback(
+      this.obter(AnuncioApi)
+        .remover(anuncioIdentificador)
+        .pipe(
+          map(() => ({
+            sucesso: true,
+            mensagem: 'Anúncio removido com sucesso.',
+            anuncio: null,
+          })),
+        ),
+      () => this.app.removerAnuncio(anuncioIdentificador, usuarioIdentificador),
+    ).pipe(
+      catchError((erro: unknown) =>
+        of({
+          sucesso: false,
+          mensagem: extrairMensagemErro(erro, 'Não foi possível remover o anúncio.'),
+          anuncio: null,
+        }),
+      ),
+    );
+  }
+
+  private vendedorAtualResumo(identificadorPadrao: number) {
+    const atual = this.app.usuarioAtual;
+    return {
+      identificador: atual?.identificador ?? identificadorPadrao,
+      nome: atual?.nome ?? 'Vendedor',
+      ...(atual?.foto ? { foto: atual.foto } : {}),
+      media: null,
+      contagem: 0,
+    };
   }
 
   buscarVendedor(identificador: number): Observable<PerfilVendedor | null> {

@@ -3,8 +3,10 @@ import type {
   CarrinhoResponse,
   CategoriaResponse,
   CompraResponse,
+  MeuAnuncioResponse,
   PedidoResponse,
   PerfilVendedor,
+  VendedorResponse,
 } from '../app';
 import type { UsuarioResponse } from '../cabecalho/cabecalho/cabecalho';
 import type * as api from './modelos-api';
@@ -19,6 +21,21 @@ const ROTULOS_CONSERVACAO: Record<api.ConservacaoProduto, string> = {
   BOM: 'Bom',
   REGULAR: 'Regular',
 };
+
+export function paraCondicaoApi(estado: AnuncioResponse['estado']): api.CondicaoProduto {
+  return estado === 'Usado' ? 'USADO' : 'NOVO';
+}
+
+export function paraConservacaoApi(conservacao: string): api.ConservacaoProduto {
+  const normalizada = conservacao.trim().toLowerCase();
+  if (normalizada === 'excelente') {
+    return 'EXCELENTE';
+  }
+  if (normalizada === 'regular') {
+    return 'REGULAR';
+  }
+  return 'BOM';
+}
 
 export function paraUsuario(
   usuario: api.DetalharUsuarioResponse | api.CadastrarUsuarioResponse,
@@ -79,6 +96,59 @@ export function paraAnuncio(anuncio: api.DetalharAnuncioResponse): AnuncioRespon
       media: anuncio.vendedor.notaMedia,
       contagem: anuncio.vendedor.quantidadeAvaliacoes ?? 0,
     },
+  };
+}
+
+export function paraMeuAnuncio(anuncio: api.ListarMeuAnuncioResponse): MeuAnuncioResponse {
+  return {
+    identificador: anuncio.id,
+    nome: anuncio.nome,
+    preco: anuncio.preco,
+    estoque: anuncio.quantidadeDisponivel,
+    disponivel: anuncio.disponivel,
+    estado: ROTULOS_CONDICAO[anuncio.condicao],
+    conservacao: ROTULOS_CONSERVACAO[anuncio.conservacao],
+    categoria: anuncio.categoriaNome,
+    imagemPrincipal: anuncio.imagemPrincipal ?? '',
+    criadoEm: anuncio.criadoEm,
+  };
+}
+
+export function paraAnuncioAdmin(anuncio: api.ListarAnuncioAdminResponse): MeuAnuncioResponse {
+  return {
+    identificador: anuncio.id,
+    nome: anuncio.nome,
+    preco: anuncio.preco,
+    estoque: anuncio.quantidadeDisponivel,
+    disponivel: anuncio.disponivel,
+    estado: 'Novo',
+    conservacao: '',
+    categoria: anuncio.categoriaNome,
+    imagemPrincipal: '',
+    vendedorIdentificador: anuncio.vendedorId,
+    vendedorNome: anuncio.vendedorNome,
+    criadoEm: anuncio.criadoEm,
+  };
+}
+
+export function paraAnuncioSalvo(
+  anuncio: api.CadastrarAnuncioResponse | api.EditarAnuncioResponse,
+  vendedor: VendedorResponse,
+): AnuncioResponse {
+  return {
+    identificador: anuncio.id,
+    nome: anuncio.nome,
+    titulo: anuncio.nome,
+    descricao: anuncio.descricao ?? '',
+    imagens: anuncio.imagens ?? [],
+    categoriaIdentificador: anuncio.categoriaId,
+    categoria: anuncio.categoriaNome,
+    preco: anuncio.preco,
+    estado: ROTULOS_CONDICAO[anuncio.condicao],
+    conservacao: ROTULOS_CONSERVACAO[anuncio.conservacao],
+    estoque: anuncio.quantidadeDisponivel,
+    disponivel: anuncio.disponivel,
+    vendedor,
   };
 }
 

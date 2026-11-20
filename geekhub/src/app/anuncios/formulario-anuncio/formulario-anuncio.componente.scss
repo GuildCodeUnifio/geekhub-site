@@ -1,0 +1,128 @@
+:host {
+  display: block;
+  min-height: calc(100dvh - 64px);
+  background-color: #faf9f6;
+  color: #212121;
+}
+
+.pagina-formulario {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  box-sizing: border-box;
+}
+
+.trilha {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  color: #757575;
+
+  a {
+    color: #3f51b5;
+    text-decoration: none;
+  }
+}
+
+.cabecalho-pagina h1 {
+  margin: 0 0 20px;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.banner-erro,
+.banner-sucesso {
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border: 1px solid;
+}
+
+.banner-erro {
+  border-color: #b3261e;
+  background: #fdecea;
+  color: #8c1d18;
+}
+
+.banner-sucesso {
+  border-color: #2e7d32;
+  background: #edf7ed;
+  color: #1b5e20;
+}
+
+.cartao-formulario {
+  background: #fff;
+  border-color: #212121;
+  padding: 24px;
+}
+
+.formulario-anuncio {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.grade-dupla {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.controle-disponivel {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.secao-imagens h2 {
+  margin: 8px 0 12px;
+  font-size: 1.15rem;
+}
+
+.linha-url {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.campo-url {
+  flex: 1 1 280px;
+}
+
+.lista-imagens {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.item-imagem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border: 1px solid #d4d4d4;
+
+  img {
+    width: 56px;
+    height: 42px;
+    object-fit: cover;
+  }
+
+  .texto-url {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.88rem;
+  }
+}
+
+.acoes-formulario {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}

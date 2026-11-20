@@ -58,6 +58,7 @@ export class Cabecalho {
     { rotulo: 'Catálogo', icone: 'home', caminho: '/' },
     { rotulo: 'Carrinho', icone: 'shopping_cart', caminho: '/carrinho' },
     { rotulo: 'Minhas compras', icone: 'orders', caminho: '/pedidos', exigeSessao: true },
+    { rotulo: 'Meus anúncios', icone: 'storefront', caminho: '/meus-anuncios', exigeSessao: true },
   ];
 
   constructor(private injetor: Injector) {}

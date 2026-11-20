@@ -28,6 +28,12 @@ const routes: Routes = [
                 .then(m => m.PedidosModule),
     },
     {
+        path: 'meus-anuncios',
+        loadChildren: () =>
+            import('./anuncios/anuncios-module')
+                .then(m => m.AnunciosModule),
+    },
+    {
         path: 'autenticacao',
         loadChildren: () =>
             import('./autenticacao/autenticacao-module')

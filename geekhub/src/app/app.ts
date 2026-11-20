@@ -32,10 +32,12 @@ export interface ResultadoEdicaoPerfil {
 }
 
 const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const REGEX_URL_HTTP = /^https?:\/\/.+/i;
 
 const CHAVE_USUARIOS_STORAGE = 'geekhub.usuarios';
 const CHAVE_USUARIO_ATUAL_STORAGE = 'geekhub.usuarioAtual';
 const CHAVE_CARRINHOS_STORAGE = 'geekhub.carrinhos';
+const CHAVE_ANUNCIOS_STORAGE = 'geekhub.anuncios';
 
 export interface ItemCarrinhoResponse {
   /** Identificador do item no carrinho (disponível quando os dados vêm da API). */
@@ -203,6 +205,54 @@ export interface AnuncioResponse {
 export interface ConsultarAnuncioRequest {
   anuncioIdentificador: number;
 }
+
+export interface MeuAnuncioResponse {
+  identificador: number;
+  nome: string;
+  preco: number;
+  estoque: number;
+  disponivel: boolean;
+  estado: 'Novo' | 'Usado';
+  conservacao: string;
+  categoria: string;
+  imagemPrincipal: string;
+  vendedorIdentificador?: number;
+  vendedorNome?: string;
+  criadoEm: string;
+}
+
+export interface ListarMeusAnunciosResponse {
+  anuncios: MeuAnuncioResponse[];
+  pagina: number;
+  itensPorPagina: number;
+  total: number;
+}
+
+export interface SalvarAnuncioRequest {
+  nome: string;
+  descricao: string;
+  categoriaIdentificador: number;
+  preco: number;
+  estoque: number;
+  disponivel?: boolean;
+  estado: 'Novo' | 'Usado';
+  conservacao: string;
+  imagens: string[];
+}
+
+export interface ResultadoOperacaoAnuncio {
+  sucesso: boolean;
+  mensagem: string;
+  anuncio: AnuncioResponse | null;
+}
+
+export type ConservacaoOpcao = 'Excelente' | 'Bom' | 'Regular';
+
+export const OPCOES_CONSERVACAO: readonly ConservacaoOpcao[] = [
+  'Excelente',
+  'Bom',
+  'Regular',
+];
 
 const CATEGORIAS_CATALOGO: readonly CategoriaResponse[] = [
   { identificador: 1, nome: 'Figuras colecionáveis' },
@@ -761,7 +811,7 @@ export class App {
     },
   ];
 
-  private readonly anuncios: AnuncioResponse[] = [
+  private readonly anunciosPadrao: readonly AnuncioResponse[] = [
     {
       identificador: 1,
       nome: 'Action figure Naruto',
@@ -1006,28 +1056,53 @@ export class App {
     },
   ];
 
+  private readonly anuncios: AnuncioResponse[] = this.carregarAnuncios();
+
 buscarVendedor(identificador: number): PerfilVendedor | null {
     const vendedor = this.vendedores.find(
       vendedor => vendedor.identificador === identificador
     );
 
-    if(!vendedor){
+    if (vendedor) {
+      const contagem = vendedor.avaliacoes.length;
+      const somaDasNotas = vendedor.avaliacoes.reduce(
+        (soma, avaliacao) => soma + avaliacao.nota,
+        0
+      );
+      const media = contagem > 0 ? somaDasNotas / contagem : null;
+
+      return {
+        ...vendedor,
+        media,
+        contagem,
+        produtos: this.listarProdutosDoVendedor(identificador)
+      };
+    }
+
+    const usuario = this.usuarios.find(
+      item => item.identificador === identificador
+    );
+
+    if (!usuario) {
       return null;
     }
 
-    const contagem = vendedor.avaliacoes.length;
-
-    const somaDasNotas = vendedor.avaliacoes.reduce(
-      (soma, avaliacao) => soma + avaliacao.nota, 0
-    );
-
-    const media = contagem > 0
-      ? somaDasNotas / contagem : null;
+    const vendas = this.pedidos.filter(
+      pedido =>
+        pedido.estado !== 'CANCELADO' &&
+        pedido.itens.some(item => item.vendedorIdentificador === identificador)
+    ).length;
 
     return {
-      ...vendedor,
-      media,
-      contagem,
+      identificador: usuario.identificador,
+      nome: usuario.nome,
+      ...(usuario.foto ? { foto: usuario.foto } : {}),
+      media: null,
+      contagem: 0,
+      membroDesde: new Date().getFullYear(),
+      vendas,
+      taxaResposta: null,
+      avaliacoes: [],
       produtos: this.listarProdutosDoVendedor(identificador)
     };
   }
@@ -1129,6 +1204,336 @@ consultarAnuncios(
 
 listarAnuncios(): AnuncioResponse[] {
   return this.anuncios;
+}
+
+listarMeusAnuncios(
+  usuarioIdentificador: number,
+  paginaSolicitada = 1,
+  itensPorPagina = 8,
+  incluirTodosAdmin = false
+): ListarMeusAnunciosResponse {
+  const tamanho =
+    Number.isInteger(itensPorPagina) && itensPorPagina > 0 ? itensPorPagina : 8;
+  const mostrarTodos =
+    incluirTodosAdmin && this.usuarioMockEhAdmin(usuarioIdentificador);
+
+  const filtrados = this.anuncios
+    .filter(
+      anuncio =>
+        mostrarTodos || anuncio.vendedor.identificador === usuarioIdentificador
+    )
+    .slice()
+    .sort((a, b) => b.identificador - a.identificador);
+
+  const total = filtrados.length;
+  const totalPaginas = Math.max(1, Math.ceil(total / tamanho));
+  const pagina = Math.min(
+    Number.isInteger(paginaSolicitada) && paginaSolicitada >= 1
+      ? paginaSolicitada
+      : 1,
+    totalPaginas
+  );
+  const inicio = (pagina - 1) * tamanho;
+
+  return {
+    anuncios: filtrados.slice(inicio, inicio + tamanho).map(anuncio => ({
+      identificador: anuncio.identificador,
+      nome: anuncio.nome,
+      preco: anuncio.preco,
+      estoque: anuncio.estoque,
+      disponivel: anuncio.disponivel ?? anuncio.estoque > 0,
+      estado: anuncio.estado,
+      conservacao: anuncio.conservacao,
+      categoria: anuncio.categoria,
+      imagemPrincipal: anuncio.imagens[0] ?? '',
+      vendedorIdentificador: anuncio.vendedor.identificador,
+      vendedorNome: anuncio.vendedor.nome,
+      criadoEm: this.dataHoraAtual(),
+    })),
+    pagina,
+    itensPorPagina: tamanho,
+    total,
+  };
+}
+
+cadastrarAnuncio(
+  vendedorIdentificador: number,
+  request: SalvarAnuncioRequest
+): ResultadoOperacaoAnuncio {
+  const vendedor = this.usuarios.find(
+    usuario => usuario.identificador === vendedorIdentificador
+  );
+
+  if (!vendedor) {
+    return { sucesso: false, mensagem: 'Usuário vendedor não encontrado.', anuncio: null };
+  }
+
+  const validacao = this.validarDadosAnuncio(request, false);
+  if (typeof validacao === 'string') {
+    return { sucesso: false, mensagem: validacao, anuncio: null };
+  }
+
+  const proximoIdentificador =
+    this.anuncios.reduce(
+      (maior, item) => Math.max(maior, item.identificador),
+      0
+    ) + 1;
+
+  const novoAnuncio: AnuncioResponse = {
+    identificador: proximoIdentificador,
+    nome: validacao.nome,
+    titulo: validacao.nome,
+    descricao: validacao.descricao,
+    imagens: validacao.imagens,
+    categoriaIdentificador: validacao.categoria.identificador,
+    categoria: validacao.categoria.nome,
+    preco: validacao.preco,
+    estado: request.estado,
+    conservacao: validacao.conservacao,
+    estoque: request.estoque,
+    disponivel: request.disponivel ?? request.estoque > 0,
+    vendedor: {
+      identificador: vendedor.identificador,
+      nome: vendedor.nome,
+      ...(vendedor.foto ? { foto: vendedor.foto } : {}),
+      media: null,
+      contagem: 0,
+    },
+  };
+
+  this.anuncios.unshift(novoAnuncio);
+  this.salvarAnuncios();
+
+  return {
+    sucesso: true,
+    mensagem: 'Anúncio cadastrado com sucesso.',
+    anuncio: this.copiarAnuncio(novoAnuncio),
+  };
+}
+
+editarAnuncio(
+  anuncioIdentificador: number,
+  usuarioIdentificador: number,
+  request: SalvarAnuncioRequest
+): ResultadoOperacaoAnuncio {
+  const anuncio = this.anuncios.find(
+    item => item.identificador === anuncioIdentificador
+  );
+
+  if (!anuncio) {
+    return { sucesso: false, mensagem: 'Anúncio não encontrado.', anuncio: null };
+  }
+
+  if (anuncio.vendedor.identificador !== usuarioIdentificador) {
+    return {
+      sucesso: false,
+      mensagem: 'Você só pode editar seus próprios anúncios.',
+      anuncio: null,
+    };
+  }
+
+  const validacao = this.validarDadosAnuncio(request, true);
+  if (typeof validacao === 'string') {
+    return { sucesso: false, mensagem: validacao, anuncio: null };
+  }
+
+  anuncio.nome = validacao.nome;
+  anuncio.titulo = validacao.nome;
+  anuncio.descricao = validacao.descricao;
+  anuncio.categoriaIdentificador = validacao.categoria.identificador;
+  anuncio.categoria = validacao.categoria.nome;
+  anuncio.preco = validacao.preco;
+  anuncio.estoque = request.estoque;
+  anuncio.disponivel = request.disponivel ?? request.estoque > 0;
+  anuncio.estado = request.estado;
+  anuncio.conservacao = validacao.conservacao;
+  anuncio.imagens = validacao.imagens;
+
+  this.salvarAnuncios();
+
+  for (const [compradorId, itens] of this.carrinhos.entries()) {
+    if (itens.some(item => item.anuncioIdentificador === anuncioIdentificador)) {
+      this.atualizarDisponibilidadeCarrinho(
+        compradorId,
+        anuncioIdentificador,
+        Boolean(anuncio.disponivel) && anuncio.estoque > 0,
+        anuncio.estoque
+      );
+    }
+  }
+
+  return {
+    sucesso: true,
+    mensagem: 'Anúncio atualizado com sucesso.',
+    anuncio: this.copiarAnuncio(anuncio),
+  };
+}
+
+removerAnuncio(
+  anuncioIdentificador: number,
+  usuarioIdentificador: number
+): ResultadoOperacaoAnuncio {
+  const indice = this.anuncios.findIndex(
+    item => item.identificador === anuncioIdentificador
+  );
+
+  if (indice === -1) {
+    return { sucesso: false, mensagem: 'Anúncio não encontrado.', anuncio: null };
+  }
+
+  const anuncio = this.anuncios[indice];
+  const podeRemover =
+    anuncio.vendedor.identificador === usuarioIdentificador ||
+    this.usuarioMockEhAdmin(usuarioIdentificador);
+
+  if (!podeRemover) {
+    return {
+      sucesso: false,
+      mensagem: 'Você não tem permissão para remover este anúncio.',
+      anuncio: null,
+    };
+  }
+
+  const vinculadoAPedido = this.pedidos.some(pedido =>
+    pedido.itens.some(item => item.anuncioIdentificador === anuncioIdentificador)
+  );
+
+  if (vinculadoAPedido) {
+    return {
+      sucesso: false,
+      mensagem: 'Não é possível excluir um anúncio vinculado a pedidos.',
+      anuncio: null,
+    };
+  }
+
+  this.anuncios.splice(indice, 1);
+  this.salvarAnuncios();
+
+  return {
+    sucesso: true,
+    mensagem: 'Anúncio removido com sucesso.',
+    anuncio: null,
+  };
+}
+
+private validarDadosAnuncio(
+  request: SalvarAnuncioRequest,
+  edicao: boolean
+):
+  | string
+  | {
+      nome: string;
+      descricao: string;
+      categoria: CategoriaResponse;
+      preco: number;
+      conservacao: string;
+      imagens: string[];
+    } {
+  const nome = request.nome.trim();
+  const descricao = request.descricao.trim();
+  const conservacao = request.conservacao.trim();
+  const categoria = this.listarCategorias().find(
+    item => item.identificador === request.categoriaIdentificador
+  );
+  const preco = Math.round(Number(request.preco) * 100) / 100;
+  const estoqueMinimo = edicao ? 0 : 1;
+  const imagens = request.imagens
+    .map(url => url.trim())
+    .filter(url => url.length > 0);
+
+  if (!nome || nome.length > 255) {
+    return 'Informe um nome válido para o anúncio (máximo 255 caracteres).';
+  }
+
+  if (!descricao || descricao.length > 2000) {
+    return 'Informe uma descrição válida (máximo 2000 caracteres).';
+  }
+
+  if (!categoria) {
+    return 'Selecione uma categoria ativa.';
+  }
+
+  if (!Number.isFinite(preco) || preco <= 0) {
+    return 'Informe um preço maior que zero.';
+  }
+
+  if (!Number.isInteger(request.estoque) || request.estoque < estoqueMinimo) {
+    return edicao
+      ? 'O estoque não pode ser negativo.'
+      : 'Informe um estoque inicial maior que zero.';
+  }
+
+  if (request.estado !== 'Novo' && request.estado !== 'Usado') {
+    return 'Selecione a condição do produto.';
+  }
+
+  if (!conservacao) {
+    return 'Selecione o estado de conservação.';
+  }
+
+  if (
+    imagens.length === 0 ||
+    imagens.some(url => url.length > 512 || !REGEX_URL_HTTP.test(url))
+  ) {
+    return 'Informe ao menos uma URL de imagem válida (http:// ou https://).';
+  }
+
+  return { nome, descricao, categoria, preco, conservacao, imagens };
+}
+
+private copiarAnuncio(anuncio: AnuncioResponse): AnuncioResponse {
+  return {
+    ...anuncio,
+    imagens: [...anuncio.imagens],
+    vendedor: { ...anuncio.vendedor },
+  };
+}
+
+private carregarAnuncios(): AnuncioResponse[] {
+  const padrao = this.anunciosPadrao.map(anuncio => this.copiarAnuncio(anuncio));
+
+  if (typeof localStorage === 'undefined') {
+    return padrao;
+  }
+
+  try {
+    const salvo = localStorage.getItem(CHAVE_ANUNCIOS_STORAGE);
+    if (salvo === null) {
+      return padrao;
+    }
+
+    const dados: unknown = JSON.parse(salvo);
+    if (!Array.isArray(dados)) {
+      return padrao;
+    }
+
+    return dados
+      .filter(
+        (item): item is AnuncioResponse =>
+          typeof item === 'object' &&
+          item !== null &&
+          typeof (item as AnuncioResponse).identificador === 'number' &&
+          typeof (item as AnuncioResponse).nome === 'string' &&
+          typeof (item as AnuncioResponse).preco === 'number' &&
+          Array.isArray((item as AnuncioResponse).imagens) &&
+          typeof (item as AnuncioResponse).vendedor?.identificador === 'number'
+      )
+      .map(anuncio => this.copiarAnuncio(anuncio));
+  } catch {
+    return padrao;
+  }
+}
+
+private salvarAnuncios(): void {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+
+  try {
+    localStorage.setItem(CHAVE_ANUNCIOS_STORAGE, JSON.stringify(this.anuncios));
+  } catch {
+    // Ignora indisponibilidade de storage no ambiente atual.
+  }
 }
 
 listarProdutosDoVendedor(identificador: number) {
