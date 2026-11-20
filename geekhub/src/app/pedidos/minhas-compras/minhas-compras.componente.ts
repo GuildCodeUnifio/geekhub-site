@@ -1,6 +1,7 @@
-import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 
 import {
   App,
@@ -26,6 +27,9 @@ export class MinhasComprasComponente implements OnInit {
   /** A aplicação é zoneless: respostas assíncronas da API precisam marcar a view para atualização. */
   private readonly detector = inject(ChangeDetectorRef);
   private readonly roteador = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
+
+  private consultaAtual?: Subscription;
 
   readonly itensPorPagina = 4;
   readonly rotulosEstado = ROTULOS_ESTADO_PEDIDO;
@@ -41,6 +45,8 @@ export class MinhasComprasComponente implements OnInit {
   erro = '';
 
   ngOnInit(): void {
+    this.destroyRef.onDestroy(() => this.consultaAtual?.unsubscribe());
+
     if (!this.app.usuarioAtual) {
       void this.roteador.navigate(['/entrar'], {
         queryParams: { redirecionar: '/pedidos' },
@@ -80,10 +86,11 @@ export class MinhasComprasComponente implements OnInit {
       return;
     }
 
+    this.consultaAtual?.unsubscribe();
     this.carregando = true;
     this.erro = '';
 
-    this.app.dados
+    this.consultaAtual = this.app.dados
       .listarCompras({
         compradorIdentificador: usuario.identificador,
         estado: this.estadoSelecionado,

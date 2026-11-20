@@ -38,6 +38,8 @@ export interface DadosCabecalho {
 export class Cabecalho {
   @Input() versao: 'Simples' | 'Completa' = 'Completa';
   @Input() usuarioAtual: UsuarioResponse | null = null;
+  @Input() ehAdmin = false;
+  @Input() modoDemonstracao = false;
   @Output() buscar = new EventEmitter<string>();
   @Output() sair = new EventEmitter<void>();
   @ViewChild('campoBusca', { read: ElementRef }) campoBusca?: ElementRef<HTMLInputElement>;

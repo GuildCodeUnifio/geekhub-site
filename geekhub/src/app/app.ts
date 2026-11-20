@@ -7,6 +7,7 @@ import type { UsuarioResponse } from './cabecalho/cabecalho/cabecalho';
 
 export interface ContaUsuario extends UsuarioResponse {
   senha: string;
+  admin?: boolean;
 }
 
 export interface CadastrarUsuarioRequest {
@@ -129,6 +130,7 @@ const CONTAS_PADRAO: readonly ContaUsuario[] = [
     nome: 'Usuário GeekHub',
     email: 'demo@geekhub.com',
     senha: '123456',
+    admin: true,
   },
   {
     identificador: 2,
@@ -443,6 +445,16 @@ export class App {
     return this.versaoCarrinhos();
   }
 
+  get usuarioAtualEhAdmin(): boolean {
+    return this.dados.usuarioEhAdmin();
+  }
+
+  usuarioMockEhAdmin(identificador: number): boolean {
+    return Boolean(
+      this.usuarios.find(usuario => usuario.identificador === identificador)?.admin,
+    );
+  }
+
   constructor(private readonly roteador: Router) {}
 
   get versaoCabecalho(): 'Simples' | 'Completa' {
@@ -632,7 +644,14 @@ export class App {
           typeof (item as ContaUsuario).senha === 'string'
       );
 
-      return contas.length > 0 ? contas : padrao;
+      return contas.length > 0
+        ? contas.map(conta =>
+            conta.email.trim().toLowerCase() === 'demo@geekhub.com' &&
+            conta.admin === undefined
+              ? { ...conta, admin: true }
+              : conta,
+          )
+        : padrao;
     } catch {
       return padrao;
     }
@@ -1327,6 +1346,27 @@ removerDoCarrinho(
     sucesso: true,
     mensagem: '',
     carrinho: this.montarCarrinhoResponse(compradorIdentificador, filtrada),
+  };
+}
+
+limparCarrinho(compradorIdentificador: number): ResultadoOperacaoCarrinho {
+  if (!Number.isInteger(compradorIdentificador) || compradorIdentificador < 1) {
+    return {
+      sucesso: false,
+      mensagem: 'Comprador inválido.',
+      carrinho: this.consultarCarrinho(compradorIdentificador),
+    };
+  }
+
+  if ((this.carrinhos.get(compradorIdentificador) ?? []).length > 0) {
+    this.carrinhos.set(compradorIdentificador, []);
+    this.salvarCarrinhos();
+  }
+
+  return {
+    sucesso: true,
+    mensagem: '',
+    carrinho: this.montarCarrinhoResponse(compradorIdentificador, []),
   };
 }
 

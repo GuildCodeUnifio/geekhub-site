@@ -1,4 +1,4 @@
-import { Injector, type ProviderToken } from '@angular/core';
+import { Injector, signal, type ProviderToken, type WritableSignal } from '@angular/core';
 import { Observable, catchError, map, of, switchMap, tap, throwError } from 'rxjs';
 
 import type {
@@ -43,40 +43,73 @@ import {
   paraUsuario,
 } from './mapeadores-api';
 import { SessaoApi } from './sessao-api';
-import { extrairMensagemErro, statusErro } from './utilitarios-api';
+import { ehErroConexaoApi, extrairMensagemErro, statusErro } from './utilitarios-api';
+
+const CHAVE_ORIGEM_SESSAO_STORAGE = 'geekhub.origemSessao';
+type OrigemSessao = 'api' | 'mock';
 
 /**
  * Ponto único de acesso aos dados das telas.
- * Com a fonte `api`, consome o geekhub-api; com `mock`, usa os dados de exemplo do `App`.
- * Erros inesperados da API são emitidos como `Error` com a mensagem pronta para exibição.
+ * Em `auto`, tenta consumir o geekhub-api e alterna automaticamente para os dados do `App`
+ * quando a API estiver inacessível (`status === 0`); em `api` exige a API; em `mock` usa apenas o `App`.
  */
 export class DadosGeekhub {
   readonly fonte: FonteDados;
+  private readonly modoAtivoSinal: WritableSignal<OrigemSessao>;
 
   constructor(
     private readonly app: App,
     private readonly injetor: Injector,
   ) {
     this.fonte = injetor.get(FONTE_DADOS);
+    this.modoAtivoSinal = signal<OrigemSessao>(this.fonte === 'mock' ? 'mock' : 'api');
 
-    if (this.usaApi) {
+    if (this.fonte !== 'mock') {
       const sessao = this.obter(SessaoApi);
+      const origem = this.carregarOrigemSessao();
 
       if (!sessao.autenticado && app.usuarioAtual) {
-        app.definirUsuarioAtual(null);
+        if (this.fonte === 'api' || origem !== 'mock') {
+          this.limparOrigemSessao();
+          app.definirUsuarioAtual(null);
+        }
       }
 
-      sessao.sessaoExpirada.subscribe(() => app.definirUsuarioAtual(null));
+      sessao.sessaoExpirada.subscribe(() => {
+        this.limparOrigemSessao();
+        app.definirUsuarioAtual(null);
+      });
     }
   }
 
+  get modoAtual(): OrigemSessao {
+    return this.modoAtivoSinal();
+  }
+
   get usaApi(): boolean {
-    return this.fonte === 'api';
+    return this.modoAtivoSinal() === 'api';
+  }
+
+  get usandoFallbackMock(): boolean {
+    return this.fonte === 'auto' && this.modoAtivoSinal() === 'mock';
+  }
+
+  usuarioEhAdmin(): boolean {
+    const usuario = this.app.usuarioAtual;
+    if (!usuario) {
+      return false;
+    }
+
+    if (this.usaApi && this.obter(SessaoApi).autenticado) {
+      return this.obter(SessaoApi).ehAdmin;
+    }
+
+    return this.app.usuarioMockEhAdmin(usuario.identificador);
   }
 
   entrar(request: EntrarRequest): Observable<UsuarioResponse | null> {
     if (!this.usaApi) {
-      return of(this.app.entrar(request));
+      return of(this.entrarNoMock(request));
     }
 
     const sessao = this.obter(SessaoApi);
@@ -86,9 +119,18 @@ export class DadosGeekhub {
       .pipe(
         tap(resposta => sessao.iniciar(resposta)),
         switchMap(() => this.identificarUsuarioAutenticado()),
-        tap(usuario => this.app.definirUsuarioAtual(usuario)),
+        tap(usuario => {
+          this.salvarOrigemSessao('api');
+          this.app.definirUsuarioAtual(usuario);
+        }),
         catchError((erro: unknown) => {
           sessao.limpar();
+          this.limparOrigemSessao();
+
+          if (this.deveUsarFallback(erro)) {
+            return this.ativarFallback(() => this.entrarNoMock(request));
+          }
+
           this.app.definirUsuarioAtual(null);
 
           return statusErro(erro) === 401
@@ -99,44 +141,36 @@ export class DadosGeekhub {
   }
 
   cadastrar(request: CadastrarUsuarioRequest): Observable<UsuarioResponse | null> {
-    if (!this.usaApi) {
-      return of(this.app.cadastrar(request));
-    }
-
-    return this.obter(UsuarioApi)
-      .cadastrar({
-        nome: request.nome.trim(),
-        email: request.email.trim().toLowerCase(),
-        senha: request.senha,
-      })
-      .pipe(
-        map(paraUsuario),
-        catchError((erro: unknown) =>
-          statusErro(erro) === 409
-            ? of(null)
-            : this.falhar(erro, 'Não foi possível criar a conta. Tente novamente.'),
-        ),
-      );
+    return this.executarComFallback(
+      this.obter(UsuarioApi)
+        .cadastrar({
+          nome: request.nome.trim(),
+          email: request.email.trim().toLowerCase(),
+          senha: request.senha,
+        })
+        .pipe(map(paraUsuario)),
+      () => this.app.cadastrar(request),
+    ).pipe(
+      catchError((erro: unknown) =>
+        statusErro(erro) === 409
+          ? of(null)
+          : this.falhar(erro, 'Não foi possível criar a conta. Tente novamente.'),
+      ),
+    );
   }
 
   listarCategorias(): Observable<CategoriaResponse[]> {
-    if (!this.usaApi) {
-      return of(this.app.listarCategorias());
-    }
-
-    return this.obter(CategoriaApi)
-      .listar({ ativa: true }, { tamanho: 100, ordenacao: 'nome' })
-      .pipe(
-        map(pagina => pagina.itens.map(paraCategoria)),
-        catchError((erro: unknown) => this.falhar(erro, 'Não foi possível carregar as categorias.')),
-      );
+    return this.executarComFallback(
+      this.obter(CategoriaApi)
+        .listar({ ativa: true }, { tamanho: 100, ordenacao: 'nome' })
+        .pipe(map(pagina => pagina.itens.map(paraCategoria))),
+      () => this.app.listarCategorias(),
+    ).pipe(
+      catchError((erro: unknown) => this.falhar(erro, 'Não foi possível carregar as categorias.')),
+    );
   }
 
   consultarAnuncios(request: ConsultarAnunciosRequest = {}): Observable<ConsultarAnunciosResponse> {
-    if (!this.usaApi) {
-      return of(this.app.consultarAnuncios(request));
-    }
-
     const itensPorPagina =
       request.itensPorPagina && Number.isInteger(request.itensPorPagina) && request.itensPorPagina > 0
         ? request.itensPorPagina
@@ -144,169 +178,159 @@ export class DadosGeekhub {
     const pagina =
       request.pagina && Number.isInteger(request.pagina) && request.pagina >= 1 ? request.pagina : 1;
 
-    return this.obter(AnuncioApi)
-      .pesquisar(
-        { nome: request.termo?.trim() || undefined, categoriaId: request.categoriaIdentificador },
-        { pagina: pagina - 1, tamanho: itensPorPagina },
-      )
-      .pipe(
-        map(resposta => ({
-          anuncios: resposta.itens.map(paraAnuncioDoCatalogo),
-          pagina: resposta.numero + 1,
-          itensPorPagina: resposta.tamanho,
-          total: resposta.totalElementos,
-        })),
-        catchError((erro: unknown) => this.falhar(erro, 'Não foi possível carregar os anúncios.')),
-      );
+    return this.executarComFallback(
+      this.obter(AnuncioApi)
+        .pesquisar(
+          { nome: request.termo?.trim() || undefined, categoriaId: request.categoriaIdentificador },
+          { pagina: pagina - 1, tamanho: itensPorPagina },
+        )
+        .pipe(
+          map(resposta => ({
+            anuncios: resposta.itens.map(paraAnuncioDoCatalogo),
+            pagina: resposta.numero + 1,
+            itensPorPagina: resposta.tamanho,
+            total: resposta.totalElementos,
+          })),
+        ),
+      () => this.app.consultarAnuncios(request),
+    ).pipe(
+      catchError((erro: unknown) => this.falhar(erro, 'Não foi possível carregar os anúncios.')),
+    );
   }
 
   buscarAnuncio(identificador: number): Observable<AnuncioResponse | null> {
-    if (!this.usaApi) {
-      return of(this.app.buscarAnuncio(identificador));
-    }
-
-    return this.obter(AnuncioApi)
-      .detalhar(identificador)
-      .pipe(
-        map(paraAnuncio),
-        catchError((erro: unknown) =>
-          statusErro(erro) === 404 ? of(null) : this.falhar(erro, 'Não foi possível carregar o anúncio.'),
-        ),
-      );
+    return this.executarComFallback(
+      this.obter(AnuncioApi).detalhar(identificador).pipe(map(paraAnuncio)),
+      () => this.app.buscarAnuncio(identificador),
+    ).pipe(
+      catchError((erro: unknown) =>
+        statusErro(erro) === 404 ? of(null) : this.falhar(erro, 'Não foi possível carregar o anúncio.'),
+      ),
+    );
   }
 
   buscarVendedor(identificador: number): Observable<PerfilVendedor | null> {
-    if (!this.usaApi) {
-      return of(this.app.buscarVendedor(identificador));
-    }
-
-    return this.obter(UsuarioApi)
-      .perfilVendedor(identificador)
-      .pipe(
-        map(paraPerfilVendedor),
-        catchError((erro: unknown) =>
-          statusErro(erro) === 404 ? of(null) : this.falhar(erro, 'Não foi possível carregar o vendedor.'),
-        ),
-      );
+    return this.executarComFallback(
+      this.obter(UsuarioApi).perfilVendedor(identificador).pipe(map(paraPerfilVendedor)),
+      () => this.app.buscarVendedor(identificador),
+    ).pipe(
+      catchError((erro: unknown) =>
+        statusErro(erro) === 404 ? of(null) : this.falhar(erro, 'Não foi possível carregar o vendedor.'),
+      ),
+    );
   }
 
   /** Na API o carrinho é sempre o do usuário autenticado; o identificador vale apenas para o mock. */
   consultarCarrinho(compradorIdentificador: number): Observable<CarrinhoResponse> {
-    if (!this.usaApi) {
-      return of(this.app.consultarCarrinho(compradorIdentificador));
-    }
-
-    return this.obter(CarrinhoApi)
-      .consultar()
-      .pipe(
-        map(paraCarrinho),
-        catchError((erro: unknown) => this.falhar(erro, 'Não foi possível carregar o carrinho.')),
-      );
+    return this.executarComFallback(
+      this.obter(CarrinhoApi).consultar().pipe(map(paraCarrinho)),
+      () => this.app.consultarCarrinho(compradorIdentificador),
+    ).pipe(
+      catchError((erro: unknown) => this.falhar(erro, 'Não foi possível carregar o carrinho.')),
+    );
   }
 
   adicionarAoCarrinho(request: AdicionarAoCarrinhoRequest): Observable<ResultadoOperacaoCarrinho> {
-    if (!this.usaApi) {
-      return of(this.app.adicionarAoCarrinho(request));
-    }
-
     return this.operarCarrinho(
       this.obter(CarrinhoApi).adicionarItem({
         anuncioId: request.anuncioIdentificador,
         quantidade: request.quantidade,
       }),
       'Produto adicionado ao carrinho.',
+      () => this.app.adicionarAoCarrinho(request),
     );
   }
 
   alterarQuantidadeCarrinho(request: AlterarQuantidadeRequest): Observable<ResultadoOperacaoCarrinho> {
-    if (!this.usaApi) {
-      return of(this.app.alterarQuantidadeCarrinho(request));
-    }
-
-    return this.operarItemDoCarrinho(request.anuncioIdentificador, identificador =>
-      this.obter(CarrinhoApi).editarItem(identificador, { quantidade: request.quantidade }),
+    return this.operarItemDoCarrinho(
+      request.anuncioIdentificador,
+      identificador => this.obter(CarrinhoApi).editarItem(identificador, { quantidade: request.quantidade }),
+      () => this.app.alterarQuantidadeCarrinho(request),
     );
   }
 
   removerDoCarrinho(request: RemoverDoCarrinhoRequest): Observable<ResultadoOperacaoCarrinho> {
-    if (!this.usaApi) {
-      return of(this.app.removerDoCarrinho(request));
-    }
+    return this.operarItemDoCarrinho(
+      request.anuncioIdentificador,
+      identificador => this.obter(CarrinhoApi).removerItem(identificador),
+      () => this.app.removerDoCarrinho(request),
+    );
+  }
 
-    return this.operarItemDoCarrinho(request.anuncioIdentificador, identificador =>
-      this.obter(CarrinhoApi).removerItem(identificador),
+  limparCarrinho(compradorIdentificador: number): Observable<ResultadoOperacaoCarrinho> {
+    return this.operarCarrinho(
+      this.obter(CarrinhoApi).limpar(),
+      'Carrinho esvaziado.',
+      () => this.app.limparCarrinho(compradorIdentificador),
     );
   }
 
   editarPerfil(request: EditarPerfilRequest): Observable<ResultadoEdicaoPerfil> {
-    if (!this.usaApi) {
-      return of(this.app.editarPerfil(request));
-    }
-
     const emailAnterior = this.app.usuarioAtual?.email;
 
-    return this.obter(UsuarioApi)
-      .editar(request.usuarioIdentificador, {
-        nome: request.nome.trim(),
-        email: request.email.trim().toLowerCase(),
-        imagemPerfil: request.foto?.trim() || null,
-      })
-      .pipe(
-        map(paraUsuario),
-        map((usuario): ResultadoEdicaoPerfil => {
-          // O token da API identifica o usuário pelo e-mail; ao trocá-lo, é preciso entrar novamente.
-          if (emailAnterior && emailAnterior !== usuario.email) {
-            this.obter(SessaoApi).limpar();
-            this.app.definirUsuarioAtual(null);
-            return {
-              sucesso: true,
-              mensagem: 'Perfil atualizado. Entre novamente com o novo e-mail.',
-              usuario,
-              exigeNovoLogin: true,
-            };
-          }
+    return this.executarComFallback(
+      this.obter(UsuarioApi)
+        .editar(request.usuarioIdentificador, {
+          nome: request.nome.trim(),
+          email: request.email.trim().toLowerCase(),
+          imagemPerfil: request.foto?.trim() || null,
+        })
+        .pipe(
+          map(paraUsuario),
+          map((usuario): ResultadoEdicaoPerfil => {
+            // O token da API identifica o usuário pelo e-mail; ao trocá-lo, é preciso entrar novamente.
+            if (emailAnterior && emailAnterior !== usuario.email) {
+              this.obter(SessaoApi).limpar();
+              this.limparOrigemSessao();
+              this.app.definirUsuarioAtual(null);
+              return {
+                sucesso: true,
+                mensagem: 'Perfil atualizado. Entre novamente com o novo e-mail.',
+                usuario,
+                exigeNovoLogin: true,
+              };
+            }
 
-          this.app.definirUsuarioAtual(usuario);
-          return { sucesso: true, mensagem: 'Perfil atualizado com sucesso.', usuario };
-        }),
-        catchError((erro: unknown) =>
-          of({
-            sucesso: false,
-            mensagem: extrairMensagemErro(erro, 'Não foi possível atualizar o perfil.'),
-            usuario: null,
+            this.app.definirUsuarioAtual(usuario);
+            return { sucesso: true, mensagem: 'Perfil atualizado com sucesso.', usuario };
           }),
         ),
-      );
+      () => this.app.editarPerfil(request),
+    ).pipe(
+      catchError((erro: unknown) =>
+        of({
+          sucesso: false,
+          mensagem: extrairMensagemErro(erro, 'Não foi possível atualizar o perfil.'),
+          usuario: null,
+        }),
+      ),
+    );
   }
 
   criarPedido(compradorIdentificador: number): Observable<ResultadoOperacaoPedido> {
-    if (!this.usaApi) {
-      return of(this.app.criarPedido(compradorIdentificador));
-    }
-
-    return this.obter(PedidoApi)
-      .criar()
-      .pipe(
-        map(pedido => ({
-          sucesso: true,
-          mensagem: 'Pedido criado com sucesso.',
-          pedido: paraPedido(pedido),
-        })),
-        catchError((erro: unknown) =>
-          of({
-            sucesso: false,
-            mensagem: extrairMensagemErro(erro, 'Não foi possível criar o pedido.'),
-            pedido: null,
-          }),
+    return this.executarComFallback(
+      this.obter(PedidoApi)
+        .criar()
+        .pipe(
+          map(pedido => ({
+            sucesso: true,
+            mensagem: 'Pedido criado com sucesso.',
+            pedido: paraPedido(pedido),
+          })),
         ),
-      );
+      () => this.app.criarPedido(compradorIdentificador),
+    ).pipe(
+      catchError((erro: unknown) =>
+        of({
+          sucesso: false,
+          mensagem: extrairMensagemErro(erro, 'Não foi possível criar o pedido.'),
+          pedido: null,
+        }),
+      ),
+    );
   }
 
   listarCompras(request: ListarComprasRequest): Observable<ListarComprasResponse> {
-    if (!this.usaApi) {
-      return of(this.app.listarCompras(request));
-    }
-
     const itensPorPagina =
       request.itensPorPagina && Number.isInteger(request.itensPorPagina) && request.itensPorPagina > 0
         ? request.itensPorPagina
@@ -314,70 +338,154 @@ export class DadosGeekhub {
     const pagina =
       request.pagina && Number.isInteger(request.pagina) && request.pagina >= 1 ? request.pagina : 1;
 
-    return this.obter(PedidoApi)
-      .listarCompras({ estado: request.estado }, { pagina: pagina - 1, tamanho: itensPorPagina })
-      .pipe(
-        map(resposta => ({
-          compras: resposta.itens.map(paraCompra),
-          pagina: resposta.numero + 1,
-          itensPorPagina: resposta.tamanho,
-          total: resposta.totalElementos,
-        })),
-        catchError((erro: unknown) => this.falhar(erro, 'Não foi possível carregar suas compras.')),
-      );
+    return this.executarComFallback(
+      this.obter(PedidoApi)
+        .listarCompras({ estado: request.estado }, { pagina: pagina - 1, tamanho: itensPorPagina })
+        .pipe(
+          map(resposta => ({
+            compras: resposta.itens.map(paraCompra),
+            pagina: resposta.numero + 1,
+            itensPorPagina: resposta.tamanho,
+            total: resposta.totalElementos,
+          })),
+        ),
+      () => this.app.listarCompras(request),
+    ).pipe(
+      catchError((erro: unknown) => this.falhar(erro, 'Não foi possível carregar suas compras.')),
+    );
   }
 
   detalharPedido(
     compradorIdentificador: number,
     pedidoIdentificador: number,
   ): Observable<PedidoResponse | null> {
-    if (!this.usaApi) {
-      return of(this.app.detalharPedido(compradorIdentificador, pedidoIdentificador));
-    }
-
-    return this.obter(PedidoApi)
-      .detalhar(pedidoIdentificador)
-      .pipe(
-        map(paraPedido),
-        catchError((erro: unknown) =>
-          statusErro(erro) === 404 || statusErro(erro) === 403
-            ? of(null)
-            : this.falhar(erro, 'Não foi possível carregar o pedido.'),
-        ),
-      );
+    return this.executarComFallback(
+      this.obter(PedidoApi).detalhar(pedidoIdentificador).pipe(map(paraPedido)),
+      () => this.app.detalharPedido(compradorIdentificador, pedidoIdentificador),
+    ).pipe(
+      catchError((erro: unknown) =>
+        statusErro(erro) === 404 || statusErro(erro) === 403
+          ? of(null)
+          : this.falhar(erro, 'Não foi possível carregar o pedido.'),
+      ),
+    );
   }
 
   avaliarPedido(request: AvaliarPedidoRequest): Observable<ResultadoOperacaoPedido> {
-    if (!this.usaApi) {
-      return of(this.app.avaliarPedido(request));
-    }
-
-    return this.obter(AvaliacaoApi)
-      .cadastrar({
-        pedidoId: request.pedidoIdentificador,
-        nota: request.nota,
-        comentario: request.comentario?.trim() || null,
-      })
-      .pipe(
-        switchMap(() => this.obter(PedidoApi).detalhar(request.pedidoIdentificador)),
-        map(pedido => ({
-          sucesso: true,
-          mensagem: 'Avaliação enviada. Obrigado!',
-          pedido: paraPedido(pedido),
-        })),
-        catchError((erro: unknown) =>
-          of({
-            sucesso: false,
-            mensagem: extrairMensagemErro(erro, 'Não foi possível enviar a avaliação.'),
-            pedido: null,
-          }),
+    return this.executarComFallback(
+      this.obter(AvaliacaoApi)
+        .cadastrar({
+          pedidoId: request.pedidoIdentificador,
+          nota: request.nota,
+          comentario: request.comentario?.trim() || null,
+        })
+        .pipe(
+          switchMap(() => this.obter(PedidoApi).detalhar(request.pedidoIdentificador)),
+          map(pedido => ({
+            sucesso: true,
+            mensagem: 'Avaliação enviada. Obrigado!',
+            pedido: paraPedido(pedido),
+          })),
         ),
-      );
+      () => this.app.avaliarPedido(request),
+    ).pipe(
+      catchError((erro: unknown) =>
+        of({
+          sucesso: false,
+          mensagem: extrairMensagemErro(erro, 'Não foi possível enviar a avaliação.'),
+          pedido: null,
+        }),
+      ),
+    );
   }
 
   encerrarSessao(): void {
-    if (this.usaApi) {
+    this.limparOrigemSessao();
+
+    if (this.fonte !== 'mock') {
       this.obter(SessaoApi).limpar();
+    }
+  }
+
+  private entrarNoMock(request: EntrarRequest): UsuarioResponse | null {
+    const usuario = this.app.entrar(request);
+
+    if (usuario) {
+      this.salvarOrigemSessao('mock');
+    } else {
+      this.limparOrigemSessao();
+    }
+
+    return usuario;
+  }
+
+  private executarComFallback<T>(api$: Observable<T>, mockFn: () => T): Observable<T> {
+    if (!this.usaApi) {
+      return of(mockFn());
+    }
+
+    return api$.pipe(
+      tap(() => this.confirmarApiAtiva()),
+      catchError((erro: unknown) =>
+        this.deveUsarFallback(erro) ? this.ativarFallback(mockFn) : throwError(() => erro),
+      ),
+    );
+  }
+
+  private deveUsarFallback(erro: unknown): boolean {
+    return this.fonte === 'auto' && ehErroConexaoApi(erro);
+  }
+
+  private ativarFallback<T>(mockFn: () => T): Observable<T> {
+    this.modoAtivoSinal.set('mock');
+    return of(mockFn());
+  }
+
+  private confirmarApiAtiva(): void {
+    if (
+      this.fonte === 'auto' &&
+      !this.obter(SessaoApi).autenticado &&
+      this.carregarOrigemSessao() === 'mock'
+    ) {
+      this.limparOrigemSessao();
+      this.app.definirUsuarioAtual(null);
+    }
+  }
+
+  private carregarOrigemSessao(): OrigemSessao | null {
+    if (typeof localStorage === 'undefined') {
+      return null;
+    }
+
+    try {
+      const valor = localStorage.getItem(CHAVE_ORIGEM_SESSAO_STORAGE);
+      return valor === 'api' || valor === 'mock' ? valor : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private salvarOrigemSessao(origem: OrigemSessao): void {
+    if (typeof localStorage === 'undefined') {
+      return;
+    }
+
+    try {
+      localStorage.setItem(CHAVE_ORIGEM_SESSAO_STORAGE, origem);
+    } catch {
+      // Ignora indisponibilidade de storage no ambiente atual.
+    }
+  }
+
+  private limparOrigemSessao(): void {
+    if (typeof localStorage === 'undefined') {
+      return;
+    }
+
+    try {
+      localStorage.removeItem(CHAVE_ORIGEM_SESSAO_STORAGE);
+    } catch {
+      // Ignora indisponibilidade de storage no ambiente atual.
     }
   }
 
@@ -403,7 +511,8 @@ export class DadosGeekhub {
   /** Executa a operação e devolve o carrinho atualizado, inclusive em caso de erro. */
   private operarCarrinho(
     operacao: Observable<unknown>,
-    mensagemSucesso = '',
+    mensagemSucesso: string,
+    mockFn: () => ResultadoOperacaoCarrinho,
   ): Observable<ResultadoOperacaoCarrinho> {
     const carrinhoApi = this.obter(CarrinhoApi);
     const carrinhoAtual = () =>
@@ -412,9 +521,13 @@ export class DadosGeekhub {
         catchError(() => of<CarrinhoResponse>({ compradorIdentificador: 0, itens: [], total: 0 })),
       );
 
-    return operacao.pipe(
-      switchMap(() => carrinhoAtual()),
-      map(carrinho => ({ sucesso: true, mensagem: mensagemSucesso, carrinho })),
+    return this.executarComFallback(
+      operacao.pipe(
+        switchMap(() => carrinhoAtual()),
+        map(carrinho => ({ sucesso: true, mensagem: mensagemSucesso, carrinho })),
+      ),
+      mockFn,
+    ).pipe(
       catchError((erro: unknown) =>
         carrinhoAtual().pipe(
           map(carrinho => ({
@@ -431,6 +544,7 @@ export class DadosGeekhub {
   private operarItemDoCarrinho(
     anuncioIdentificador: number,
     operacao: (itemIdentificador: number) => Observable<unknown>,
+    mockFn: () => ResultadoOperacaoCarrinho,
   ): Observable<ResultadoOperacaoCarrinho> {
     const localizarItem = this.obter(CarrinhoApi)
       .consultar()
@@ -443,7 +557,7 @@ export class DadosGeekhub {
         }),
       );
 
-    return this.operarCarrinho(localizarItem);
+    return this.operarCarrinho(localizarItem, '', mockFn);
   }
 
   private obter<T>(token: ProviderToken<T>): T {

@@ -116,6 +116,25 @@
   }
 }
 
+.aviso-modo-demo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 12px 8px;
+  padding: 6px 10px;
+  border: 1px solid #d7a83c;
+  background-color: #fff8e1;
+  color: #5c4300;
+  font-size: 0.78rem;
+  font-weight: 600;
+
+  mat-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+  }
+}
+
 @keyframes expandir-busca {
   from {
     opacity: 0;

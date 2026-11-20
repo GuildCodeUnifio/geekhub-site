@@ -2,14 +2,15 @@ import { InjectionToken } from '@angular/core';
 
 /**
  * De onde o frontend busca os dados:
- * - `api`: consome o geekhub-api (requer a API em execução em `urlBase`);
+ * - `auto`: tenta consumir o geekhub-api em `urlBase` e alterna automaticamente para `mock` quando a API estiver inacessível;
+ * - `api`: consome apenas o geekhub-api em `urlBase`;
  * - `mock`: usa os dados de exemplo mantidos pelo `App` no localStorage.
  */
-export type FonteDados = 'api' | 'mock';
+export type FonteDados = 'auto' | 'api' | 'mock';
 
 export const CONFIGURACAO_API: { readonly urlBase: string; readonly fonteDados: FonteDados } = {
   urlBase: 'http://localhost:8080',
-  fonteDados: 'api',
+  fonteDados: 'auto',
 };
 
 export const URL_API = new InjectionToken<string>('URL_API', {

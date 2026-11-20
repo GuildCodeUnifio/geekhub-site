@@ -45,6 +45,22 @@ export class SessaoApi {
     return this.token !== null;
   }
 
+  get ehAdmin(): boolean {
+    const scope = this.claims()?.scope;
+
+    if (Array.isArray(scope)) {
+      return scope.some(item => item === 'ADMIN' || item === 'SCOPE_ADMIN');
+    }
+
+    if (typeof scope === 'string') {
+      return scope
+        .split(/\s+/)
+        .some(item => item === 'ADMIN' || item === 'SCOPE_ADMIN');
+    }
+
+    return false;
+  }
+
   iniciar(resposta: LoginResponse): void {
     this.sessao = {
       accessToken: resposta.accessToken,

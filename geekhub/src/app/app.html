@@ -1,6 +1,8 @@
 <app-cabecalho
   [versao]="versaoCabecalho"
   [usuarioAtual]="usuarioAtual"
+  [ehAdmin]="usuarioAtualEhAdmin"
+  [modoDemonstracao]="dados.usandoFallbackMock"
   (buscar)="pesquisar($event)"
   (sair)="sair()"
 >

@@ -72,6 +72,10 @@ export function extrairMensagemErro(erro: unknown, padrao = 'Não foi possível 
   return padrao;
 }
 
+export function ehErroConexaoApi(erro: unknown): boolean {
+  return erro instanceof HttpErrorResponse && erro.status === 0;
+}
+
 export function statusErro(erro: unknown): number | null {
   return erro instanceof HttpErrorResponse ? erro.status : null;
 }

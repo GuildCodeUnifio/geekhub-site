@@ -80,6 +80,13 @@
       </button>
     </div>
 
+    @if (modoDemonstracao) {
+      <p class="aviso-modo-demo" role="status">
+        <mat-icon aria-hidden="true">cloud_off</mat-icon>
+        <span>Modo demonstração (dados locais)</span>
+      </p>
+    }
+
     <mat-nav-list aria-label="Navegação principal">
       @for (item of itensMenu; track item.caminho) {
         @if (!item.exigeSessao || usuarioAtual) {
