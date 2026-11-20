@@ -75,6 +75,61 @@
           </dl>
         </section>
 
+        @if (mensagemEstado) {
+          <p
+            class="mensagem"
+            [class.mensagem-erro]="estadoComErro"
+            [attr.role]="estadoComErro ? 'alert' : 'status'"
+          >
+            {{ mensagemEstado }}
+          </p>
+        }
+
+        @if (podeAvancarEstado || podeCancelarPedido) {
+          <section class="painel acoes-pedido" aria-label="Ações do pedido">
+            @if (podeAvancarEstado && proximoEstado; as proximo) {
+              <button
+                mat-flat-button
+                color="primary"
+                type="button"
+                [disabled]="atualizandoEstado"
+                (click)="avancarEstado()"
+              >
+                {{ proximo.rotulo }}
+              </button>
+            }
+
+            @if (podeCancelarPedido) {
+              @if (confirmandoCancelamento) {
+                <div class="confirmacao-cancelamento">
+                  <button
+                    mat-flat-button
+                    color="warn"
+                    type="button"
+                    [disabled]="atualizandoEstado"
+                    (click)="confirmarCancelamento()"
+                  >
+                    Confirmar cancelamento
+                  </button>
+                  <button mat-stroked-button type="button" (click)="desistirCancelamento()">
+                    Manter pedido
+                  </button>
+                </div>
+              } @else {
+                <button
+                  mat-stroked-button
+                  color="warn"
+                  type="button"
+                  [disabled]="atualizandoEstado"
+                  (click)="solicitarCancelamento()"
+                >
+                  Cancelar pedido
+                </button>
+              }
+            }
+          </section>
+        }
+
         @if (mensagemAvaliacao) {
           <p
             class="mensagem"

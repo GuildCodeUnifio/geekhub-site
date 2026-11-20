@@ -84,6 +84,27 @@ export interface DetalharUsuarioResponse {
 
 export type EditarUsuarioResponse = DetalharUsuarioResponse;
 
+export interface ListarUsuarioResponse {
+  id: number;
+  nome: string;
+  email: string;
+  imagemPerfil: string | null;
+  ativo: boolean;
+  criadoEm: string;
+}
+
+export interface AtualizarPermissaoUsuarioRequest {
+  admin: boolean;
+}
+
+export interface AtualizarPermissaoUsuarioResponse {
+  id: number;
+  nome: string;
+  email: string;
+  admin: boolean;
+  permissoes: string[];
+}
+
 export interface AvaliacaoPerfilVendedorResponse {
   id: number;
   pedidoId: number;
@@ -129,6 +150,20 @@ export interface ListarCategoriaResponse {
   ativa: boolean;
   criadoEm: string;
 }
+
+export interface CadastrarCategoriaRequest {
+  nome: string;
+  descricao?: string | null;
+}
+
+export interface EditarCategoriaRequest {
+  nome: string;
+  descricao?: string | null;
+  ativa: boolean;
+}
+
+export type CadastrarCategoriaResponse = ListarCategoriaResponse;
+export type EditarCategoriaResponse = ListarCategoriaResponse;
 
 // Anúncios
 export interface PesquisarAnunciosFiltro {
@@ -318,6 +353,37 @@ export type CriarPedidoResponse = DetalharPedidoResponse;
 
 export interface ListarCompraResponse {
   id: number;
+  valorTotal: number;
+  estado: EstadoPedido;
+  avaliado: boolean;
+  quantidadeItens: number;
+  criadoEm: string;
+}
+
+export interface AtualizarEstadoPedidoRequest {
+  estado: EstadoPedido;
+}
+
+export interface AtualizarEstadoPedidoResponse {
+  id: number;
+  estado: EstadoPedido;
+  historico: EventoPedidoResponse[];
+  avaliado: boolean;
+}
+
+export interface ListarVendaResponse {
+  id: number;
+  compradorNome: string;
+  valorTotal: number;
+  estado: EstadoPedido;
+  criadoEm: string;
+}
+
+export interface ListarPedidoAdminResponse {
+  id: number;
+  compradorId: number;
+  compradorNome: string;
+  compradorEmail: string;
   valorTotal: number;
   estado: EstadoPedido;
   avaliado: boolean;

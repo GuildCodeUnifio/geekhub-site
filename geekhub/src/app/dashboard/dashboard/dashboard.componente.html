@@ -1,0 +1,180 @@
+<main class="pagina-dashboard">
+  <nav class="trilha" aria-label="Navegação estrutural">
+    <a routerLink="/">Catálogo</a>
+    <span aria-hidden="true">/</span>
+    <span>Dashboard operacional</span>
+  </nav>
+
+  <header class="cabecalho-pagina">
+    <div>
+      <h1>Dashboard operacional</h1>
+      <p class="subtitulo">
+        Indicadores calculados em tempo real a partir de anúncios, categorias, pedidos e avaliações.
+      </p>
+    </div>
+
+    <div class="acoes-cabecalho">
+      @if (dados) {
+        <mat-chip-set aria-label="Origem dos dados">
+          <mat-chip>
+            {{ dados.fonte === 'api' ? 'Fonte: geekhub-api' : 'Fonte: Demonstração local' }}
+          </mat-chip>
+        </mat-chip-set>
+      }
+
+      <button mat-stroked-button color="primary" type="button" (click)="carregar()">
+        <mat-icon>refresh</mat-icon>
+        Atualizar indicadores
+      </button>
+    </div>
+  </header>
+
+  @if (erro) {
+    <p class="banner-erro" role="alert">{{ erro }}</p>
+  }
+
+  @if (carregando && !dados) {
+    <p role="status">Calculando indicadores...</p>
+  } @else if (dados; as d) {
+    <section class="grade-kpis" aria-label="Indicadores principais">
+      <mat-card appearance="outlined" class="kpi-cartao" data-kpi="receita">
+        <div class="kpi-topo">
+          <span class="kpi-rotulo">Receita movimentada</span>
+          <mat-icon color="primary" aria-hidden="true">payments</mat-icon>
+        </div>
+        <strong class="kpi-valor">{{ d.receitaTotal | currency: 'BRL' }}</strong>
+        <span class="kpi-detalhe">Ticket médio: {{ d.ticketMedio | currency: 'BRL' }}</span>
+      </mat-card>
+
+      <mat-card appearance="outlined" class="kpi-cartao" data-kpi="pedidos">
+        <div class="kpi-topo">
+          <span class="kpi-rotulo">Pedidos e conversão</span>
+          <mat-icon color="primary" aria-hidden="true">shopping_bag</mat-icon>
+        </div>
+        <strong class="kpi-valor">{{ d.totalPedidos }}</strong>
+        <span class="kpi-detalhe">
+          Taxa de conclusão: {{ d.taxaConclusao }}% ({{ d.pedidosConcluidos }} concluídos)
+        </span>
+      </mat-card>
+
+      <mat-card appearance="outlined" class="kpi-cartao" data-kpi="anuncios">
+        <div class="kpi-topo">
+          <span class="kpi-rotulo">Anúncios ativos e estoque</span>
+          <mat-icon color="primary" aria-hidden="true">inventory_2</mat-icon>
+        </div>
+        <strong class="kpi-valor">{{ d.anunciosDisponiveis }} / {{ d.totalAnuncios }}</strong>
+        <span class="kpi-detalhe">
+          {{ d.unidadesEmEstoque }} un. em estoque • {{ d.totalCategoriasAtivas }} categorias ativas
+        </span>
+      </mat-card>
+
+      <mat-card appearance="outlined" class="kpi-cartao" data-kpi="avaliacoes">
+        <div class="kpi-topo">
+          <span class="kpi-rotulo">Satisfação e avaliações</span>
+          <mat-icon color="primary" aria-hidden="true">star</mat-icon>
+        </div>
+        <strong class="kpi-valor">
+          {{ d.notaMediaAvaliacoes !== null ? (d.notaMediaAvaliacoes | number: '1.1-1') + ' / 5' : 'Sem notas' }}
+        </strong>
+        <span class="kpi-detalhe">{{ d.totalAvaliacoes }} avaliações registradas</span>
+      </mat-card>
+    </section>
+
+    <div class="grade-paineis">
+      <mat-card appearance="outlined" class="painel-detalhe">
+        <h2>Pedidos por estado</h2>
+        <mat-divider />
+        <ul class="lista-barras">
+          @for (item of d.pedidosPorEstado; track item.estado) {
+            <li>
+              <div class="rotulo-barra">
+                <span>{{ item.rotulo }}</span>
+                <strong>{{ item.quantidade }} ({{ item.percentual }}%)</strong>
+              </div>
+              <mat-progress-bar mode="determinate" [value]="item.percentual" />
+            </li>
+          }
+        </ul>
+      </mat-card>
+
+      <mat-card appearance="outlined" class="painel-detalhe">
+        <h2>Anúncios por categoria</h2>
+        <mat-divider />
+        <ul class="lista-barras">
+          @for (cat of d.anunciosPorCategoria; track cat.nome) {
+            <li>
+              <div class="rotulo-barra">
+                <span>{{ cat.nome }}</span>
+                <strong>{{ cat.quantidadeAnuncios }} itens ({{ cat.estoqueTotal }} un.)</strong>
+              </div>
+              <mat-progress-bar mode="determinate" [value]="cat.percentual" />
+            </li>
+          }
+        </ul>
+      </mat-card>
+    </div>
+
+    <mat-card appearance="outlined" class="painel-tabela">
+      <div class="cabecalho-tabela">
+        <h2>Pedidos recentes</h2>
+        <div class="atalhos">
+          <a mat-stroked-button routerLink="/meus-anuncios">Gerenciar anúncios</a>
+          <a mat-stroked-button routerLink="/pedidos/vendas">Gerenciar pedidos</a>
+          @if (ehAdmin) {
+            <a mat-stroked-button routerLink="/categorias">Categorias</a>
+            <a mat-stroked-button routerLink="/minha-conta/usuarios">Usuários</a>
+          }
+        </div>
+      </div>
+
+      @if (d.pedidosRecentes.length > 0) {
+        <div class="tabela-rolagem">
+          <table mat-table [dataSource]="d.pedidosRecentes" class="tabela-pedidos">
+            <ng-container matColumnDef="pedido">
+              <th mat-header-cell *matHeaderCellDef>Pedido</th>
+              <td mat-cell *matCellDef="let pedido">
+                <a [routerLink]="['/pedidos', pedido.identificador]">#{{ pedido.identificador }}</a>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="comprador">
+              <th mat-header-cell *matHeaderCellDef>Comprador</th>
+              <td mat-cell *matCellDef="let pedido">{{ pedido.compradorNome }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef>Estado</th>
+              <td mat-cell *matCellDef="let pedido">{{ obterRotuloEstado(pedido.estado) }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="itens">
+              <th mat-header-cell *matHeaderCellDef>Itens</th>
+              <td mat-cell *matCellDef="let pedido">{{ pedido.quantidadeItens }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="valor">
+              <th mat-header-cell *matHeaderCellDef>Total</th>
+              <td mat-cell *matCellDef="let pedido">{{ pedido.valorTotal | currency: 'BRL' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="data">
+              <th mat-header-cell *matHeaderCellDef>Data</th>
+              <td mat-cell *matCellDef="let pedido">{{ pedido.criadoEm | date: 'dd/MM/yyyy' }}</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="colunasRecentes"></tr>
+            <tr mat-row *matRowDef="let linha; columns: colunasRecentes"></tr>
+          </table>
+        </div>
+      } @else {
+        <p class="aviso-pedidos">
+          {{
+            usuarioAutenticado
+              ? 'Nenhum pedido registrado no momento.'
+              : 'Entre na sua conta para acompanhar os seus pedidos recentes neste painel.'
+          }}
+        </p>
+      }
+    </mat-card>
+  }
+</main>

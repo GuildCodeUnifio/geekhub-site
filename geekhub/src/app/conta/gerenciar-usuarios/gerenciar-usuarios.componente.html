@@ -1,0 +1,127 @@
+<main class="pagina-usuarios">
+  <nav class="trilha" aria-label="Navegação estrutural">
+    <a routerLink="/">Catálogo</a>
+    <span aria-hidden="true">/</span>
+    <span>Usuários</span>
+  </nav>
+
+  <header class="cabecalho-pagina">
+    <h1>Gerenciar usuários</h1>
+    <p class="subtitulo">Administre contas cadastradas, permissões administrativas e remoções.</p>
+  </header>
+
+  @if (!ehAdmin) {
+    <mat-card appearance="outlined" class="painel-restrito">
+      <h2>Acesso restrito a administradores</h2>
+      <p>Entre com uma conta administrativa para visualizar e gerenciar usuários.</p>
+      <a mat-stroked-button routerLink="/">Voltar ao catálogo</a>
+    </mat-card>
+  } @else {
+    @if (mensagem) {
+      <p class="banner-sucesso" role="status">{{ mensagem }}</p>
+    }
+
+    @if (erro) {
+      <p class="banner-erro" role="alert">{{ erro }}</p>
+    }
+
+    @if (carregando) {
+      <p>Carregando usuários...</p>
+    } @else if (resposta && resposta.usuarios.length > 0) {
+      <ul class="lista-usuarios">
+        @for (usuario of resposta.usuarios; track usuario.identificador) {
+          <li>
+            <mat-card appearance="outlined" class="cartao-usuario">
+              <div class="conteudo-usuario">
+                <div class="info-usuario">
+                  <div class="titulo-linha">
+                    <h2>{{ usuario.nome }}</h2>
+                    <mat-chip-set>
+                      <mat-chip>{{ usuario.ativo ? 'Ativo' : 'Inativo' }}</mat-chip>
+                      @if (usuario.identificador === usuarioAtualIdentificador) {
+                        <mat-chip>Você</mat-chip>
+                      }
+                    </mat-chip-set>
+                  </div>
+                  <p class="email">{{ usuario.email }}</p>
+                </div>
+
+                <div class="acoes-usuario">
+                  @if (usuario.admin !== undefined) {
+                    <mat-slide-toggle
+                      [checked]="usuario.admin"
+                      [disabled]="
+                        processandoId === usuario.identificador ||
+                        usuario.identificador === usuarioAtualIdentificador
+                      "
+                      (change)="alternarAdmin(usuario, $event.checked)"
+                    >
+                      Admin
+                    </mat-slide-toggle>
+                  } @else {
+                    <button
+                      mat-stroked-button
+                      type="button"
+                      [disabled]="processandoId === usuario.identificador"
+                      (click)="alternarAdmin(usuario, true)"
+                    >
+                      Tornar admin
+                    </button>
+                    <button
+                      mat-stroked-button
+                      type="button"
+                      [disabled]="
+                        processandoId === usuario.identificador ||
+                        usuario.identificador === usuarioAtualIdentificador
+                      "
+                      (click)="alternarAdmin(usuario, false)"
+                    >
+                      Remover admin
+                    </button>
+                  }
+
+                  @if (confirmandoExclusaoId === usuario.identificador) {
+                    <button
+                      mat-flat-button
+                      color="warn"
+                      type="button"
+                      [disabled]="processandoId === usuario.identificador"
+                      (click)="confirmarExclusao(usuario.identificador)"
+                    >
+                      Confirmar
+                    </button>
+                    <button
+                      mat-button
+                      type="button"
+                      (click)="confirmandoExclusaoId = null"
+                    >
+                      Cancelar
+                    </button>
+                  } @else {
+                    <button
+                      mat-stroked-button
+                      color="warn"
+                      type="button"
+                      [disabled]="usuario.identificador === usuarioAtualIdentificador"
+                      (click)="solicitarExclusao(usuario.identificador)"
+                    >
+                      Excluir
+                    </button>
+                  }
+                </div>
+              </div>
+            </mat-card>
+          </li>
+        }
+      </ul>
+
+      <mat-paginator
+        [length]="resposta.total"
+        [pageIndex]="pagina - 1"
+        [pageSize]="itensPorPagina"
+        [hidePageSize]="true"
+        (page)="mudarPagina($event)"
+      />
+    }
+  }
+</main>

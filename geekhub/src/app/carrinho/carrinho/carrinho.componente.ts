@@ -150,6 +150,10 @@ export class CarrinhoComponente implements OnInit {
     }).subscribe();
   }
 
+  aoLimparCarrinho(): void {
+    this.executar(this.app.dados.limparCarrinho(this.compradorIdentificador)).subscribe();
+  }
+
   obterOpcoesQuantidade(estoque: number): number[] {
     return Array.from({ length: Math.max(0, Math.floor(estoque)) }, (_, indice) => indice + 1);
   }
