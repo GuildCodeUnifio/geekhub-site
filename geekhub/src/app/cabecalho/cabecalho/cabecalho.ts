@@ -22,6 +22,7 @@ interface ItemMenuNavegacao {
   icone: string;
   caminho: string;
   exigeSessao?: boolean;
+  exigeAdmin?: boolean;
 }
 
 export interface DadosCabecalho {
@@ -56,8 +57,13 @@ export class Cabecalho {
 
   readonly itensMenu: ItemMenuNavegacao[] = [
     { rotulo: 'Catálogo', icone: 'home', caminho: '/' },
+    { rotulo: 'Dashboard', icone: 'dashboard', caminho: '/dashboard' },
     { rotulo: 'Carrinho', icone: 'shopping_cart', caminho: '/carrinho' },
     { rotulo: 'Minhas compras', icone: 'orders', caminho: '/pedidos', exigeSessao: true },
+    { rotulo: 'Minhas vendas', icone: 'local_shipping', caminho: '/pedidos/vendas', exigeSessao: true },
+    { rotulo: 'Meus anúncios', icone: 'storefront', caminho: '/meus-anuncios', exigeSessao: true },
+    { rotulo: 'Categorias', icone: 'category', caminho: '/categorias', exigeSessao: true, exigeAdmin: true },
+    { rotulo: 'Usuários', icone: 'group', caminho: '/minha-conta/usuarios', exigeSessao: true, exigeAdmin: true },
   ];
 
   constructor(private injetor: Injector) {}

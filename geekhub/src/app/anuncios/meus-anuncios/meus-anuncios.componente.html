@@ -1,0 +1,148 @@
+<main class="pagina-anuncios">
+  <nav class="trilha" aria-label="Navegação estrutural">
+    <a routerLink="/">Catálogo</a>
+    <span aria-hidden="true">/</span>
+    <span>Meus anúncios</span>
+  </nav>
+
+  <header class="cabecalho-pagina">
+    <div>
+      <h1>Meus anúncios</h1>
+      <p class="subtitulo">Cadastre novos itens colecionáveis, edite preços ou gerencie o estoque.</p>
+    </div>
+
+    <div class="acoes-cabecalho">
+      @if (ehAdmin) {
+        <mat-slide-toggle
+          [checked]="exibirTodosAdmin"
+          (change)="alternarVisaoAdmin($event.checked)"
+        >
+          Exibir todos (Admin)
+        </mat-slide-toggle>
+      }
+
+      <a mat-flat-button color="primary" routerLink="/meus-anuncios/novo">
+        <mat-icon>add</mat-icon>
+        Novo anúncio
+      </a>
+    </div>
+  </header>
+
+  @if (mensagem) {
+    <p class="banner-sucesso" role="status">{{ mensagem }}</p>
+  }
+
+  @if (erro) {
+    <p class="banner-erro" role="alert">{{ erro }}</p>
+  }
+
+  @if (carregando) {
+    <p class="estado-vazio">Carregando anúncios...</p>
+  } @else if (resposta && resposta.anuncios.length > 0) {
+    <ul class="lista-anuncios">
+      @for (anuncio of resposta.anuncios; track anuncio.identificador) {
+        <li>
+          <mat-card appearance="outlined" class="cartao-anuncio">
+            <div class="conteudo-anuncio">
+              @if (anuncio.imagemPrincipal) {
+                <img
+                  class="miniatura"
+                  [src]="anuncio.imagemPrincipal"
+                  [alt]="anuncio.nome"
+                />
+              } @else {
+                <div class="miniatura miniatura-vazia" aria-hidden="true">
+                  <mat-icon>image</mat-icon>
+                </div>
+              }
+
+              <div class="dados-anuncio">
+                <div class="titulo-linha">
+                  <h2>{{ anuncio.nome }}</h2>
+                  <mat-chip-set aria-label="Status do anúncio">
+                    <mat-chip [class.indisponivel]="!anuncio.disponivel">
+                      {{ anuncio.disponivel ? 'Disponível' : 'Indisponível' }}
+                    </mat-chip>
+                  </mat-chip-set>
+                </div>
+
+                <p class="meta">
+                  <span>{{ anuncio.categoria }}</span>
+                  <span>•</span>
+                  <span>{{ anuncio.estado }}</span>
+                  @if (anuncio.conservacao) {
+                    <span>• {{ anuncio.conservacao }}</span>
+                  }
+                  @if (exibirTodosAdmin && anuncio.vendedorNome) {
+                    <span>• Vendedor: {{ anuncio.vendedorNome }}</span>
+                  }
+                </p>
+
+                <p class="preco-estoque">
+                  <strong>{{ anuncio.preco | currency: 'BRL' }}</strong>
+                  <span>Estoque: {{ anuncio.estoque }} un.</span>
+                </p>
+              </div>
+
+              <div class="acoes-anuncio">
+                <a mat-stroked-button [routerLink]="['/produtos', anuncio.identificador]">
+                  Ver
+                </a>
+                @if (!exibirTodosAdmin) {
+                  <a
+                    mat-stroked-button
+                    color="primary"
+                    [routerLink]="['/meus-anuncios', anuncio.identificador, 'editar']"
+                  >
+                    Editar
+                  </a>
+                }
+                @if (confirmandoExclusaoId === anuncio.identificador) {
+                  <button
+                    mat-flat-button
+                    color="warn"
+                    type="button"
+                    [disabled]="removendoId === anuncio.identificador"
+                    (click)="confirmarExclusao(anuncio.identificador)"
+                  >
+                    Confirmar
+                  </button>
+                  <button mat-button type="button" (click)="cancelarExclusao()">
+                    Cancelar
+                  </button>
+                } @else {
+                  <button
+                    mat-stroked-button
+                    color="warn"
+                    type="button"
+                    (click)="solicitarExclusao(anuncio.identificador)"
+                  >
+                    Excluir
+                  </button>
+                }
+              </div>
+            </div>
+          </mat-card>
+        </li>
+      }
+    </ul>
+
+    <div class="rodape-lista">
+      <span>Exibindo {{ inicioIntervalo }}–{{ fimIntervalo }} de {{ resposta.total }}</span>
+      <mat-paginator
+        [length]="resposta.total"
+        [pageIndex]="pagina - 1"
+        [pageSize]="itensPorPagina"
+        [hidePageSize]="true"
+        (page)="mudarPagina($event)"
+      />
+    </div>
+  } @else {
+    <mat-card appearance="outlined" class="estado-vazio">
+      <p>Você ainda não possui anúncios cadastrados.</p>
+      <a mat-flat-button color="primary" routerLink="/meus-anuncios/novo">
+        Cadastrar primeiro anúncio
+      </a>
+    </mat-card>
+  }
+</main>

@@ -3,7 +3,16 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
 import { URL_API } from '../configuracao-api';
-import type { ListarCategoriaResponse, Pagina, PaginaSpring, Paginacao } from '../modelos-api';
+import type {
+  CadastrarCategoriaRequest,
+  CadastrarCategoriaResponse,
+  EditarCategoriaRequest,
+  EditarCategoriaResponse,
+  ListarCategoriaResponse,
+  Pagina,
+  PaginaSpring,
+  Paginacao,
+} from '../modelos-api';
 import { montarParametros, normalizarPagina } from '../utilitarios-api';
 
 @Injectable({ providedIn: 'root' })
@@ -21,5 +30,20 @@ export class CategoriaApi {
         params: montarParametros(filtro, paginacao),
       })
       .pipe(map(pagina => normalizarPagina(pagina)));
+  }
+
+  /** POST /categorias */
+  cadastrar(request: CadastrarCategoriaRequest): Observable<CadastrarCategoriaResponse> {
+    return this.http.post<CadastrarCategoriaResponse>(`${this.urlApi}/categorias`, request);
+  }
+
+  /** PUT /categorias/{id} */
+  editar(id: number, request: EditarCategoriaRequest): Observable<EditarCategoriaResponse> {
+    return this.http.put<EditarCategoriaResponse>(`${this.urlApi}/categorias/${id}`, request);
+  }
+
+  /** DELETE /categorias/{id} */
+  remover(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.urlApi}/categorias/${id}`);
   }
 }

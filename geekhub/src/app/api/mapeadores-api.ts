@@ -1,10 +1,15 @@
 import type {
   AnuncioResponse,
   CarrinhoResponse,
+  CategoriaDetalheResponse,
   CategoriaResponse,
   CompraResponse,
+  MeuAnuncioResponse,
   PedidoResponse,
   PerfilVendedor,
+  UsuarioAdminResponse,
+  VendaResponse,
+  VendedorResponse,
 } from '../app';
 import type { UsuarioResponse } from '../cabecalho/cabecalho/cabecalho';
 import type * as api from './modelos-api';
@@ -20,6 +25,21 @@ const ROTULOS_CONSERVACAO: Record<api.ConservacaoProduto, string> = {
   REGULAR: 'Regular',
 };
 
+export function paraCondicaoApi(estado: AnuncioResponse['estado']): api.CondicaoProduto {
+  return estado === 'Usado' ? 'USADO' : 'NOVO';
+}
+
+export function paraConservacaoApi(conservacao: string): api.ConservacaoProduto {
+  const normalizada = conservacao.trim().toLowerCase();
+  if (normalizada === 'excelente') {
+    return 'EXCELENTE';
+  }
+  if (normalizada === 'regular') {
+    return 'REGULAR';
+  }
+  return 'BOM';
+}
+
 export function paraUsuario(
   usuario: api.DetalharUsuarioResponse | api.CadastrarUsuarioResponse,
 ): UsuarioResponse {
@@ -33,6 +53,29 @@ export function paraUsuario(
 
 export function paraCategoria(categoria: api.ListarCategoriaResponse): CategoriaResponse {
   return { identificador: categoria.id, nome: categoria.nome };
+}
+
+export function paraCategoriaDetalhe(
+  categoria: api.ListarCategoriaResponse,
+): CategoriaDetalheResponse {
+  return {
+    identificador: categoria.id,
+    nome: categoria.nome,
+    descricao: categoria.descricao ?? '',
+    ativa: categoria.ativa,
+    criadoEm: categoria.criadoEm,
+  };
+}
+
+export function paraUsuarioAdmin(usuario: api.ListarUsuarioResponse): UsuarioAdminResponse {
+  return {
+    identificador: usuario.id,
+    nome: usuario.nome,
+    email: usuario.email,
+    ...(usuario.imagemPerfil ? { foto: usuario.imagemPerfil } : {}),
+    ativo: usuario.ativo,
+    criadoEm: usuario.criadoEm,
+  };
 }
 
 export function paraAnuncioDoCatalogo(anuncio: api.ListarAnuncioResponse): AnuncioResponse {
@@ -79,6 +122,59 @@ export function paraAnuncio(anuncio: api.DetalharAnuncioResponse): AnuncioRespon
       media: anuncio.vendedor.notaMedia,
       contagem: anuncio.vendedor.quantidadeAvaliacoes ?? 0,
     },
+  };
+}
+
+export function paraMeuAnuncio(anuncio: api.ListarMeuAnuncioResponse): MeuAnuncioResponse {
+  return {
+    identificador: anuncio.id,
+    nome: anuncio.nome,
+    preco: anuncio.preco,
+    estoque: anuncio.quantidadeDisponivel,
+    disponivel: anuncio.disponivel,
+    estado: ROTULOS_CONDICAO[anuncio.condicao],
+    conservacao: ROTULOS_CONSERVACAO[anuncio.conservacao],
+    categoria: anuncio.categoriaNome,
+    imagemPrincipal: anuncio.imagemPrincipal ?? '',
+    criadoEm: anuncio.criadoEm,
+  };
+}
+
+export function paraAnuncioAdmin(anuncio: api.ListarAnuncioAdminResponse): MeuAnuncioResponse {
+  return {
+    identificador: anuncio.id,
+    nome: anuncio.nome,
+    preco: anuncio.preco,
+    estoque: anuncio.quantidadeDisponivel,
+    disponivel: anuncio.disponivel,
+    estado: 'Novo',
+    conservacao: '',
+    categoria: anuncio.categoriaNome,
+    imagemPrincipal: '',
+    vendedorIdentificador: anuncio.vendedorId,
+    vendedorNome: anuncio.vendedorNome,
+    criadoEm: anuncio.criadoEm,
+  };
+}
+
+export function paraAnuncioSalvo(
+  anuncio: api.CadastrarAnuncioResponse | api.EditarAnuncioResponse,
+  vendedor: VendedorResponse,
+): AnuncioResponse {
+  return {
+    identificador: anuncio.id,
+    nome: anuncio.nome,
+    titulo: anuncio.nome,
+    descricao: anuncio.descricao ?? '',
+    imagens: anuncio.imagens ?? [],
+    categoriaIdentificador: anuncio.categoriaId,
+    categoria: anuncio.categoriaNome,
+    preco: anuncio.preco,
+    estado: ROTULOS_CONDICAO[anuncio.condicao],
+    conservacao: ROTULOS_CONSERVACAO[anuncio.conservacao],
+    estoque: anuncio.quantidadeDisponivel,
+    disponivel: anuncio.disponivel,
+    vendedor,
   };
 }
 
@@ -159,6 +255,26 @@ export function paraCompra(compra: api.ListarCompraResponse): CompraResponse {
     quantidadeItens: compra.quantidadeItens,
     imagem: '',
     criadoEm: compra.criadoEm,
+  };
+}
+
+export function paraVenda(venda: api.ListarVendaResponse): VendaResponse {
+  return {
+    identificador: venda.id,
+    compradorNome: venda.compradorNome,
+    valorTotal: venda.valorTotal,
+    estado: venda.estado,
+    criadoEm: venda.criadoEm,
+  };
+}
+
+export function paraVendaAdmin(pedido: api.ListarPedidoAdminResponse): VendaResponse {
+  return {
+    identificador: pedido.id,
+    compradorNome: pedido.compradorNome,
+    valorTotal: pedido.valorTotal,
+    estado: pedido.estado,
+    criadoEm: pedido.criadoEm,
   };
 }
 

@@ -1,0 +1,198 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 900" width="1280" height="900" role="img" aria-labelledby="titulo desc">
+  <title id="titulo">Diagrama de Classes — GeekHub</title>
+  <desc id="desc">Diagrama de classes das entidades Usuario, Permissao, Categoria, Anuncio, ItemCarrinho, Pedido, ItemPedido, EventoPedido e Avaliacao do sistema GeekHub.</desc>
+  <defs>
+    <style>
+      .bg { fill: #faf9f6; }
+      .box { fill: #ffffff; stroke: #212121; stroke-width: 2; }
+      .hdr { fill: #3f51b5; stroke: #212121; stroke-width: 2; }
+      .hdr-enum { fill: #455a64; stroke: #212121; stroke-width: 2; }
+      .title { fill: #ffffff; font: 700 15px Arial, sans-serif; text-anchor: middle; }
+      .stereo { fill: #e8eaf6; font: 400 11px Arial, sans-serif; text-anchor: middle; }
+      .txt { fill: #212121; font: 400 12px "Courier New", monospace; }
+      .sep { stroke: #212121; stroke-width: 1.5; }
+      .rel { fill: none; stroke: #3f51b5; stroke-width: 2; }
+      .lbl { fill: #212121; font: 600 11px Arial, sans-serif; }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#3f51b5"/>
+    </marker>
+  </defs>
+
+  <rect width="1280" height="900" class="bg"/>
+  <text x="640" y="34" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#212121">
+    GeekHub — Diagrama de Classes do Domínio
+  </text>
+
+  <!-- Usuario -->
+  <rect x="40" y="70" width="310" height="250" class="box"/>
+  <rect x="40" y="70" width="310" height="34" class="hdr"/>
+  <text x="195" y="92" class="title">Usuario</text>
+  <text x="52" y="124" class="txt">- id: Long</text>
+  <text x="52" y="142" class="txt">- nome: String</text>
+  <text x="52" y="160" class="txt">- email: String</text>
+  <text x="52" y="178" class="txt">- senha: String</text>
+  <text x="52" y="196" class="txt">- imagemPerfil: String</text>
+  <text x="52" y="214" class="txt">- ativo: Boolean</text>
+  <text x="52" y="232" class="txt">- criadoEm: LocalDateTime</text>
+  <line x1="40" y1="244" x2="350" y2="244" class="sep"/>
+  <text x="52" y="264" class="txt">+ isAdmin(): Boolean</text>
+  <text x="52" y="282" class="txt">+ adicionarPermissao(p)</text>
+  <text x="52" y="300" class="txt">+ atualizarPermissaoAdmin(b)</text>
+
+  <!-- Permissao -->
+  <rect x="40" y="390" width="230" height="110" class="box"/>
+  <rect x="40" y="390" width="230" height="34" class="hdr"/>
+  <text x="155" y="412" class="title">Permissao</text>
+  <text x="52" y="444" class="txt">- id: Long</text>
+  <text x="52" y="462" class="txt">- nome: String</text>
+  <text x="52" y="480" class="txt">- usuario: Usuario</text>
+
+  <!-- Categoria -->
+  <rect x="480" y="70" width="260" height="150" class="box"/>
+  <rect x="480" y="70" width="260" height="34" class="hdr"/>
+  <text x="610" y="92" class="title">Categoria</text>
+  <text x="492" y="124" class="txt">- id: Long</text>
+  <text x="492" y="142" class="txt">- nome: String</text>
+  <text x="492" y="160" class="txt">- descricao: String</text>
+  <text x="492" y="178" class="txt">- ativa: Boolean</text>
+  <text x="492" y="196" class="txt">- criadoEm: LocalDateTime</text>
+
+  <!-- Anuncio -->
+  <rect x="450" y="280" width="320" height="270" class="box"/>
+  <rect x="450" y="280" width="320" height="34" class="hdr"/>
+  <text x="610" y="302" class="title">Anuncio</text>
+  <text x="462" y="334" class="txt">- id: Long</text>
+  <text x="462" y="352" class="txt">- nome: String</text>
+  <text x="462" y="370" class="txt">- descricao: String</text>
+  <text x="462" y="388" class="txt">- preco: BigDecimal</text>
+  <text x="462" y="406" class="txt">- quantidadeDisponivel: Integer</text>
+  <text x="462" y="424" class="txt">- disponivel: Boolean</text>
+  <text x="462" y="442" class="txt">- condicao: CondicaoProduto</text>
+  <text x="462" y="460" class="txt">- conservacao: ConservacaoProduto</text>
+  <line x1="450" y1="472" x2="770" y2="472" class="sep"/>
+  <text x="462" y="492" class="txt">+ obterImagemPrincipal(): String</text>
+  <text x="462" y="510" class="txt">+ descontarEstoque(qtd: Integer)</text>
+  <text x="462" y="528" class="txt">+ estornarEstoque(qtd: Integer)</text>
+
+  <!-- ItemCarrinho -->
+  <rect x="40" y="580" width="290" height="165" class="box"/>
+  <rect x="40" y="580" width="290" height="34" class="hdr"/>
+  <text x="185" y="602" class="title">ItemCarrinho</text>
+  <text x="52" y="634" class="txt">- id: Long</text>
+  <text x="52" y="652" class="txt">- comprador: Usuario</text>
+  <text x="52" y="670" class="txt">- anuncio: Anuncio</text>
+  <text x="52" y="688" class="txt">- quantidade: Integer</text>
+  <text x="52" y="706" class="txt">- criadoEm: LocalDateTime</text>
+  <line x1="40" y1="716" x2="330" y2="716" class="sep"/>
+  <text x="52" y="734" class="txt">+ calcularSubtotal(): BigDecimal</text>
+
+  <!-- Pedido -->
+  <rect x="890" y="70" width="340" height="285" class="box"/>
+  <rect x="890" y="70" width="340" height="34" class="hdr"/>
+  <text x="1060" y="92" class="title">Pedido</text>
+  <text x="902" y="124" class="txt">- id: Long</text>
+  <text x="902" y="142" class="txt">- comprador: Usuario</text>
+  <text x="902" y="160" class="txt">- compradorNome / Email: String</text>
+  <text x="902" y="178" class="txt">- valorTotal: BigDecimal</text>
+  <text x="902" y="196" class="txt">- estado: EstadoPedido</text>
+  <text x="902" y="214" class="txt">- avaliado: Boolean</text>
+  <text x="902" y="232" class="txt">- criadoEm: LocalDateTime</text>
+  <line x1="890" y1="244" x2="1230" y2="244" class="sep"/>
+  <text x="902" y="264" class="txt">+ calcularValorTotal(): void</text>
+  <text x="902" y="282" class="txt">+ registrarEvento(estado, data)</text>
+  <text x="902" y="300" class="txt">+ calcularQuantidadeItens(): Integer</text>
+  <text x="902" y="318" class="txt">+ pertenceAoComprador(id): Boolean</text>
+  <text x="902" y="336" class="txt">+ isConcluido(): Boolean</text>
+
+  <!-- ItemPedido -->
+  <rect x="890" y="410" width="165" height="145" class="box"/>
+  <rect x="890" y="410" width="165" height="34" class="hdr"/>
+  <text x="972" y="432" class="title">ItemPedido</text>
+  <text x="900" y="464" class="txt">- anuncioId: Long</text>
+  <text x="900" y="482" class="txt">- vendedorId: Long</text>
+  <text x="900" y="500" class="txt">- nomeProduto: String</text>
+  <text x="900" y="518" class="txt">- precoUnitario</text>
+  <text x="900" y="536" class="txt">- quantidade / subtotal</text>
+
+  <!-- EventoPedido -->
+  <rect x="1070" y="410" width="165" height="100" class="box"/>
+  <rect x="1070" y="410" width="165" height="34" class="hdr"/>
+  <text x="1152" y="432" class="title">EventoPedido</text>
+  <text x="1080" y="464" class="txt">- estado: EstadoPedido</text>
+  <text x="1080" y="484" class="txt">- ocorridoEm</text>
+
+  <!-- EstadoPedido -->
+  <rect x="1070" y="555" width="165" height="145" class="box"/>
+  <rect x="1070" y="555" width="165" height="44" class="hdr-enum"/>
+  <text x="1152" y="572" class="stereo">&lt;&lt;enumeration&gt;&gt;</text>
+  <text x="1152" y="590" class="title">EstadoPedido</text>
+  <text x="1082" y="618" class="txt">CRIADO</text>
+  <text x="1082" y="636" class="txt">CONFIRMADO</text>
+  <text x="1082" y="654" class="txt">ENVIADO</text>
+  <text x="1082" y="672" class="txt">CONCLUIDO</text>
+  <text x="1082" y="690" class="txt">CANCELADO</text>
+
+  <!-- Avaliacao -->
+  <rect x="450" y="630" width="330" height="205" class="box"/>
+  <rect x="450" y="630" width="330" height="34" class="hdr"/>
+  <text x="615" y="652" class="title">Avaliacao</text>
+  <text x="462" y="684" class="txt">- id: Long</text>
+  <text x="462" y="702" class="txt">- pedido: Pedido</text>
+  <text x="462" y="720" class="txt">- autor: Usuario</text>
+  <text x="462" y="738" class="txt">- vendedor: Usuario</text>
+  <text x="462" y="756" class="txt">- nota: Integer (1..5)</text>
+  <text x="462" y="774" class="txt">- comentario: String</text>
+  <text x="462" y="792" class="txt">- criadoEm: LocalDateTime</text>
+  <line x1="450" y1="804" x2="780" y2="804" class="sep"/>
+  <text x="462" y="822" class="txt">+ pertenceAoAutor(id): Boolean</text>
+
+  <!-- Condicao & Conservacao -->
+  <rect x="850" y="740" width="180" height="105" class="box"/>
+  <rect x="850" y="740" width="180" height="44" class="hdr-enum"/>
+  <text x="940" y="757" class="stereo">&lt;&lt;enumeration&gt;&gt;</text>
+  <text x="940" y="775" class="title">CondicaoProduto</text>
+  <text x="865" y="805" class="txt">NOVO</text>
+  <text x="865" y="825" class="txt">USADO</text>
+
+  <rect x="1055" y="740" width="185" height="122" class="box"/>
+  <rect x="1055" y="740" width="185" height="44" class="hdr-enum"/>
+  <text x="1147" y="757" class="stereo">&lt;&lt;enumeration&gt;&gt;</text>
+  <text x="1147" y="775" class="title">ConservacaoProduto</text>
+  <text x="1070" y="805" class="txt">EXCELENTE</text>
+  <text x="1070" y="825" class="txt">BOM</text>
+  <text x="1070" y="845" class="txt">REGULAR</text>
+
+  <!-- Relacionamentos -->
+  <path d="M155,320 L155,390" class="rel" marker-end="url(#arrow)"/>
+  <text x="165" y="362" class="lbl">1 .. 0..*</text>
+
+  <path d="M610,220 L610,280" class="rel" marker-end="url(#arrow)"/>
+  <text x="620" y="254" class="lbl">1 .. 0..*</text>
+
+  <path d="M350,295 L450,360" class="rel" marker-end="url(#arrow)"/>
+  <text x="382" y="314" class="lbl">anuncia (1..*)</text>
+
+  <path d="M300,320 L300,580" class="rel" marker-end="url(#arrow)"/>
+  <text x="308" y="455" class="lbl">seleciona (0..*)</text>
+
+  <path d="M330,625 L450,510" class="rel" marker-end="url(#arrow)"/>
+  <text x="348" y="558" class="lbl">referencia (1)</text>
+
+  <path d="M350,115 L450,55 L845,55 L890,115" class="rel" marker-end="url(#arrow)"/>
+  <text x="610" y="48" class="lbl">realiza pedidos (1 .. 0..*)</text>
+
+  <path d="M972,355 L972,410" class="rel" marker-end="url(#arrow)"/>
+  <text x="980" y="388" class="lbl">1..*</text>
+
+  <path d="M1152,355 L1152,410" class="rel" marker-end="url(#arrow)"/>
+  <text x="1160" y="388" class="lbl">1..*</text>
+
+  <path d="M1152,510 L1152,555" class="rel" marker-end="url(#arrow)"/>
+
+  <path d="M890,325 L780,680" class="rel" marker-end="url(#arrow)"/>
+  <text x="802" y="592" class="lbl">origina (0..1)</text>
+
+  <path d="M250,320 L250,550 L360,550 L450,720" class="rel" marker-end="url(#arrow)"/>
+  <text x="366" y="688" class="lbl">autor / vendedor</text>
+</svg>

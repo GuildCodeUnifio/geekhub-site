@@ -221,4 +221,18 @@ describe('CarrinhoComponente', () => {
     const icone = fixture.nativeElement.querySelector('.icone-vazio') as HTMLElement;
     expect(icone.classList.contains('material-symbols-outlined')).toBe(true);
   });
+
+  it('limpa todos os itens do carrinho ao clicar em Limpar carrinho', async () => {
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(component.itensCarrinho.length).toBe(3);
+
+    const botaoLimpar = fixture.nativeElement.querySelector('.botao-limpar-carrinho') as HTMLButtonElement;
+    botaoLimpar.click();
+    await fixture.whenStable();
+
+    expect(component.itensCarrinho).toEqual([]);
+    expect(component.valorTotal).toBe(0);
+  });
 });

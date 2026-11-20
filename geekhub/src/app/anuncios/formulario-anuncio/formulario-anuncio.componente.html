@@ -1,0 +1,157 @@
+<main class="pagina-formulario">
+  <nav class="trilha" aria-label="Navegação estrutural">
+    <a routerLink="/">Catálogo</a>
+    <span aria-hidden="true">/</span>
+    <a routerLink="/meus-anuncios">Meus anúncios</a>
+    <span aria-hidden="true">/</span>
+    <span>{{ ehEdicao ? 'Editar anúncio' : 'Novo anúncio' }}</span>
+  </nav>
+
+  <header class="cabecalho-pagina">
+    <h1>{{ ehEdicao ? 'Editar anúncio' : 'Cadastrar anúncio' }}</h1>
+  </header>
+
+  @if (erro) {
+    <p class="banner-erro" role="alert">{{ erro }}</p>
+  }
+
+  @if (mensagem) {
+    <p class="banner-sucesso" role="status">{{ mensagem }}</p>
+  }
+
+  @if (carregando) {
+    <p>Carregando dados...</p>
+  } @else if (!bloqueado) {
+    <mat-card appearance="outlined" class="cartao-formulario">
+      <form class="formulario-anuncio" (ngSubmit)="salvar()">
+        <mat-form-field appearance="outline">
+          <mat-label>Nome do produto</mat-label>
+          <input matInput name="nome" [(ngModel)]="nome" maxlength="255" required />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Descrição</mat-label>
+          <textarea
+            matInput
+            name="descricao"
+            [(ngModel)]="descricao"
+            rows="4"
+            maxlength="2000"
+            required
+          ></textarea>
+        </mat-form-field>
+
+        <div class="grade-dupla">
+          <mat-form-field appearance="outline">
+            <mat-label>Categoria</mat-label>
+            <mat-select name="categoria" [(ngModel)]="categoriaIdentificador" required>
+              @for (categoria of categorias; track categoria.identificador) {
+                <mat-option [value]="categoria.identificador">{{ categoria.nome }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Preço (R$)</mat-label>
+            <input
+              matInput
+              type="number"
+              name="preco"
+              [(ngModel)]="preco"
+              min="0.01"
+              step="0.01"
+              required
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Estoque disponível</mat-label>
+            <input
+              matInput
+              type="number"
+              name="estoque"
+              [(ngModel)]="estoque"
+              [min]="ehEdicao ? 0 : 1"
+              step="1"
+              required
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Condição</mat-label>
+            <mat-select name="estado" [(ngModel)]="estado" required>
+              @for (item of opcoesEstado; track item) {
+                <mat-option [value]="item">{{ item }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Conservação</mat-label>
+            <mat-select name="conservacao" [(ngModel)]="conservacao" required>
+              @for (item of opcoesConservacao; track item) {
+                <mat-option [value]="item">{{ item }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          @if (ehEdicao) {
+            <div class="controle-disponivel">
+              <mat-slide-toggle name="disponivel" [(ngModel)]="disponivel">
+                Anúncio disponível no catálogo
+              </mat-slide-toggle>
+            </div>
+          }
+        </div>
+
+        <mat-divider />
+
+        <section class="secao-imagens" aria-label="Imagens do produto">
+          <h2>Imagens do anúncio</h2>
+          <div class="linha-url">
+            <mat-form-field appearance="outline" class="campo-url">
+              <mat-label>URL da imagem (https://...)</mat-label>
+              <input
+                matInput
+                name="novaImagemUrl"
+                [(ngModel)]="novaImagemUrl"
+                maxlength="512"
+                placeholder="https://picsum.photos/400"
+              />
+            </mat-form-field>
+            <button mat-stroked-button color="primary" type="button" (click)="adicionarImagem()">
+              Adicionar imagem
+            </button>
+          </div>
+
+          @if (imagens.length > 0) {
+            <ul class="lista-imagens">
+              @for (url of imagens; track $index) {
+                <li class="item-imagem">
+                  <img [src]="url" alt="Pré-visualização do produto" />
+                  <span class="texto-url">{{ url }}</span>
+                  <button
+                    mat-icon-button
+                    color="warn"
+                    type="button"
+                    aria-label="Remover imagem"
+                    (click)="removerImagem($index)"
+                  >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+
+        <div class="acoes-formulario">
+          <a mat-stroked-button routerLink="/meus-anuncios">Cancelar</a>
+          <button mat-flat-button color="primary" type="submit" [disabled]="salvando">
+            {{ salvando ? 'Salvando...' : ehEdicao ? 'Salvar alterações' : 'Publicar anúncio' }}
+          </button>
+        </div>
+      </form>
+    </mat-card>
+  }
+</main>
