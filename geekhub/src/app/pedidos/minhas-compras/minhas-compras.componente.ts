@@ -1,4 +1,19 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
+import { PageEvent } from '@angular/material/paginator';
+import { Router } from '@angular/router';
+
+import {
+  App,
+  ESTADOS_PEDIDO,
+  ROTULOS_ESTADO_PEDIDO,
+  type EstadoPedido,
+  type ListarComprasResponse,
+} from '../../app';
+
+interface FiltroEstado {
+  rotulo: string;
+  estado: EstadoPedido | undefined;
+}
 
 @Component({
   selector: 'app-minhas-compras',
@@ -6,4 +21,67 @@ import { Component } from '@angular/core';
   styleUrl: './minhas-compras.componente.scss',
   templateUrl: './minhas-compras.componente.html',
 })
-export class MinhasComprasComponente {}
+export class MinhasComprasComponente implements OnInit {
+  private readonly app = inject(App);
+  private readonly roteador = inject(Router);
+
+  readonly itensPorPagina = 4;
+  readonly rotulosEstado = ROTULOS_ESTADO_PEDIDO;
+  readonly filtros: FiltroEstado[] = [
+    { rotulo: 'Todas', estado: undefined },
+    ...ESTADOS_PEDIDO.map(estado => ({ rotulo: ROTULOS_ESTADO_PEDIDO[estado], estado })),
+  ];
+
+  estadoSelecionado: EstadoPedido | undefined = undefined;
+  pagina = 1;
+  resposta: ListarComprasResponse | null = null;
+
+  ngOnInit(): void {
+    if (!this.app.usuarioAtual) {
+      void this.roteador.navigate(['/entrar'], {
+        queryParams: { redirecionar: '/pedidos' },
+      });
+      return;
+    }
+
+    this.carregar();
+  }
+
+  get inicioIntervalo(): number {
+    return this.resposta && this.resposta.total > 0
+      ? (this.resposta.pagina - 1) * this.resposta.itensPorPagina + 1
+      : 0;
+  }
+
+  get fimIntervalo(): number {
+    return this.resposta
+      ? Math.min(this.resposta.pagina * this.resposta.itensPorPagina, this.resposta.total)
+      : 0;
+  }
+
+  filtrar(estado: EstadoPedido | undefined): void {
+    this.estadoSelecionado = estado;
+    this.pagina = 1;
+    this.carregar();
+  }
+
+  mudarPagina(evento: PageEvent): void {
+    this.pagina = evento.pageIndex + 1;
+    this.carregar();
+  }
+
+  private carregar(): void {
+    const usuario = this.app.usuarioAtual;
+    if (!usuario) {
+      return;
+    }
+
+    this.resposta = this.app.listarCompras({
+      compradorIdentificador: usuario.identificador,
+      estado: this.estadoSelecionado,
+      pagina: this.pagina,
+      itensPorPagina: this.itensPorPagina,
+    });
+    this.pagina = this.resposta.pagina;
+  }
+}
