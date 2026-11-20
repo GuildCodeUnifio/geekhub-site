@@ -416,6 +416,162 @@ export interface ListarComprasResponse {
   total: number;
 }
 
+export interface EstadoKpiContagem {
+  estado: EstadoPedido;
+  rotulo: string;
+  quantidade: number;
+  percentual: number;
+}
+
+export interface CategoriaKpiContagem {
+  nome: string;
+  quantidadeAnuncios: number;
+  estoqueTotal: number;
+  percentual: number;
+}
+
+export interface PedidoRecenteDashboard {
+  identificador: number;
+  compradorNome: string;
+  estado: EstadoPedido;
+  valorTotal: number;
+  quantidadeItens: number;
+  criadoEm: string;
+}
+
+export interface DashboardOperacionalResponse {
+  receitaTotal: number;
+  ticketMedio: number;
+  totalPedidos: number;
+  pedidosConcluidos: number;
+  pedidosEmAndamento: number;
+  pedidosCancelados: number;
+  taxaConclusao: number;
+  totalAnuncios: number;
+  anunciosDisponiveis: number;
+  anunciosIndisponiveis: number;
+  unidadesEmEstoque: number;
+  totalCategoriasAtivas: number;
+  notaMediaAvaliacoes: number | null;
+  totalAvaliacoes: number;
+  pedidosPorEstado: EstadoKpiContagem[];
+  anunciosPorCategoria: CategoriaKpiContagem[];
+  pedidosRecentes: PedidoRecenteDashboard[];
+  fonte: 'api' | 'mock';
+}
+
+export interface EntradaAnuncioDashboard {
+  categoria: string;
+  estoque: number;
+  disponivel: boolean;
+}
+
+export interface EntradaPedidoDashboard {
+  identificador: number;
+  compradorNome: string;
+  estado: EstadoPedido;
+  valorTotal: number;
+  quantidadeItens: number;
+  criadoEm: string;
+}
+
+export function calcularDashboardOperacional(dados: {
+  anuncios: readonly EntradaAnuncioDashboard[];
+  totalAnuncios?: number;
+  totalCategoriasAtivas: number;
+  pedidos: readonly EntradaPedidoDashboard[];
+  totalPedidos?: number;
+  notasAvaliacoes: readonly number[];
+  totalAvaliacoes?: number;
+  fonte: 'api' | 'mock';
+}): DashboardOperacionalResponse {
+  const totalAnuncios = dados.totalAnuncios ?? dados.anuncios.length;
+  const anunciosDisponiveis = dados.anuncios.filter(a => a.disponivel && a.estoque > 0).length;
+  const anunciosIndisponiveis = Math.max(0, totalAnuncios - anunciosDisponiveis);
+  const unidadesEmEstoque = dados.anuncios.reduce((soma, a) => soma + Math.max(0, a.estoque), 0);
+
+  const mapaCategorias = new Map<string, { quantidadeAnuncios: number; estoqueTotal: number }>();
+  for (const anuncio of dados.anuncios) {
+    const nome = anuncio.categoria || 'Sem categoria';
+    const atual = mapaCategorias.get(nome) ?? { quantidadeAnuncios: 0, estoqueTotal: 0 };
+    atual.quantidadeAnuncios += 1;
+    atual.estoqueTotal += Math.max(0, anuncio.estoque);
+    mapaCategorias.set(nome, atual);
+  }
+
+  const baseAnuncios = Math.max(1, dados.anuncios.length);
+  const anunciosPorCategoria: CategoriaKpiContagem[] = Array.from(mapaCategorias.entries())
+    .map(([nome, valores]) => ({
+      nome,
+      quantidadeAnuncios: valores.quantidadeAnuncios,
+      estoqueTotal: valores.estoqueTotal,
+      percentual: Math.round((valores.quantidadeAnuncios / baseAnuncios) * 100),
+    }))
+    .sort((a, b) => b.quantidadeAnuncios - a.quantidadeAnuncios);
+
+  const totalPedidos = dados.totalPedidos ?? dados.pedidos.length;
+  const pedidosConcluidos = dados.pedidos.filter(p => p.estado === 'CONCLUIDO').length;
+  const pedidosCancelados = dados.pedidos.filter(p => p.estado === 'CANCELADO').length;
+  const pedidosEmAndamento = dados.pedidos.filter(
+    p => p.estado === 'CRIADO' || p.estado === 'CONFIRMADO' || p.estado === 'ENVIADO',
+  ).length;
+  const pedidosValidos = dados.pedidos.filter(p => p.estado !== 'CANCELADO');
+  const receitaEmCentavos = pedidosValidos.reduce(
+    (soma, p) => soma + Math.round(p.valorTotal * 100),
+    0,
+  );
+  const receitaTotal = receitaEmCentavos / 100;
+  const ticketMedio =
+    pedidosValidos.length > 0 ? Math.round(receitaEmCentavos / pedidosValidos.length) / 100 : 0;
+  const taxaConclusao =
+    totalPedidos > 0 ? Math.round((pedidosConcluidos / totalPedidos) * 100) : 0;
+
+  const basePedidos = Math.max(1, totalPedidos);
+  const pedidosPorEstado: EstadoKpiContagem[] = ESTADOS_PEDIDO.map(estado => {
+    const quantidade = dados.pedidos.filter(p => p.estado === estado).length;
+    return {
+      estado,
+      rotulo: ROTULOS_ESTADO_PEDIDO[estado],
+      quantidade,
+      percentual: totalPedidos > 0 ? Math.round((quantidade / basePedidos) * 100) : 0,
+    };
+  });
+
+  const pedidosRecentes: PedidoRecenteDashboard[] = dados.pedidos
+    .slice()
+    .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm))
+    .slice(0, 5)
+    .map(p => ({ ...p }));
+
+  const totalAvaliacoes = dados.totalAvaliacoes ?? dados.notasAvaliacoes.length;
+  const somaNotas = dados.notasAvaliacoes.reduce((soma, nota) => soma + nota, 0);
+  const notaMediaAvaliacoes =
+    dados.notasAvaliacoes.length > 0
+      ? Math.round((somaNotas / dados.notasAvaliacoes.length) * 10) / 10
+      : null;
+
+  return {
+    receitaTotal,
+    ticketMedio,
+    totalPedidos,
+    pedidosConcluidos,
+    pedidosEmAndamento,
+    pedidosCancelados,
+    taxaConclusao,
+    totalAnuncios,
+    anunciosDisponiveis,
+    anunciosIndisponiveis,
+    unidadesEmEstoque,
+    totalCategoriasAtivas: dados.totalCategoriasAtivas,
+    notaMediaAvaliacoes,
+    totalAvaliacoes,
+    pedidosPorEstado,
+    anunciosPorCategoria,
+    pedidosRecentes,
+    fonte: dados.fonte,
+  };
+}
+
 export interface AvaliarPedidoRequest {
   compradorIdentificador: number;
   pedidoIdentificador: number;
@@ -2581,6 +2737,31 @@ removerPedido(pedidoIdentificador: number, usuarioIdentificador: number): Result
   this.salvarPedidos();
 
   return { sucesso: true, mensagem: 'Pedido removido com sucesso.' };
+}
+
+obterDadosDashboard(): DashboardOperacionalResponse {
+  const notas = this.vendedores.flatMap(vendedor =>
+    vendedor.avaliacoes.map(avaliacao => avaliacao.nota),
+  );
+
+  return calcularDashboardOperacional({
+    anuncios: this.anuncios.map(anuncio => ({
+      categoria: anuncio.categoria,
+      estoque: anuncio.estoque,
+      disponivel: anuncio.disponivel !== false && anuncio.estoque > 0,
+    })),
+    totalCategoriasAtivas: this.categorias.filter(categoria => categoria.ativa).length,
+    pedidos: this.pedidos.map(pedido => ({
+      identificador: pedido.identificador,
+      compradorNome: pedido.compradorNome,
+      estado: pedido.estado,
+      valorTotal: pedido.valorTotal,
+      quantidadeItens: pedido.itens.reduce((soma, item) => soma + item.quantidade, 0),
+      criadoEm: pedido.criadoEm,
+    })),
+    notasAvaliacoes: notas,
+    fonte: 'mock',
+  });
 }
 
 avaliarPedido(request: AvaliarPedidoRequest): ResultadoOperacaoPedido {
