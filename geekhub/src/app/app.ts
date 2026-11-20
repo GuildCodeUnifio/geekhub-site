@@ -215,6 +215,192 @@ export interface VendedorResponse{
   contagem: number;
 }
 
+export type EstadoPedido =
+  | 'CRIADO'
+  | 'CONFIRMADO'
+  | 'ENVIADO'
+  | 'CONCLUIDO'
+  | 'CANCELADO';
+
+export const ESTADOS_PEDIDO: readonly EstadoPedido[] = [
+  'CRIADO',
+  'CONFIRMADO',
+  'ENVIADO',
+  'CONCLUIDO',
+  'CANCELADO',
+];
+
+export interface ItemPedidoResponse {
+  anuncioIdentificador: number;
+  vendedorIdentificador: number;
+  nomeProduto: string;
+  imagemProduto: string;
+  precoUnitario: number;
+  quantidade: number;
+  subtotal: number;
+}
+
+export interface EventoPedidoResponse {
+  estado: EstadoPedido;
+  ocorridoEm: string;
+}
+
+export interface PedidoResponse {
+  identificador: number;
+  compradorIdentificador: number;
+  compradorNome: string;
+  compradorEmail: string;
+  itens: ItemPedidoResponse[];
+  valorTotal: number;
+  estado: EstadoPedido;
+  historico: EventoPedidoResponse[];
+  avaliado: boolean;
+  criadoEm: string;
+}
+
+export interface CompraResponse {
+  identificador: number;
+  valorTotal: number;
+  estado: EstadoPedido;
+  avaliado: boolean;
+  quantidadeItens: number;
+  imagem: string;
+  criadoEm: string;
+}
+
+export interface ListarComprasRequest {
+  compradorIdentificador: number;
+  estado?: EstadoPedido;
+  pagina?: number;
+  itensPorPagina?: number;
+}
+
+export interface ListarComprasResponse {
+  compras: CompraResponse[];
+  pagina: number;
+  itensPorPagina: number;
+  total: number;
+}
+
+export interface AvaliarPedidoRequest {
+  compradorIdentificador: number;
+  pedidoIdentificador: number;
+  nota: number;
+  comentario?: string;
+}
+
+export interface ResultadoOperacaoPedido {
+  sucesso: boolean;
+  mensagem: string;
+  pedido: PedidoResponse | null;
+}
+
+const CHAVE_PEDIDOS_STORAGE = 'geekhub.pedidos';
+
+function criarItemPedido(
+  anuncioIdentificador: number,
+  vendedorIdentificador: number,
+  nomeProduto: string,
+  imagemProduto: string,
+  precoUnitario: number,
+  quantidade: number
+): ItemPedidoResponse {
+  return {
+    anuncioIdentificador,
+    vendedorIdentificador,
+    nomeProduto,
+    imagemProduto,
+    precoUnitario,
+    quantidade,
+    subtotal: (Math.round(precoUnitario * 100) * quantidade) / 100,
+  };
+}
+
+function criarPedidoPadrao(
+  identificador: number,
+  itens: ItemPedidoResponse[],
+  historico: EventoPedidoResponse[],
+  avaliado = false
+): PedidoResponse {
+  const valorTotal =
+    itens.reduce((soma, item) => soma + Math.round(item.subtotal * 100), 0) / 100;
+
+  return {
+    identificador,
+    compradorIdentificador: 1,
+    compradorNome: 'Usuário GeekHub',
+    compradorEmail: 'demo@geekhub.com',
+    itens,
+    valorTotal,
+    estado: historico[historico.length - 1].estado,
+    historico,
+    avaliado,
+    criadoEm: historico[0].ocorridoEm,
+  };
+}
+
+const ITEM_NARUTO = criarItemPedido(
+  1, 2, 'Action figure Naruto',
+  'https://cdn.myanimelist.net/images/anime/13/17405.jpg', 1850.0, 1
+);
+const ITEM_MANGA = criarItemPedido(
+  2, 2, 'Mangá Colecionável — Edição Especial',
+  'https://cdn.myanimelist.net/images/characters/2/284121.jpg', 49.9, 2
+);
+const ITEM_POSTER = criarItemPedido(
+  3, 3, 'Poster Ilustrado Ninja',
+  'https://cdn.myanimelist.net/images/characters/9/131317.jpg', 85.5, 1
+);
+const ITEM_KAKASHI = criarItemPedido(
+  4, 2, 'Estátua Kakashi Hatake 18cm',
+  'https://cdn.myanimelist.net/images/characters/7/284129.jpg', 329.9, 1
+);
+const ITEM_BATMAN = criarItemPedido(
+  5, 3, 'HQ Batman: O Cavaleiro das Trevas',
+  'https://covers.openlibrary.org/b/id/12673834-L.jpg', 139.9, 1
+);
+const ITEM_HEADSET = criarItemPedido(
+  8, 2, 'Headset Gamer RGB Profissional',
+  'https://images.unsplash.com/photo-1566055972289-c52022ae23b7?auto=format&fit=crop&w=800&h=450&q=80',
+  234.9, 1
+);
+const ITEM_D20 = criarItemPedido(
+  10, 2, 'Dado D20 Colecionável RPG',
+  'https://images.unsplash.com/photo-1650024520022-cab7611a460b?auto=format&fit=crop&w=800&h=450&q=80',
+  118.5, 2
+);
+
+const PEDIDOS_PADRAO: readonly PedidoResponse[] = [
+  criarPedidoPadrao(1001, [ITEM_KAKASHI, ITEM_POSTER], [
+    { estado: 'CRIADO', ocorridoEm: '2026-09-02T10:30:00' },
+    { estado: 'CONFIRMADO', ocorridoEm: '2026-09-02T11:15:00' },
+    { estado: 'ENVIADO', ocorridoEm: '2026-09-03T09:20:00' },
+    { estado: 'CONCLUIDO', ocorridoEm: '2026-09-05T15:45:00' },
+  ], true),
+  criarPedidoPadrao(1002, [ITEM_BATMAN], [
+    { estado: 'CRIADO', ocorridoEm: '2026-09-18T14:05:00' },
+    { estado: 'CANCELADO', ocorridoEm: '2026-09-18T18:40:00' },
+  ]),
+  criarPedidoPadrao(1003, [ITEM_D20], [
+    { estado: 'CRIADO', ocorridoEm: '2026-10-01T08:50:00' },
+    { estado: 'CONFIRMADO', ocorridoEm: '2026-10-01T09:30:00' },
+    { estado: 'ENVIADO', ocorridoEm: '2026-10-02T13:10:00' },
+    { estado: 'CONCLUIDO', ocorridoEm: '2026-10-06T16:00:00' },
+  ]),
+  criarPedidoPadrao(1004, [ITEM_HEADSET, ITEM_MANGA], [
+    { estado: 'CRIADO', ocorridoEm: '2026-10-22T19:25:00' },
+    { estado: 'CONFIRMADO', ocorridoEm: '2026-10-22T20:00:00' },
+    { estado: 'ENVIADO', ocorridoEm: '2026-10-24T10:15:00' },
+  ]),
+  criarPedidoPadrao(1005, [ITEM_POSTER], [
+    { estado: 'CRIADO', ocorridoEm: '2026-11-08T12:00:00' },
+    { estado: 'CONFIRMADO', ocorridoEm: '2026-11-08T12:40:00' },
+  ]),
+  criarPedidoPadrao(1006, [ITEM_NARUTO], [
+    { estado: 'CRIADO', ocorridoEm: '2026-11-15T21:10:00' },
+  ]),
+];
+
 @Component({
   selector: 'app-root',
   standalone: false,
@@ -1282,6 +1468,274 @@ private salvarCarrinhos(): void {
     }
 
     localStorage.setItem(CHAVE_CARRINHOS_STORAGE, JSON.stringify(objeto));
+  } catch {
+    // Ignora indisponibilidade de storage no ambiente atual.
+  }
+}
+
+private readonly pedidos: PedidoResponse[] = this.carregarPedidos();
+
+criarPedido(compradorIdentificador: number): ResultadoOperacaoPedido {
+  const comprador = this.usuarios.find(
+    usuario => usuario.identificador === compradorIdentificador
+  );
+
+  if (!comprador) {
+    return { sucesso: false, mensagem: 'Comprador inválido.', pedido: null };
+  }
+
+  const carrinho = this.consultarCarrinho(compradorIdentificador);
+
+  if (carrinho.itens.length === 0) {
+    return { sucesso: false, mensagem: 'Seu carrinho está vazio.', pedido: null };
+  }
+
+  const possuiPendencia = carrinho.itens.some(
+    item =>
+      !item.disponivel ||
+      !this.quantidadeValida(item.quantidade, item.estoqueDisponivel)
+  );
+
+  if (possuiPendencia) {
+    return {
+      sucesso: false,
+      mensagem: 'Corrija ou remova os itens indisponíveis antes de confirmar o pedido.',
+      pedido: null,
+    };
+  }
+
+  const agora = this.dataHoraAtual();
+  const identificador =
+    this.pedidos.reduce((maior, pedido) => Math.max(maior, pedido.identificador), 1000) + 1;
+
+  const pedido: PedidoResponse = {
+    identificador,
+    compradorIdentificador,
+    compradorNome: comprador.nome,
+    compradorEmail: comprador.email,
+    itens: carrinho.itens.map(item => ({
+      anuncioIdentificador: item.anuncioIdentificador,
+      vendedorIdentificador:
+        this.anuncios.find(anuncio => anuncio.identificador === item.anuncioIdentificador)
+          ?.vendedor.identificador ?? 0,
+      nomeProduto: item.nome,
+      imagemProduto: item.imagem,
+      precoUnitario: item.precoUnitario,
+      quantidade: item.quantidade,
+      subtotal: item.subtotal,
+    })),
+    valorTotal: carrinho.total,
+    estado: 'CRIADO',
+    historico: [{ estado: 'CRIADO', ocorridoEm: agora }],
+    avaliado: false,
+    criadoEm: agora,
+  };
+
+  this.pedidos.push(pedido);
+  this.salvarPedidos();
+
+  this.carrinhos.set(compradorIdentificador, []);
+  this.salvarCarrinhos();
+
+  return {
+    sucesso: true,
+    mensagem: 'Pedido criado com sucesso.',
+    pedido: this.copiarPedido(pedido),
+  };
+}
+
+listarCompras(request: ListarComprasRequest): ListarComprasResponse {
+  const itensPorPagina =
+    request.itensPorPagina &&
+    Number.isInteger(request.itensPorPagina) &&
+    request.itensPorPagina > 0
+      ? request.itensPorPagina
+      : 10;
+
+  const filtrados = this.pedidos
+    .filter(
+      pedido =>
+        pedido.compradorIdentificador === request.compradorIdentificador &&
+        (request.estado === undefined || pedido.estado === request.estado)
+    )
+    .sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
+
+  const total = filtrados.length;
+  const totalPaginas = Math.max(1, Math.ceil(total / itensPorPagina));
+  const paginaSolicitada =
+    request.pagina && Number.isInteger(request.pagina) && request.pagina >= 1
+      ? request.pagina
+      : 1;
+  const pagina = Math.min(paginaSolicitada, totalPaginas);
+  const inicio = (pagina - 1) * itensPorPagina;
+
+  return {
+    compras: filtrados.slice(inicio, inicio + itensPorPagina).map(pedido => ({
+      identificador: pedido.identificador,
+      valorTotal: pedido.valorTotal,
+      estado: pedido.estado,
+      avaliado: pedido.avaliado,
+      quantidadeItens: pedido.itens.reduce((soma, item) => soma + item.quantidade, 0),
+      imagem: pedido.itens[0]?.imagemProduto ?? '',
+      criadoEm: pedido.criadoEm,
+    })),
+    pagina,
+    itensPorPagina,
+    total,
+  };
+}
+
+detalharPedido(
+  compradorIdentificador: number,
+  pedidoIdentificador: number
+): PedidoResponse | null {
+  const pedido = this.pedidos.find(
+    item =>
+      item.identificador === pedidoIdentificador &&
+      item.compradorIdentificador === compradorIdentificador
+  );
+
+  return pedido ? this.copiarPedido(pedido) : null;
+}
+
+avaliarPedido(request: AvaliarPedidoRequest): ResultadoOperacaoPedido {
+  const pedido = this.pedidos.find(
+    item =>
+      item.identificador === request.pedidoIdentificador &&
+      item.compradorIdentificador === request.compradorIdentificador
+  );
+
+  if (!pedido) {
+    return { sucesso: false, mensagem: 'Pedido não encontrado.', pedido: null };
+  }
+
+  if (pedido.estado !== 'CONCLUIDO') {
+    return {
+      sucesso: false,
+      mensagem: 'Somente pedidos concluídos podem ser avaliados.',
+      pedido: this.copiarPedido(pedido),
+    };
+  }
+
+  if (pedido.avaliado) {
+    return {
+      sucesso: false,
+      mensagem: 'Este pedido já foi avaliado.',
+      pedido: this.copiarPedido(pedido),
+    };
+  }
+
+  if (!Number.isInteger(request.nota) || request.nota < 1 || request.nota > 5) {
+    return {
+      sucesso: false,
+      mensagem: 'Informe uma nota de 1 a 5.',
+      pedido: this.copiarPedido(pedido),
+    };
+  }
+
+  const comentario = request.comentario?.trim() ?? '';
+  if (comentario.length > 1000) {
+    return {
+      sucesso: false,
+      mensagem: 'O comentário deve ter no máximo 1000 caracteres.',
+      pedido: this.copiarPedido(pedido),
+    };
+  }
+
+  const data = new Date().toLocaleDateString('pt-BR');
+  const vendedoresAvaliados = new Set(pedido.itens.map(item => item.vendedorIdentificador));
+
+  for (const vendedorIdentificador of vendedoresAvaliados) {
+    const vendedor = this.vendedores.find(
+      item => item.identificador === vendedorIdentificador
+    );
+
+    if (!vendedor) {
+      continue;
+    }
+
+    const proximoIdentificador =
+      this.vendedores
+        .flatMap(item => item.avaliacoes)
+        .reduce((maior, avaliacao) => Math.max(maior, avaliacao.identificador), 0) + 1;
+
+    vendedor.avaliacoes.unshift({
+      identificador: proximoIdentificador,
+      autor: pedido.compradorNome,
+      nota: request.nota,
+      comentario,
+      data,
+    });
+  }
+
+  pedido.avaliado = true;
+  this.salvarPedidos();
+
+  return {
+    sucesso: true,
+    mensagem: 'Avaliação enviada. Obrigado!',
+    pedido: this.copiarPedido(pedido),
+  };
+}
+
+private copiarPedido(pedido: PedidoResponse): PedidoResponse {
+  return {
+    ...pedido,
+    itens: pedido.itens.map(item => ({ ...item })),
+    historico: pedido.historico.map(evento => ({ ...evento })),
+  };
+}
+
+private dataHoraAtual(): string {
+  const agora = new Date();
+  const deslocamento = agora.getTimezoneOffset() * 60000;
+  return new Date(agora.getTime() - deslocamento).toISOString().slice(0, 19);
+}
+
+private carregarPedidos(): PedidoResponse[] {
+  const padrao = PEDIDOS_PADRAO.map(pedido => this.copiarPedido(pedido));
+
+  if (typeof localStorage === 'undefined') {
+    return padrao;
+  }
+
+  try {
+    const salvo = localStorage.getItem(CHAVE_PEDIDOS_STORAGE);
+    if (salvo === null) {
+      return padrao;
+    }
+
+    const dados: unknown = JSON.parse(salvo);
+    if (!Array.isArray(dados)) {
+      return padrao;
+    }
+
+    return dados
+      .filter(
+        (item): item is PedidoResponse =>
+          typeof item === 'object' &&
+          item !== null &&
+          typeof (item as PedidoResponse).identificador === 'number' &&
+          typeof (item as PedidoResponse).compradorIdentificador === 'number' &&
+          Array.isArray((item as PedidoResponse).itens) &&
+          Array.isArray((item as PedidoResponse).historico) &&
+          ESTADOS_PEDIDO.includes((item as PedidoResponse).estado) &&
+          typeof (item as PedidoResponse).valorTotal === 'number' &&
+          typeof (item as PedidoResponse).criadoEm === 'string'
+      )
+      .map(pedido => this.copiarPedido(pedido));
+  } catch {
+    return padrao;
+  }
+}
+
+private salvarPedidos(): void {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+
+  try {
+    localStorage.setItem(CHAVE_PEDIDOS_STORAGE, JSON.stringify(this.pedidos));
   } catch {
     // Ignora indisponibilidade de storage no ambiente atual.
   }
