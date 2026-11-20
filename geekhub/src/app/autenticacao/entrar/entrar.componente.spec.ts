@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { firstValueFrom } from 'rxjs';
 import { provideRouter, Router } from '@angular/router';
 import { vi } from 'vitest';
 
@@ -42,11 +43,11 @@ describe('EntrarComponente', () => {
     expect(component.mensagemErro).toBe('');
   });
 
-  it('entra com dados validos atualizando o App sem manter a senha', () => {
-    const sucesso = component.entrar({
+  it('entra com dados validos atualizando o App sem manter a senha', async () => {
+    const sucesso = await firstValueFrom(component.entrar({
       email: ' DEMO@GEEKHUB.COM ',
       senha: '123456',
-    });
+    }));
 
     expect(sucesso).toBe(true);
 
@@ -66,11 +67,11 @@ describe('EntrarComponente', () => {
     ['', '123456', 'email'],
     ['demo@geekhub.com', '', 'senha'],
     ['   ', '   ', 'email'],
-  ])('rejeita campos obrigatorios vazios', (email, senha, campo) => {
-    const sucesso = component.entrar({
+  ])('rejeita campos obrigatorios vazios', async (email, senha, campo) => {
+    const sucesso = await firstValueFrom(component.entrar({
       email,
       senha,
-    });
+    }));
 
     expect(sucesso).toBe(false);
     expect(component.errosCampos[campo as 'email' | 'senha']).toBeTruthy();
@@ -82,11 +83,11 @@ describe('EntrarComponente', () => {
 
   it.each([['email-invalido'], ['sem-arroba.com'], ['usuario@'], ['@dominio.com']])(
     'rejeita formato de e-mail invalido',
-    (email) => {
-      const sucesso = component.entrar({
+    async (email) => {
+      const sucesso = await firstValueFrom(component.entrar({
         email,
         senha: '123456',
-      });
+      }));
 
       expect(sucesso).toBe(false);
       expect(component.errosCampos.email).toBe('Informe um e-mail válido.');
@@ -99,11 +100,11 @@ describe('EntrarComponente', () => {
   it.each([
     ['naoexiste@geekhub.com', '123456'],
     ['demo@geekhub.com', 'senhaerrada'],
-  ])('rejeita credenciais nao cadastradas ou senha incorreta', (email, senha) => {
-    const sucesso = component.entrar({
+  ])('rejeita credenciais nao cadastradas ou senha incorreta', async (email, senha) => {
+    const sucesso = await firstValueFrom(component.entrar({
       email,
       senha,
-    });
+    }));
 
     expect(sucesso).toBe(false);
     expect(component.mensagemErro).toBe('E-mail ou senha incorretos.');
@@ -176,10 +177,10 @@ describe('EntrarComponente', () => {
     const novoFixture = TestBed.createComponent(EntrarComponente);
     const novoComponent = novoFixture.componentInstance;
 
-    const sucesso = novoComponent.entrar({
+    const sucesso = await firstValueFrom(novoComponent.entrar({
       email: 'demo@geekhub.com',
       senha: '123456',
-    });
+    }));
 
     expect(sucesso).toBe(true);
     expect(spyNovoByUrl).toHaveBeenCalledWith('/produtos/1');

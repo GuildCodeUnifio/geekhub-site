@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { vi } from 'vitest';
 
+import { FONTE_DADOS } from './api/configuracao-api';
 import { App } from './app';
 import { AppModule } from './app-module';
 
@@ -11,6 +12,7 @@ describe('App', () => {
 
     await TestBed.configureTestingModule({
       imports: [AppModule],
+      providers: [{ provide: FONTE_DADOS, useValue: 'mock' }],
     }).compileComponents();
   });
 

@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { firstValueFrom } from 'rxjs';
 import { provideRouter, Router } from '@angular/router';
 import { vi } from 'vitest';
 
@@ -33,57 +34,57 @@ describe('CarrinhoComponente', () => {
     expect(component).toBeTruthy();
   });
 
-  it('soma o mesmo anuncio e separa os carrinhos por comprador', () => {
-    const adicaoMesmaConta = component.adicionarAoCarrinho({
+  it('soma o mesmo anuncio e separa os carrinhos por comprador', async () => {
+    const adicaoMesmaConta = await firstValueFrom(component.adicionarAoCarrinho({
       compradorIdentificador: 1,
       anuncioIdentificador: 1,
       quantidade: 2,
-    });
+    }));
 
     expect(adicaoMesmaConta.sucesso).toBe(true);
     expect(component.itensCarrinho).toHaveLength(3);
     expect(component.itensCarrinho[0].quantidade).toBe(3);
 
-    const adicaoOutroComprador = component.adicionarAoCarrinho({
+    const adicaoOutroComprador = await firstValueFrom(component.adicionarAoCarrinho({
       compradorIdentificador: 2,
       anuncioIdentificador: 1,
       quantidade: 1,
-    });
+    }));
 
     expect(adicaoOutroComprador.sucesso).toBe(true);
-    expect(component.consultarCarrinho(2).itens).toHaveLength(1);
-    expect(component.consultarCarrinho(2).itens[0].quantidade).toBe(1);
+    expect((await firstValueFrom(component.consultarCarrinho(2))).itens).toHaveLength(1);
+    expect((await firstValueFrom(component.consultarCarrinho(2))).itens[0].quantidade).toBe(1);
 
-    const acimaDoEstoque = component.adicionarAoCarrinho({
+    const acimaDoEstoque = await firstValueFrom(component.adicionarAoCarrinho({
       compradorIdentificador: 1,
       anuncioIdentificador: 1,
       quantidade: 1,
-    });
+    }));
 
     expect(acimaDoEstoque.sucesso).toBe(false);
     expect(component.itensCarrinho[0].quantidade).toBe(3);
     expect(component.mensagem).not.toBe('');
   });
 
-  it('recusa quantidades invalidas e preserva a linha anterior', () => {
+  it('recusa quantidades invalidas e preserva a linha anterior', async () => {
     const quantidadesInvalidas: unknown[] = ['', null, undefined, 0, -1, 1.5, Number.NaN, 6];
 
     for (const quantidade of quantidadesInvalidas) {
-      const resultadoAlteracao = component.alterarQuantidade({
+      const resultadoAlteracao = await firstValueFrom(component.alterarQuantidade({
         compradorIdentificador: 1,
         anuncioIdentificador: 2,
         quantidade: quantidade as number,
-      });
+      }));
 
       expect(resultadoAlteracao.sucesso).toBe(false);
       expect(component.itensCarrinho[1].quantidade).toBe(2);
       expect(component.mensagem).not.toBe('');
 
-      const resultadoAdicao = component.adicionarAoCarrinho({
+      const resultadoAdicao = await firstValueFrom(component.adicionarAoCarrinho({
         compradorIdentificador: 1,
         anuncioIdentificador: 2,
         quantidade: quantidade as number,
-      });
+      }));
 
       expect(resultadoAdicao.sucesso).toBe(false);
       expect(component.itensCarrinho[1].quantidade).toBe(2);
@@ -104,11 +105,11 @@ describe('CarrinhoComponente', () => {
     ) as HTMLButtonElement;
     expect(botaoFinalizar.disabled).toBe(true);
 
-    const tentativaAlteracao = component.alterarQuantidade({
+    const tentativaAlteracao = await firstValueFrom(component.alterarQuantidade({
       compradorIdentificador: 1,
       anuncioIdentificador: 1,
       quantidade: 2,
-    });
+    }));
     expect(tentativaAlteracao.sucesso).toBe(false);
     expect(component.mensagem).not.toBe('');
 
@@ -121,10 +122,10 @@ describe('CarrinhoComponente', () => {
     expect(component.itensCarrinho).toHaveLength(2);
   });
 
-  it('oferece todo o estoque, recalcula em centavos e acompanha o usuario autenticado', () => {
+  it('oferece todo o estoque, recalcula em centavos e acompanha o usuario autenticado', async () => {
     expect(component.obterOpcoesQuantidade(15)).toHaveLength(15);
 
-    component.adicionarAoCarrinho({
+    await firstValueFrom(component.adicionarAoCarrinho({
       compradorIdentificador: 2,
       anuncioIdentificador: 99,
       nome: 'Item de Centavos',
@@ -133,7 +134,7 @@ describe('CarrinhoComponente', () => {
       quantidade: 1,
       disponivel: true,
       estoqueDisponivel: 12,
-    });
+    }));
 
     app.entrar({
       email: 'teste@geekhub.com',
@@ -144,29 +145,29 @@ describe('CarrinhoComponente', () => {
     expect(component.compradorIdentificador).toBe(2);
     expect(component.itensCarrinho).toHaveLength(1);
 
-    const aumentado = component.alterarQuantidade({
+    const aumentado = await firstValueFrom(component.alterarQuantidade({
       compradorIdentificador: 2,
       anuncioIdentificador: 99,
       quantidade: 3,
-    });
+    }));
     expect(aumentado.sucesso).toBe(true);
     expect(component.obterSubtotalCentavos(component.itensCarrinho[0])).toBe(87);
     expect(component.valorTotal).toBe(0.87);
 
-    const diminuido = component.alterarQuantidade({
+    const diminuido = await firstValueFrom(component.alterarQuantidade({
       compradorIdentificador: 2,
       anuncioIdentificador: 99,
       quantidade: 1,
-    });
+    }));
     expect(diminuido.sucesso).toBe(true);
     expect(component.valorTotal).toBe(0.29);
   });
 
-  it('remove produtos preservando os demais, zera no ultimo e ignora ausente', () => {
-    const removerAusente = component.removerDoCarrinho({
+  it('remove produtos preservando os demais, zera no ultimo e ignora ausente', async () => {
+    const removerAusente = await firstValueFrom(component.removerDoCarrinho({
       compradorIdentificador: 1,
       anuncioIdentificador: 999,
-    });
+    }));
     expect(removerAusente.sucesso).toBe(true);
     expect(component.itensCarrinho).toHaveLength(3);
 

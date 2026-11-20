@@ -1,1 +1,145 @@
-<p>detalhes-pedido works!</p>
+<main class="pagina-pedido">
+  <a class="voltar" routerLink="/pedidos">
+    <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">chevron_left</mat-icon>
+    Voltar
+  </a>
+
+  @if (pedido; as p) {
+    <header class="cabecalho-pedido">
+      <h1>Pedido #{{ p.identificador }}</h1>
+      <span class="estado" [attr.data-estado]="p.estado">{{ rotulosEstado[p.estado] }}</span>
+    </header>
+
+    <section class="painel linha-tempo" aria-label="Andamento do pedido">
+      <ol>
+        @for (etapa of etapas; track etapa.estado) {
+          <li
+            class="etapa"
+            [class.concluida]="etapa.ocorridoEm"
+            [attr.data-estado]="etapa.estado"
+          >
+            <mat-icon fontSet="material-symbols-outlined" aria-hidden="true">
+              {{ etapa.estado === 'CANCELADO' ? 'cancel' : etapa.ocorridoEm ? 'check_box' : 'check_box_outline_blank' }}
+            </mat-icon>
+            <strong>{{ etapa.rotulo }}</strong>
+            @if (etapa.ocorridoEm) {
+              <time [attr.datetime]="etapa.ocorridoEm">
+                {{ etapa.ocorridoEm | date: 'dd/MM/yyyy HH:mm' }}
+              </time>
+            } @else {
+              <span>Pendente</span>
+            }
+          </li>
+        }
+      </ol>
+    </section>
+
+    <div class="grade">
+      <section class="painel itens-pedido" aria-labelledby="titulo-itens">
+        <h2 id="titulo-itens" class="cabecalho-painel">Itens do pedido</h2>
+
+        <ul class="lista-itens">
+          @for (item of p.itens; track item.anuncioIdentificador) {
+            <li class="item">
+              @if (item.imagemProduto) {
+                <img class="imagem-item" [src]="item.imagemProduto" alt="" />
+              } @else {
+                <span class="imagem-item" aria-hidden="true"></span>
+              }
+              <div class="dados-item">
+                <a [routerLink]="['/produtos', item.anuncioIdentificador]">{{ item.nomeProduto }}</a>
+                <span>Qtd: {{ item.quantidade }}</span>
+              </div>
+              <strong class="valor">{{ item.subtotal | currency: 'BRL' }}</strong>
+            </li>
+          }
+        </ul>
+      </section>
+
+      <div class="coluna-lateral">
+        <section class="painel resumo" aria-labelledby="titulo-resumo">
+          <h2 id="titulo-resumo">Resumo da compra</h2>
+          <dl>
+            <div>
+              <dt>Pedido</dt>
+              <dd>#{{ p.identificador }}</dd>
+            </div>
+            <div>
+              <dt>Data</dt>
+              <dd>{{ p.criadoEm | date: 'dd/MM/yyyy' }}</dd>
+            </div>
+            <div class="linha-total">
+              <dt>Total</dt>
+              <dd>{{ p.valorTotal | currency: 'BRL' }}</dd>
+            </div>
+          </dl>
+        </section>
+
+        @if (mensagemAvaliacao) {
+          <p
+            class="mensagem"
+            [class.mensagem-erro]="avaliacaoComErro"
+            [attr.role]="avaliacaoComErro ? 'alert' : 'status'"
+          >
+            {{ mensagemAvaliacao }}
+          </p>
+        }
+
+        @if (podeAvaliar) {
+          @if (avaliando) {
+            <form class="painel formulario-avaliacao" (ngSubmit)="enviarAvaliacao()" novalidate>
+              <fieldset>
+                <legend>Sua nota</legend>
+                <div class="estrelas">
+                  @for (valor of notas; track valor) {
+                    <label [class.selecionada]="valor <= nota">
+                      <input
+                        type="radio"
+                        name="nota"
+                        [value]="valor"
+                        [(ngModel)]="nota"
+                        [attr.aria-label]="valor + ' de 5'"
+                      />
+                      <span aria-hidden="true">★</span>
+                    </label>
+                  }
+                </div>
+              </fieldset>
+
+              <label class="rotulo-comentario" for="comentario-avaliacao">Comentário (opcional)</label>
+              <textarea
+                id="comentario-avaliacao"
+                name="comentario"
+                rows="4"
+                maxlength="1000"
+                [(ngModel)]="comentario"
+              ></textarea>
+
+              <div class="acoes-avaliacao">
+                <button type="submit" class="botao botao-primario" [disabled]="enviandoAvaliacao">
+                  {{ enviandoAvaliacao ? 'ENVIANDO...' : 'ENVIAR' }}
+                </button>
+                <button type="button" class="botao botao-secundario" (click)="cancelarAvaliacao()">
+                  CANCELAR
+                </button>
+              </div>
+            </form>
+          } @else {
+            <button type="button" class="botao botao-primario botao-largo" (click)="abrirAvaliacao()">
+              AVALIAR COMPRA
+            </button>
+          }
+        } @else if (p.avaliado) {
+          <p class="aviso-avaliado">Você já avaliou esta compra.</p>
+        }
+      </div>
+    </div>
+  } @else if (carregando) {
+    <p role="status">Carregando pedido...</p>
+  } @else if (erro) {
+    <section class="painel nao-encontrado">
+      <h1>{{ erro }}</h1>
+      <p>Confira o número do pedido ou volte para <a routerLink="/pedidos">Minhas compras</a>.</p>
+    </section>
+  }
+</main>

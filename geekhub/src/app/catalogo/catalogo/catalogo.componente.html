@@ -11,7 +11,7 @@
       Todos
     </button>
 
-    @for (categoria of categorias; track categoria.identificador) {
+    @for (categoria of categorias(); track categoria.identificador) {
       <button
         [matButton]="categoriaSelecionada() === categoria.identificador ? 'filled' : 'outlined'"
         type="button"
@@ -32,7 +32,20 @@
     </div>
   }
 
-  @if (anuncios.length > 0) {
+  @if (erro()) {
+    <mat-card class="estado-vazio" appearance="outlined" role="alert">
+      <mat-icon fontSet="material-symbols-outlined" class="icone-vazio" aria-hidden="true">
+        cloud_off
+      </mat-icon>
+      <h2>Não foi possível carregar os produtos.</h2>
+      <p>{{ erro() }}</p>
+      <button matButton="filled" type="button" class="botao-limpar" (click)="atualizarAnuncios()">
+        Tentar novamente
+      </button>
+    </mat-card>
+  } @else if (carregando() && anuncios.length === 0) {
+    <p class="status-busca" role="status">Carregando produtos...</p>
+  } @else if (anuncios.length > 0) {
     <div class="lista-produtos">
       @for (anuncio of anuncios; track anuncio.identificador) {
         <app-cartao-produto [anuncio]="anuncio" />
