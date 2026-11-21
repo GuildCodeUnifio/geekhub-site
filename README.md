@@ -105,8 +105,8 @@ Por padrão, [CONFIGURACAO_API.fonteDados](geekhub/src/app/api/configuracao-api.
 
 ## Documentação e Diagramas
 
-- **Diagrama de Classes (Markdown + Mermaid)**: [docs/diagrama-classes.md](docs/diagrama-classes.md)
-- **Diagrama de Classes (SVG)**: [docs/diagrama-classes.svg](docs/diagrama-classes.svg)
+- **Diagrama de Classes (Documentação)**: [docs/diagrama-classes.md](docs/diagrama-classes.md)
+- **Diagrama de Classes (PNG)**: [docs/diagrama-classes.png](docs/diagrama-classes.png)
 - **Protótipos de Tela**: [prototipos-telas/](prototipos-telas/)
 - **Backend REST e Swagger/Postman**: <https://github.com/GuildCodeUnifio/geekhub-api>
 

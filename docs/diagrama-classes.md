@@ -2,7 +2,7 @@
 
 Documentação técnica da modelagem orientada a objetos e dos relacionamentos entre as entidades de negócio do **GeekHub** (Marketplace de produtos geek e colecionáveis — Projeto Integrador UNIFIO, Grupo GuildCode).
 
-![Diagrama de Classes do GeekHub](diagrama-classes.svg)
+![Diagrama de Classes do GeekHub](diagrama-classes.png)
 
 ## Entidades e Responsabilidades
 
