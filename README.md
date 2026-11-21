@@ -1,109 +1,151 @@
-# GeekHub
+# GeekHub Site
 
-Marketplace de produtos geek e colecionáveis, desenvolvido pela equipe
-**GuildCode** como Projeto Integrador da UNIFIO.
+Aplicação web do Projeto Integrador **GeekHub** (Grupo **GuildCode** — UNIFIO), um marketplace para compra e venda de produtos geek e colecionáveis.
 
-A plataforma conecta compradores e vendedores com busca e filtragem no catálogo,
-gestão de anúncios e categorias, carrinho de compras, acompanhamento de pedidos,
-avaliação de vendedores e dashboard operacional.
+O frontend gerencia catálogo com busca e filtragem, perfil público de vendedores, autenticação JWT e cadastro, gestão completa de anúncios e categorias, carrinho de compras, ciclo ponta a ponta de pedidos com avaliações pós-compra e dashboard operacional administrativo.
 
 ---
 
 ## Link da Aplicação Publicada
 
 - **Aplicação web (nuvem)**: _inserir aqui a URL publicada após o deploy de produção (ex.: Vercel / Netlify / Render)_
-- **Código-fonte frontend**: <https://github.com/GuildCodeUnifio/geekhub-site>
+- **Código-fonte frontend (`geekhub-site`)**: <https://github.com/GuildCodeUnifio/geekhub-site>
 - **Código-fonte backend (`geekhub-api`)**: <https://github.com/GuildCodeUnifio/geekhub-api>
 
 ---
 
-## Funcionalidades Implementadas
+## Tecnologias
 
-- **Configuração Angular**: módulos (`NgModule`), componentes com `standalone: false`, roteamento por feature (`AppRoutingModule`) com lazy loading, **SSR/SSG desabilitado** e interface construída com **Angular Material**.
-- **Catálogo e Vendedores (`/`, `/produtos/:id`, `/vendedores/:id`)**: pesquisa textual, filtro por categoria, paginação, galeria de fotos e reputação do vendedor.
-- **Autenticação e Conta (`/entrar`, `/cadastro`, `/minha-conta/perfil`, `/minha-conta/usuarios`)**: login, cadastro, edição de perfil e gestão administrativa de usuários/permissões.
-- **CRUD Completo de Anúncios (`/meus-anuncios`, `/meus-anuncios/novo`, `/meus-anuncios/:id/editar`)**: cadastro, edição, ativação/pausa de disponibilidade, visão administrativa e remoção.
-- **CRUD Completo de Categorias (`/categorias`)**: cadastro, edição, ativação/inativação e remoção protegida (administradores).
-- **Carrinho e Fluxo de Pedido (`/carrinho`, `/pedidos/revisar`, `/pedidos`, `/pedidos/vendas`, `/pedidos/:id`)**: ajuste de quantidade, limpeza completa do carrinho, revisão, criação do pedido, avanço de estado (`CRIADO -> CONFIRMADO -> ENVIADO -> CONCLUIDO`), cancelamento com estorno de estoque e avaliação pós-conclusão.
-- **Dashboard Operacional (`/dashboard`)**: painel exclusivo para administradores consumindo os KPIs calculados em `GET /dashboard` no `geekhub-api` (com fallback local automático caso a API esteja inacessível): receita/ticket médio, total de pedidos e taxa de conclusão, anúncios ativos/estoque/categorias, nota média de avaliações, distribuição por estado/categoria e tabela de pedidos recentes.
+| Camada | Tecnologia |
+| --- | --- |
+| Linguagem | TypeScript `6.0` |
+| Framework e Arquitetura | Angular `22.2` (`NgModules`, `standalone: false`, roteamento sem SSR/SSG) |
+| Interface e Componentes | Angular Material `22.2` + Angular CDK |
+| Reatividade e Estado | RxJS `7.8` + Angular Signals |
+| Integração e Fallback | `HttpClient` + Interceptor JWT / fallback automático local (`localStorage`) |
+| Testes Unitários | Vitest `5.0` + `jsdom` |
+| Ambiente e Execução | Node.js `22` + npm `10.9` + Dev Container |
 
 ---
 
-## Integração com a API e Fallback Automático para Dados Mockados
+## Como Executar
 
-Por padrão, [`CONFIGURACAO_API.fonteDados`](geekhub/src/app/api/configuracao-api.ts) utiliza o modo **`'auto'`**:
+### Opção 1: Dev Container / GitHub Codespaces (Recomendado)
 
-1. O frontend tenta consumir o **geekhub-api** na URL configurada em `CONFIGURACAO_API.urlBase` (padrão local: `http://localhost:8080`).
-2. Se a API não estiver acessível (`status === 0`), o serviço [`DadosGeekhub`](geekhub/src/app/api/dados-geekhub.ts) alterna **automaticamente** em tempo de execução para os dados locais mantidos no `localStorage`, permitindo testar todo o sistema mesmo sem backend ativo (ex.: deploy estático em nuvem).
-3. Erros de regra de negócio retornados pela API (`400`, `401`, `403`, `404`, `409`, `500`) continuam sendo exibidos normalmente ao usuário sem mascaramento.
+1. Abra a pasta `geekhub-site` no VS Code com a extensão **Dev Containers** (ou inicie um GitHub Codespace).
+2. Selecione **Reopen in Container**. O ambiente (`.devcontainer/devcontainer.json`) utiliza **Node.js 22**, instala o Angular CLI e executa `npm --prefix geekhub ci`.
+3. Entre na pasta `geekhub/` e inicie a aplicação:
+   ```bash
+   cd geekhub
+   npm start
+   ```
+
+### Opção 2: Execução Local (Windows / Linux)
+
+1. Instale **Node.js 22+** e **npm**.
+2. Entre na pasta `geekhub/`, instale as dependências e inicie o servidor de desenvolvimento:
+   ```bash
+   cd geekhub
+   npm ci
+   npm start
+   ```
+
+A aplicação inicia em `http://localhost:4200/`.
+
+### Integração com a API e Fallback Automático para Dados Mockados
+
+Por padrão, [CONFIGURACAO_API.fonteDados](geekhub/src/app/api/configuracao-api.ts) utiliza o modo **`'auto'`**:
+
+1. O frontend tenta consumir o **geekhub-api** em `CONFIGURACAO_API.urlBase` (padrão local: `http://localhost:8080`).
+2. Se a API estiver inacessível (`status === 0`), o serviço [DadosGeekhub](geekhub/src/app/api/dados-geekhub.ts) alterna **automaticamente** em tempo de execução para os dados locais mantidos em `localStorage`, permitindo executar todo o sistema ponta a ponta mesmo sem backend ativo.
+3. Erros de regra de negócio retornados pela API (`400`, `401`, `403`, `404`, `409`, `500`) são exibidos normalmente na interface sem mascaramento.
 
 ---
 
 ## Credenciais de Acesso para Avaliação
 
+### Modo Integrado com `geekhub-api` (API rodando na porta `8080`)
+
+| Perfil | E-mail | Senha | Permissões |
+| --- | --- | --- | --- |
+| **Administrador** | `admin@geekhub.com` | `123456` | `ADMIN` e `USUARIO` (inclui `/dashboard`, `/categorias` e `/minha-conta/usuarios`) |
+| **Usuário Comum** | `usuario@geekhub.com` | `123456` | `USUARIO` |
+| **Vendedor (`V2`)** | `vendedor@geekhub.com` | `123456` | `USUARIO` |
+
 ### Modo Demonstração / Fallback Local (sem API no ar)
 
 | Perfil | E-mail | Senha | Permissões |
-| :--- | :--- | :--- | :--- |
+| --- | --- | --- | --- |
 | **Administrador / Comprador** | `demo@geekhub.com` | `123456` | Acesso total (Catálogo, Meus Anúncios, Categorias, Usuários, Vendas, Compras, Dashboard) |
 | **Usuário Comum** | `teste@geekhub.com` | `teste123` | Comprador e Vendedor padrão |
 
-### Modo Integrado com `geekhub-api`
-
-| Perfil | E-mail | Senha | Permissões |
-| :--- | :--- | :--- | :--- |
-| **Administrador** | `admin@geekhub.com` | `123456` | `ADMIN` e `USUARIO` |
-| **Usuário Comum** | `usuario@geekhub.com` | `123456` | `USUARIO` |
-
 ### Roteiro Sugerido de Teste Ponta a Ponta
 
-1. Entre com `demo@geekhub.com` / `123456` (ou `admin@geekhub.com` / `123456` se estiver com a API rodando).
-2. Acesse **Dashboard** (`/dashboard`) no menu lateral (restrito a administradores) para conferir os KPIs operacionais calculados a partir dos dados do sistema.
-3. Em **Meus anúncios** (`/meus-anuncios`), crie um novo produto ou edite/exclua anúncios existentes.
-4. No **Catálogo** (`/`), abra um produto, adicione ao **Carrinho** (`/carrinho`) e avance para **Revisar pedido** (`/pedidos/revisar`) para concluir uma compra.
-5. Acompanhe o pedido em **Minhas compras** (`/pedidos`), gerencie seu avanço (`Confirmar` → `Enviar` → `Concluir`) em **Minhas vendas** (`/pedidos/vendas`), envie uma avaliação em `/pedidos/:id` e retorne ao `/dashboard` para observar os KPIs atualizados.
+1. Entre em `/entrar` com `admin@geekhub.com` / `123456` (com API ativa) ou `demo@geekhub.com` / `123456` (em fallback local).
+2. Abra **Dashboard** (`/dashboard`) no menu lateral (restrito a administradores) para conferir os 4 KPIs operacionais iniciais.
+3. Em **Meus anúncios** (`/meus-anuncios`), crie, edite ou exclua anúncios; em **Categorias** (`/categorias`), gerencie categorias do catálogo.
+4. No **Catálogo** (`/`), filtre ou pesquise um item, adicione ao **Carrinho** (`/carrinho`) e finalize a compra em **Revisar pedido** (`/pedidos/revisar`).
+5. Acompanhe o pedido em **Minhas compras** (`/pedidos`), avance o estado (`Confirmar` → `Enviar` → `Concluir`) em **Minhas vendas** (`/pedidos/vendas`), avalie a compra em `/pedidos/:id` e volte ao `/dashboard` para conferir os indicadores atualizados.
 
 ---
 
-## Documentação Técnica (Diagrama de Classes)
+## Rotas e Funcionalidades Principais
 
-- **Documento completo em Markdown + Mermaid**: [docs/diagrama-classes.md](docs/diagrama-classes.md)
-- **Diagrama vetorial (SVG)**: [docs/diagrama-classes.svg](docs/diagrama-classes.svg)
+| Recurso / Rotas | Acesso | Funcionalidades |
+| --- | --- | --- |
+| Catálogo e Vendedores (`/`, `/produtos/:id`, `/vendedores/:id`) | Público | Busca textual, filtro por categoria, paginação, galeria e reputação do vendedor |
+| Autenticação (`/entrar`, `/cadastro`) | Público | Login com e-mail/senha, criação de conta e redirecionamento pós-login |
+| Conta e Usuários (`/minha-conta/perfil`, `/minha-conta/usuarios`) | Autenticado / `ADMIN` | Edição de perfil/foto e listagem administrativa de usuários e permissões |
+| Anúncios (`/meus-anuncios`, `/meus-anuncios/novo`, `/meus-anuncios/:id/editar`) | Autenticado (`ADMIN` vê todos) | CRUD completo de anúncios, controle de disponibilidade/estoque e remoção |
+| Categorias (`/categorias`) | `ADMIN` | CRUD completo de categorias, ativação/inativação e proteção contra vínculo |
+| Carrinho, Pedidos e Avaliações (`/carrinho`, `/pedidos/revisar`, `/pedidos`, `/pedidos/vendas`, `/pedidos/:id`) | Autenticado | Carrinho com limpeza completa, revisão, criação de pedido, avanço/cancelamento e avaliação |
+| Dashboard Operacional (`/dashboard`) | `ADMIN` | KPIs consolidados (`GET /dashboard` com fallback local), distribuições e pedidos recentes |
 
 ---
 
-## Executar e Testar Localmente
+## Documentação e Diagramas
 
-Com Node.js e npm instalados, execute dentro da pasta `geekhub/`:
+- **Diagrama de Classes (Markdown + Mermaid)**: [docs/diagrama-classes.md](docs/diagrama-classes.md)
+- **Diagrama de Classes (SVG)**: [docs/diagrama-classes.svg](docs/diagrama-classes.svg)
+- **Protótipos de Tela**: [prototipos-telas/](prototipos-telas/)
+- **Backend REST e Swagger/Postman**: <https://github.com/GuildCodeUnifio/geekhub-api>
 
-```bash
-cd geekhub
-npm ci
-npm start
-```
+---
 
-- Aplicação web: <http://localhost:4200/>
-- Testes unitários (Vitest):
+## Testes e Build
+
+Os testes unitários usam **Vitest** (`jsdom`) com cobertura dos fluxos em modo mock, integração com a API (`HttpTestingController`) e fallback automático em `status === 0`. Execute dentro da pasta `geekhub/`:
 
 ```bash
 cd geekhub
 npm test -- --watch=false
 ```
 
-- Build de produção (gera `geekhub/dist/geekhub/browser`):
+Suíte atual: **`32` arquivos e `152` testes** passando sem falhas.
+
+Para gerar o bundle estático de produção (saída em `geekhub/dist/geekhub/browser`):
 
 ```bash
 cd geekhub
 npm run build
 ```
 
-O repositório também inclui uma configuração de Dev Container em `.devcontainer/`.
+---
 
-## Contribuir
+## Integrantes (Grupo GuildCode)
 
-Consulte [CONTRIBUTING.md](CONTRIBUTING.md) para seguir o fluxo de branches da equipe.
+| Nome Completo | RA | GitHub |
+| --- | --- | --- |
+| Bryan Alvarenga | `272426` | [@bryan-coursework](https://github.com/bryan-coursework) |
+| Igor Bassetto Menon | `274582` | [@Igor-menon](https://github.com/Igor-menon) |
+| Juan Pedrozo | `273889` | [@juanpedrozo](https://github.com/juanpedrozo) |
+| Kauã Gustavo da Fonseca Rodrigues | `273722` | [@uaikauaa](https://github.com/uaikauaa) |
+| Rafael Dias Garcia | `272207` | [@diasgarcia](https://github.com/diasgarcia) |
+| Vitor Yago Ferreira dos Santos | `272261` | [@Cuidoka](https://github.com/Cuidoka) |
 
-## Licença
+---
 
-Este projeto é distribuído sob a GNU General Public License, versão 3
-(`GPL-3.0-only`). O texto completo está em [LICENSE](LICENSE).
+## Contribuição e Licença
+
+- Guia de contribuição e fluxo Git: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Licença: [GNU General Public License v3.0 (GPL-3.0)](LICENSE)
