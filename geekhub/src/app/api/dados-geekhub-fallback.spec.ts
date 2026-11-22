@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { vi } from 'vitest';
 
 import { App } from '../app';
 import { URL_TESTE, criarToken } from './apoio-testes-api';
@@ -193,5 +194,33 @@ describe('DadosGeekhub — modo automatico (API -> fallback mock)', () => {
     estritoHttp.expectOne(req => req.url === `${URL_TESTE}/categorias`).error(new ProgressEvent('error'), { status: 0 });
     await expect(chamada).rejects.toThrow(MENSAGEM_API_INDISPONIVEL);
     estritoHttp.verify();
+  });
+
+  it('alterna para o mock durante cold start (502/503/504 ou timeout de 6s) e aceita login admin@geekhub.com no mock', async () => {
+    vi.useFakeTimers();
+    try {
+      const chamadaTimeout = firstValueFrom(app.dados.consultarAnuncios());
+      http.expectOne(req => req.url === `${URL_TESTE}/anuncios`);
+      await vi.advanceTimersByTimeAsync(6000);
+
+      const resultadoTimeout = await chamadaTimeout;
+      expect(resultadoTimeout.total).toBeGreaterThan(0);
+      expect(app.dados.usandoFallbackMock).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+
+    TestBed.resetTestingModule();
+    ({ app, http } = configurarModoAuto());
+
+    const login503 = firstValueFrom(app.dados.entrar({ email: 'admin@geekhub.com', senha: '123456' }));
+    http
+      .expectOne(`${URL_TESTE}/login`)
+      .flush('Service Unavailable', { status: 503, statusText: 'Service Unavailable' });
+
+    const admin = await login503;
+    expect(admin?.email).toBe('demo@geekhub.com');
+    expect(app.usuarioAtualEhAdmin).toBe(true);
+    expect(app.dados.usandoFallbackMock).toBe(true);
   });
 });

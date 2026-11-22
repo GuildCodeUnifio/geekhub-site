@@ -1,7 +1,9 @@
 import { HttpErrorResponse } from '@angular/common/http';
+import { TimeoutError } from 'rxjs';
 
 import {
   MENSAGEM_API_INDISPONIVEL,
+  ehErroConexaoApi,
   extrairMensagemErro,
   montarParametros,
   normalizarPagina,
@@ -29,6 +31,12 @@ describe('utilitarios da API', () => {
     expect(extrairMensagemErro(validacao)).toBe('email: deve ser válido');
     expect(extrairMensagemErro(negocio)).toBe('E-mail já cadastrado');
     expect(extrairMensagemErro(new HttpErrorResponse({ status: 0 }))).toBe(MENSAGEM_API_INDISPONIVEL);
+    expect(extrairMensagemErro(new HttpErrorResponse({ status: 503 }))).toBe(MENSAGEM_API_INDISPONIVEL);
+    expect(extrairMensagemErro(new TimeoutError())).toBe(MENSAGEM_API_INDISPONIVEL);
+    expect(ehErroConexaoApi(new HttpErrorResponse({ status: 502 }))).toBe(true);
+    expect(ehErroConexaoApi(new HttpErrorResponse({ status: 504 }))).toBe(true);
+    expect(ehErroConexaoApi(new TimeoutError())).toBe(true);
+    expect(ehErroConexaoApi(new HttpErrorResponse({ status: 403 }))).toBe(false);
     expect(extrairMensagemErro(new HttpErrorResponse({ status: 500 }), 'Falhou')).toBe('Falhou');
   });
 });

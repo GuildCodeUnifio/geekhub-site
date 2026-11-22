@@ -52,19 +52,28 @@ O frontend gerencia catálogo com busca e filtragem, perfil público de vendedor
 
 A aplicação inicia em `http://localhost:4200/`.
 
+### Opção 3: Deploy em Nuvem (Vercel)
+
+O projeto possui [vercel.json](geekhub/vercel.json) e suporte a configuração de ambiente por variáveis para publicação SPA na Vercel:
+
+- **Root Directory**: `geekhub`
+- **Build Command**: `npm run build:vercel` (definido em `geekhub/vercel.json`)
+- **Output Directory**: `dist/geekhub/browser`
+- **Variável opcional (`GEEKHUB_API_URL`)**: URL pública do backend no Render (padrão em produção: `https://geekhub-api.onrender.com` definido em [environment.prod.ts](geekhub/src/environments/environment.prod.ts)).
+
 ### Integração com a API e Fallback Automático para Dados Mockados
 
 Por padrão, [CONFIGURACAO_API.fonteDados](geekhub/src/app/api/configuracao-api.ts) utiliza o modo **`'auto'`**:
 
-1. O frontend tenta consumir o **geekhub-api** em `CONFIGURACAO_API.urlBase` (padrão local: `http://localhost:8080`).
-2. Se a API estiver inacessível (`status === 0`), o serviço [DadosGeekhub](geekhub/src/app/api/dados-geekhub.ts) alterna **automaticamente** em tempo de execução para os dados locais mantidos em `localStorage`, permitindo executar todo o sistema ponta a ponta mesmo sem backend ativo.
+1. O frontend tenta consumir o **geekhub-api** em `CONFIGURACAO_API.urlBase` (`http://localhost:8080` em desenvolvimento local e `environment.prod.ts` em produção).
+2. Se a API estiver inacessível, hibernando no Render ou retornar erro de indisponibilidade (`status === 0`, `502`, `503`, `504` ou timeout acima de `6s`), o serviço [DadosGeekhub](geekhub/src/app/api/dados-geekhub.ts) alterna **automaticamente** em tempo de execução para os dados locais mantidos em `localStorage`, permitindo executar todo o sistema ponta a ponta mesmo durante o *cold start* do backend.
 3. Erros de regra de negócio retornados pela API (`400`, `401`, `403`, `404`, `409`, `500`) são exibidos normalmente na interface sem mascaramento.
 
 ---
 
 ## Credenciais de Acesso para Avaliação
 
-### Modo Integrado com `geekhub-api` (API rodando na porta `8080`)
+### Modo Integrado com `geekhub-api`
 
 | Perfil | E-mail | Senha | Permissões |
 | --- | --- | --- | --- |
@@ -76,8 +85,8 @@ Por padrão, [CONFIGURACAO_API.fonteDados](geekhub/src/app/api/configuracao-api.
 
 | Perfil | E-mail | Senha | Permissões |
 | --- | --- | --- | --- |
-| **Administrador / Comprador** | `demo@geekhub.com` | `123456` | Acesso total (Catálogo, Meus Anúncios, Categorias, Usuários, Vendas, Compras, Dashboard) |
-| **Usuário Comum** | `teste@geekhub.com` | `teste123` | Comprador e Vendedor padrão |
+| **Administrador / Comprador** | `demo@geekhub.com` *(ou `admin@geekhub.com`)* | `123456` | Acesso total (Catálogo, Meus Anúncios, Categorias, Usuários, Vendas, Compras, Dashboard) |
+| **Usuário Comum** | `teste@geekhub.com` *(ou `usuario@geekhub.com` com senha `123456`)* | `teste123` | Comprador e Vendedor padrão |
 
 ### Roteiro Sugerido de Teste Ponta a Ponta
 

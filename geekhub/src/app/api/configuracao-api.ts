@@ -1,5 +1,7 @@
 import { InjectionToken } from '@angular/core';
 
+import { environment } from '../../environments/environment';
+
 /**
  * De onde o frontend busca os dados:
  * - `auto`: tenta consumir o geekhub-api em `urlBase` e alterna automaticamente para `mock` quando a API estiver inacessível;
@@ -9,8 +11,8 @@ import { InjectionToken } from '@angular/core';
 export type FonteDados = 'auto' | 'api' | 'mock';
 
 export const CONFIGURACAO_API: { readonly urlBase: string; readonly fonteDados: FonteDados } = {
-  urlBase: 'http://localhost:8080',
-  fonteDados: 'auto',
+  urlBase: environment.apiUrl,
+  fonteDados: environment.fonteDados,
 };
 
 export const URL_API = new InjectionToken<string>('URL_API', {
