@@ -8,7 +8,8 @@ O frontend gerencia catálogo com busca e filtragem, perfil público de vendedor
 
 ## Link da Aplicação Publicada
 
-- **Aplicação web (nuvem)**: _inserir aqui a URL publicada após o deploy de produção (ex.: Vercel / Netlify / Render)_
+- **Aplicação web (Vercel)**: <https://geekhub-site.vercel.app>
+- **API REST em produção (Render)**: <https://geekhub-api.onrender.com> ([Swagger UI](https://geekhub-api.onrender.com/swagger-ui.html))
 - **Código-fonte frontend (`geekhub-site`)**: <https://github.com/GuildCodeUnifio/geekhub-site>
 - **Código-fonte backend (`geekhub-api`)**: <https://github.com/GuildCodeUnifio/geekhub-api>
 
@@ -56,10 +57,11 @@ A aplicação inicia em `http://localhost:4200/`.
 
 O projeto possui [vercel.json](geekhub/vercel.json) e suporte a configuração de ambiente por variáveis para publicação SPA na Vercel:
 
-- **Root Directory**: `geekhub`
+- **Diretório da aplicação**: `geekhub/` (definido via `working-directory` no workflow; *Root Directory* padrão no painel da Vercel)
 - **Build Command**: `npm run build:vercel` (definido em `geekhub/vercel.json`)
 - **Output Directory**: `dist/geekhub/browser`
 - **Variável opcional (`GEEKHUB_API_URL`)**: URL pública do backend no Render (padrão em produção: `https://geekhub-api.onrender.com` definido em [environment.prod.ts](geekhub/src/environments/environment.prod.ts)).
+- **Deploy automático (CI/CD)**: workflow [.github/workflows/deploy-vercel.yml](.github/workflows/deploy-vercel.yml) executa os testes Vitest e publica automaticamente em <https://geekhub-site.vercel.app> a cada push na branch `main`.
 
 ### Integração com a API e Fallback Automático para Dados Mockados
 
@@ -130,7 +132,7 @@ cd geekhub
 npm test -- --watch=false
 ```
 
-Suíte atual: **`32` arquivos e `152` testes** passando sem falhas.
+Suíte atual: **`32` arquivos e `153` testes** passando sem falhas.
 
 Para gerar o bundle estático de produção (saída em `geekhub/dist/geekhub/browser`):
 
