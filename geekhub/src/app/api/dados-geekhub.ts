@@ -1,5 +1,5 @@
 import { Injector, signal, type ProviderToken, type WritableSignal } from '@angular/core';
-import { Observable, catchError, map, of, switchMap, tap, throwError } from 'rxjs';
+import { Observable, catchError, map, of, switchMap, tap, throwError, timeout } from 'rxjs';
 
 import {
   type AdicionarAoCarrinhoRequest,
@@ -70,6 +70,7 @@ import { SessaoApi } from './sessao-api';
 import { ehErroConexaoApi, extrairMensagemErro, statusErro } from './utilitarios-api';
 
 const CHAVE_ORIGEM_SESSAO_STORAGE = 'geekhub.origemSessao';
+const TEMPO_LIMITE_API_AUTO_MS = 6000;
 type OrigemSessao = 'api' | 'mock';
 
 /**
@@ -137,31 +138,35 @@ export class DadosGeekhub {
     }
 
     const sessao = this.obter(SessaoApi);
-
-    return this.obter(AutenticacaoApi)
+    const entrada$ = this.obter(AutenticacaoApi)
       .entrar({ email: request.email.trim().toLowerCase(), senha: request.senha })
       .pipe(
         tap(resposta => sessao.iniciar(resposta)),
         switchMap(() => this.identificarUsuarioAutenticado()),
-        tap(usuario => {
-          this.salvarOrigemSessao('api');
-          this.app.definirUsuarioAtual(usuario);
-        }),
-        catchError((erro: unknown) => {
-          sessao.limpar();
-          this.limparOrigemSessao();
-
-          if (this.deveUsarFallback(erro)) {
-            return this.ativarFallback(() => this.entrarNoMock(request));
-          }
-
-          this.app.definirUsuarioAtual(null);
-
-          return statusErro(erro) === 401
-            ? of(null)
-            : this.falhar(erro, 'Não foi possível entrar. Tente novamente.');
-        }),
       );
+    const entradaComPrazo$ =
+      this.fonte === 'auto' ? entrada$.pipe(timeout(TEMPO_LIMITE_API_AUTO_MS)) : entrada$;
+
+    return entradaComPrazo$.pipe(
+      tap(usuario => {
+        this.salvarOrigemSessao('api');
+        this.app.definirUsuarioAtual(usuario);
+      }),
+      catchError((erro: unknown) => {
+        sessao.limpar();
+        this.limparOrigemSessao();
+
+        if (this.deveUsarFallback(erro)) {
+          return this.ativarFallback(() => this.entrarNoMock(request));
+        }
+
+        this.app.definirUsuarioAtual(null);
+
+        return statusErro(erro) === 401
+          ? of(null)
+          : this.falhar(erro, 'Não foi possível entrar. Tente novamente.');
+      }),
+    );
   }
 
   cadastrar(request: CadastrarUsuarioRequest): Observable<UsuarioResponse | null> {
@@ -871,7 +876,9 @@ export class DadosGeekhub {
       return of(mockFn());
     }
 
-    return api$.pipe(
+    const origem$ = this.fonte === 'auto' ? api$.pipe(timeout(TEMPO_LIMITE_API_AUTO_MS)) : api$;
+
+    return origem$.pipe(
       tap(() => this.confirmarApiAtiva()),
       catchError((erro: unknown) =>
         this.deveUsarFallback(erro) ? this.ativarFallback(mockFn) : throwError(() => erro),

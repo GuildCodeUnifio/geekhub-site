@@ -1,4 +1,5 @@
 import { HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { TimeoutError } from 'rxjs';
 
 import type { ErroApi, Pagina, PaginaSpring, Paginacao } from './modelos-api';
 
@@ -43,13 +44,19 @@ export function normalizarPagina<T>(pagina: PaginaSpring<T>): Pagina<T> {
 export const MENSAGEM_API_INDISPONIVEL =
   'Não foi possível conectar ao servidor. Verifique se a API está em execução.';
 
+const STATUS_API_INDISPONIVEL: ReadonlySet<number> = new Set([0, 502, 503, 504]);
+
 /** Extrai a mensagem do corpo de erro padrão do geekhub-api (`{ erro, detalhes }`). */
 export function extrairMensagemErro(erro: unknown, padrao = 'Não foi possível concluir a operação.'): string {
+  if (erro instanceof TimeoutError) {
+    return MENSAGEM_API_INDISPONIVEL;
+  }
+
   if (!(erro instanceof HttpErrorResponse)) {
     return erro instanceof Error && erro.message ? erro.message : padrao;
   }
 
-  if (erro.status === 0) {
+  if (STATUS_API_INDISPONIVEL.has(erro.status)) {
     return MENSAGEM_API_INDISPONIVEL;
   }
 
@@ -73,7 +80,10 @@ export function extrairMensagemErro(erro: unknown, padrao = 'Não foi possível 
 }
 
 export function ehErroConexaoApi(erro: unknown): boolean {
-  return erro instanceof HttpErrorResponse && erro.status === 0;
+  return (
+    erro instanceof TimeoutError ||
+    (erro instanceof HttpErrorResponse && STATUS_API_INDISPONIVEL.has(erro.status))
+  );
 }
 
 export function statusErro(erro: unknown): number | null {
