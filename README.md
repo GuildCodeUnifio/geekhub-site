@@ -71,6 +71,8 @@ Por padrão, [CONFIGURACAO_API.fonteDados](geekhub/src/app/api/configuracao-api.
 2. Se a API estiver inacessível, hibernando no Render ou retornar erro de indisponibilidade (`status === 0`, `502`, `503`, `504` ou timeout acima de `6s`), o serviço [DadosGeekhub](geekhub/src/app/api/dados-geekhub.ts) alterna **automaticamente** em tempo de execução para os dados locais mantidos em `localStorage`, permitindo executar todo o sistema ponta a ponta mesmo durante o *cold start* do backend.
 3. Erros de regra de negócio retornados pela API (`400`, `401`, `403`, `404`, `409`, `500`) são exibidos normalmente na interface sem mascaramento.
 
+> **Ciclo em nuvem (Render Free)**: a API hiberna após cerca de **15 minutos** de inatividade (~30–60s para acordar). Assim que o container reinicia, o **Flyway** recria automaticamente a massa inicial (`V1` e `V2`) no H2 em memória e as alterações ficam ativas enquanto o serviço permanecer acordado. Veja o passo a passo completo em [docs/funcionamento-deploy.md](docs/funcionamento-deploy.md).
+
 ---
 
 ## Credenciais de Acesso para Avaliação
@@ -116,6 +118,7 @@ Por padrão, [CONFIGURACAO_API.fonteDados](geekhub/src/app/api/configuracao-api.
 
 ## Documentação e Diagramas
 
+- **Funcionamento do Deploy em Nuvem e Integração com a API**: [docs/funcionamento-deploy.md](docs/funcionamento-deploy.md)
 - **Diagrama de Classes (Documentação)**: [docs/diagrama-classes.md](docs/diagrama-classes.md)
 - **Diagrama de Classes (PNG)**: [docs/diagrama-classes.png](docs/diagrama-classes.png)
 - **Protótipos de Tela**: [prototipos-telas/](prototipos-telas/)
